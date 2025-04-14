@@ -41,7 +41,7 @@ fun NavigationGraph(
 
 
         composable(Routes.CREDITS_SCREEN) {
-            CreditsScreen(navController)
+            CreditsScreen(navController,userViewModel)
         }
 
         composable(Routes.SETTINGS_SCREEN) {

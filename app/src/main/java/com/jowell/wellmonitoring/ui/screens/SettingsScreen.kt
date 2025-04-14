@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.jowell.wellmonitoring.data.ThemePreference
-import com.jowell.wellmonitoring.ui.BackButton
+import com.jowell.wellmonitoring.ui.theme.BackButton
 import com.jowell.wellmonitoring.ui.RectangleButton
 import com.jowell.wellmonitoring.ui.TextComponent
 import com.jowell.wellmonitoring.ui.TopBar
@@ -42,7 +42,11 @@ fun SettingsScreen(
             .fillMaxSize()
     ) {
         item { TopBar(topBarMessage = "Settings") }
-        item { BackButton(navController = navController) }
+        item {
+            BackButton(navController = navController, userViewModel) {
+                navController.popBackStack()
+            }
+        }
 
         // Reset data
         item {

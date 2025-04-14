@@ -64,9 +64,10 @@ class WellDataStore(private val context: Context) {
         }
     }
 
-    suspend fun resetWellList() {
+    suspend fun resetAllWellData() {
         context.wellDataStore.edit { prefs ->
             prefs.remove(WELL_LIST)
+            prefs.remove(WELLS)
         }
     }
 
