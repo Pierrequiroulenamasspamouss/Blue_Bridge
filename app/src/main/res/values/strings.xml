@@ -1,6 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Jo_Well</string>
     <string name="app_dev">Pierre Sluse</string>
+    <string name="app_designer">Pierre Sluse</string>
     <string name="standard_top_bar_text">Hello there</string>
     <string name="Configure_top_bar_text">Configuration</string>
     <string name="Welcome_top_bar_text">Welcome !</string>
@@ -20,4 +21,5 @@
     <string name="Water_level_field_text">Water Level (L)</string>
     <string name="Water_consumption_field_text">Daily Consumption (L)</string>
 
+<!--    <string name=""></string>-->
 </resources>

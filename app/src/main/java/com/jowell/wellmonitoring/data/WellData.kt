@@ -1,8 +1,16 @@
 package com.jowell.wellmonitoring.data
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-@Serializable
+fun WellData.isSavable(): Boolean {
+    return wellName.isNotBlank() ||
+            ipAddress.isNotBlank()
+}
+
+
+
+@Serializable(with = WellDataSerializer::class)
 data class WellData(
     val id: Int = 0,
     val wellName: String = "",
@@ -14,6 +22,6 @@ data class WellData(
     val wellWaterConsumption: Int = 0,
     val espId: String = "",
     val ipAddress: String = "",
-    val extraData: Map<String, String> = emptyMap()
+    var lastRefreshTime: Long = 0L, // Unix timestamp in millis
+    val extraData: Map<String, JsonElement> = emptyMap()
 )
-

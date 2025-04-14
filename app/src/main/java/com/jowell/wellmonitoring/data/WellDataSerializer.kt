@@ -1,13 +1,19 @@
 package com.jowell.wellmonitoring.data
 
-package com.jowell.wellmonitoring.data
-
-import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.encoding.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 object WellDataSerializer : KSerializer<WellData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("WellData")
@@ -35,7 +41,8 @@ object WellDataSerializer : KSerializer<WellData> {
             wellWaterConsumption = jsonObject["wellWaterConsumption"]?.jsonPrimitive?.intOrNull ?: 0,
             espId = jsonObject["espId"]?.jsonPrimitive?.contentOrNull ?: "",
             ipAddress = jsonObject["ipAddress"]?.jsonPrimitive?.contentOrNull ?: "",
-            extraData = jsonObject.filterKeys { it !in knownFields }
+            extraData = jsonObject.filterKeys { it !in knownFields }.toMap()
+
         )
         return well
     }
