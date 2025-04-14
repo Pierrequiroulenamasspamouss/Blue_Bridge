@@ -41,6 +41,15 @@ android {
 }
 
 dependencies {
+    //Testing
+    implementation(libs.okhttp)
+
+    implementation(libs.retrofit)
+    implementation(libs.converter.scalars)
+    implementation (libs.jakewharton.retrofit2.kotlinx.serialization.converter)
+
+
+    //Keep
     implementation(libs.kotlinx.serialization.json.v163)
     implementation(libs.androidx.datastore.preferences.v114)
     implementation(libs.kotlinx.serialization.json)

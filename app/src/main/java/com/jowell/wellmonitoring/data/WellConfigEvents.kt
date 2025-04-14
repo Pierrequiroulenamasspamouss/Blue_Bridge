@@ -9,6 +9,7 @@ open class WellConfigEvents {
     data class WellCapacityEntered(val wellCapacity: Int) : WellConfigEvents()
     data class WaterLevelEntered(val wellWaterLevel: Int) : WellConfigEvents()
     data class ConsumptionEntered(val wellWaterConsumption: Int) : WellConfigEvents()
+    data class IpAddressEntered(val espId: String) : WellConfigEvents()
 
 
 }

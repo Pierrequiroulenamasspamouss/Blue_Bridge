@@ -26,15 +26,17 @@ import com.jowell.wellmonitoring.ui.theme.My_second_appTheme
 import kotlinx.coroutines.launch
 
 /*TODO :
-
-- Data does not save currently. Fix that.
-    -Data does not display ?  Either case it's always empty. Fix that.
-
+- Add "last updated: time+day"
+- Add a screen to pick from a list of given (with a search bar)
+    - Server side too
+- Be able to connect to other servers. Currently data is accessible for 192.168.0.98 only
 - Change app icon and boot screen
 - Change app name
 - Ask for more user information
-- Improve data presentation in the Monitoring screen
-- Connection with an ESP32
+- Fix broken "back" button in the config screen
+- Don't ask for overwrite able data in the settings (Well name) or the field shpuld only be displayed if the user wants to overwrite the name.
+-Map implementation
+-Dynamically add new fields based on the data the server sends. Like if it sends a value other than the ones we have, add a new field to the UI and save it in the specific well's json.
 
 */
 
@@ -89,7 +91,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     )
-                    //test
                 }
             }
         }

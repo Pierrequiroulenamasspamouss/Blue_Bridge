@@ -10,6 +10,7 @@
     <string name="unsaved_changes_dialog_confirm">Yes, save</string>
     <string name="unsaved_changes_dialog_dismiss">No, do not save</string>
     <string name="create_new_well">New well</string>
+    <string name="Well_ip_address_field_text">192.168.0.1</string>
 
     <string name="Well_name_field_text">Well Name</string>
     <string name="Well_owner_field_text">Well Owner</string>

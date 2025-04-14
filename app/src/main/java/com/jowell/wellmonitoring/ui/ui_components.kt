@@ -1,10 +1,14 @@
 package com.jowell.wellmonitoring.ui
 
+
 import android.annotation.SuppressLint
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +18,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.jowell.wellmonitoring.R
+import com.jowell.wellmonitoring.data.WellData
+import com.jowell.wellmonitoring.ui.screens.Routes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawable.water_well_icon) {
@@ -244,4 +261,100 @@ fun BackButton(navController: NavController, clickable: Boolean = true) {
 }
 
 
+@SuppressLint("StateFlowValueCalledInComposition")
+@Composable
+fun DataAndButtons(
+    well: WellData,
+    index: Int,
+    navController: NavController,
+    userViewModel: WellViewModel,
+    context: Context,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState
+) {
+    val expanded = remember { mutableStateOf(false) }
 
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .border(1.dp, color = MaterialTheme.colorScheme.primary)
+            .padding(16.dp)
+    ) {
+        Column {
+            // Conditionally show only non-empty or non-zero fields
+            if (well.wellName.isNotBlank()) TextComponent("Name: ${well.wellName}", 20.sp, textFont = FontWeight.Bold)
+            if (well.wellOwner.isNotBlank()) TextComponent("Owner: ${well.wellOwner}", 16.sp)
+            if (well.wellLocation.isNotBlank()) TextComponent("Location: ${well.wellLocation}", 16.sp)
+            if (well.wellWaterType.isNotBlank()) TextComponent("Type: ${well.wellWaterType}", 16.sp)
+            if (well.wellCapacity > 0) TextComponent("Capacity: ${well.wellCapacity} L", 16.sp)
+            if (well.wellWaterLevel > 0) TextComponent("Level: ${well.wellWaterLevel} L", 16.sp)
+            if (well.wellWaterConsumption > 0) TextComponent("Consumption: ${well.wellWaterConsumption} L/day", 16.sp)
+            if (well.ipAddress.isNotBlank()) TextComponent("IP: ${well.ipAddress}", 16.sp)
+            well.extraData.forEach { (key, value) ->
+                TextComponent("$key: ${value.toString().trim('"')}", 16.sp)
+            }
+
+        }
+
+        // Triple-dot menu for actions
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+            IconButton(onClick = { expanded.value = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Actions")
+            }
+
+            DropdownMenu(
+                expanded = expanded.value,
+                onDismissRequest = { expanded.value = false }
+            ) {
+                if (index > 0) {
+                    DropdownMenuItem(
+                        text = { Text("Move Up") },
+                        onClick = {
+                            userViewModel.swapWells(index, index - 1)
+                            expanded.value = false
+                        },
+                        leadingIcon = { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move Up") }
+                    )
+                }
+                if (index < userViewModel.wellList.value.size - 1) {
+                    DropdownMenuItem(
+                        text = { Text("Move Down") },
+                        onClick = {
+                            userViewModel.swapWells(index, index + 1)
+                            expanded.value = false
+                        },
+                        leadingIcon = { Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move Down") }
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text("Edit") },
+                    onClick = {
+                        navController.navigate("${Routes.WELL_CONFIG_SCREEN}/${well.id}")
+                        expanded.value = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Delete") },
+                    onClick = {
+                        userViewModel.deleteWell(index)
+                        expanded.value = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Refresh") },
+                    onClick = {
+                        if (userViewModel.isConnectedToInternet(context)) {
+                            userViewModel.fetchWellDataFromESP(well.ipAddress, context)
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("No internet connection available.")
+                            }
+                        }
+                        expanded.value = false
+                    }
+                )
+            }
+        }
+    }
+}

@@ -222,6 +222,27 @@ fun WellConfigScreen(userViewModel: WellViewModel, navController: NavController,
                 }
 
                 item {
+                    Spacer(modifier = Modifier.size(10.dp))
+                    TextComponent(
+                        textValue = stringResource(id = R.string.Well_ip_address_field_text),
+                        textSize = 18.sp
+                    )
+                    key(wellData.id) {
+                        TextFieldComponent(
+                            initialValue = wellData.ipAddress.toString(),
+                            defaultInputMessage = stringResource(id = R.string.Well_ip_address_field_text),
+                            onTextChanged = {
+                                userViewModel.onConfigEvent(
+                                    WellConfigEvents.IpAddressEntered(
+                                        it
+                                    )
+                                )
+                            }
+                        )
+                    }
+                }
+
+                item {
                     if (!dataIsSaved) {
                         Box(
                             modifier = Modifier.fillMaxWidth(),
@@ -230,8 +251,8 @@ fun WellConfigScreen(userViewModel: WellViewModel, navController: NavController,
                             SaveDataButton(
                                 userViewModel = userViewModel,
                                 onSave = {
-                                    dataIsSaved = true
                                     userViewModel.onConfigEvent(WellConfigEvents.SaveWell(wellId))
+                                    dataIsSaved = true
                                 },
                                 navController = navController
                             )

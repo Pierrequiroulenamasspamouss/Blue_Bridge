@@ -24,10 +24,30 @@ class WellDataStore(private val context: Context) {
     suspend fun saveWellData(wellId: Int?, wellData: WellData) {
         context.wellDataStore.edit { prefs ->
             val wellList = prefs[WELLS]?.let { Json.decodeFromString<List<WellData>>(it) } ?: emptyList()
-            val updatedWellList = wellList.map { if (it.id == wellId) wellData else it }
-            prefs[WELLS] = Json.encodeToString(updatedWellList)
+            val updatedWellList = if (wellList.any { it.id == wellId }) {
+                wellList.map { if (it.id == wellId) wellData else it }
+            } else {
+                wellList + wellData
+            }
+
+            val encoded = Json.encodeToString(updatedWellList)
+            prefs[WELLS] = encoded
+            prefs[WELL_LIST] = encoded // sync both
         }
     }
+
+    suspend fun deleteWellById(wellId: Int) {
+        context.wellDataStore.edit { prefs ->
+            val currentList = prefs[WELLS]?.let { Json.decodeFromString<List<WellData>>(it) } ?: emptyList()
+            val updatedList = currentList.filterNot { it.id == wellId }
+
+            val encoded = Json.encodeToString(updatedList)
+            prefs[WELLS] = encoded
+            prefs[WELL_LIST] = encoded // keep both in sync
+        }
+    }
+
+
 
     suspend fun getWellData(wellId: Int): WellData? {
         val wellList = context.wellDataStore.data.firstOrNull()?.let { prefs ->
