@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
     - Ask for more user information
     - Don't ask for overwrite able data in the settings (Well name) or the field should only be displayed if the user wants to overwrite the name.
     -Map implementation
-
+    - I deleted the top bar in the config screen. put it back pl
 
 
 */
