@@ -2,6 +2,7 @@
     <string name="app_name">Jo_Well</string>
     <string name="app_dev">Pierre Sluse</string>
     <string name="app_designer">Pierre Sluse</string>
+    <string name="helper">ChatGPT, Claude 3.5 Sonnet, DeepSeek</string>
     <string name="standard_top_bar_text">Hello there</string>
     <string name="Configure_top_bar_text">Configuration</string>
     <string name="Welcome_top_bar_text">Welcome !</string>
