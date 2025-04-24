@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui
+package com.wellconnect.wellmonitoring.ui.components
 
 
 import android.annotation.SuppressLint
@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -105,7 +106,7 @@ fun NumbersFieldComponent(
             },
             textStyle = TextStyle.Default.copy(fontSize = 24.sp, color = MaterialTheme.colorScheme.surface),
             keyboardOptions = KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions {

@@ -102,13 +102,13 @@ app/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project has no license whasoever for now. I'ts free of copying, but I ask you to not steal our idea. It's free for everyone
 
 ## Acknowledgments
 
 - Thanks to all community members who provided feedback
 - Special thanks to contributors and maintainers
-- Built with support from [Your Organization]
+- Built with support from the Kanard'eau organization. 
 
 ## Contact
 

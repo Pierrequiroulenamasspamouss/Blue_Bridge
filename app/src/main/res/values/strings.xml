@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Jo_Well</string>
+    <string name="app_name">WellConnect</string>
     <string name="app_dev">Pierre Sluse</string>
     <string name="app_designer">Pierre Sluse</string>
     <string name="helper">ChatGPT, Claude 3.5 Sonnet, DeepSeek</string>

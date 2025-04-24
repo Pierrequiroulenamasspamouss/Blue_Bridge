@@ -30,10 +30,10 @@ import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
 import com.wellconnect.wellmonitoring.data.WellConfigEvents
 import com.wellconnect.wellmonitoring.data.isSavable
-import com.wellconnect.wellmonitoring.ui.TopBar
-import com.wellconnect.wellmonitoring.ui.WellViewModel
-import com.wellconnect.wellmonitoring.ui.theme.SaveDataButton
-import com.wellconnect.wellmonitoring.ui.theme.WellField
+import com.wellconnect.wellmonitoring.ui.components.TopBar
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
+import com.wellconnect.wellmonitoring.ui.components.SaveDataButton
+import com.wellconnect.wellmonitoring.ui.components.WellField
 import kotlinx.coroutines.launch
 
 const val debug = true

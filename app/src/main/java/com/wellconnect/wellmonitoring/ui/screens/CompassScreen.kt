@@ -33,8 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,7 +54,7 @@ import com.wellconnect.wellmonitoring.data.WellData
 import com.wellconnect.wellmonitoring.data.getLatitude
 import com.wellconnect.wellmonitoring.data.getLongitude
 import com.wellconnect.wellmonitoring.data.hasValidCoordinates
-import com.wellconnect.wellmonitoring.ui.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -81,7 +79,7 @@ fun CompassScreen(
     var currentLocation by remember { mutableStateOf(lastKnownLocation) }
     var targetLatitude by remember { mutableStateOf(latitude?.toString() ?: "") }
     var targetLongitude by remember { mutableStateOf(longitude?.toString() ?: "") }
-    var azimuth by remember { mutableFloatStateOf(0f) }
+    var azimuth by remember { mutableStateOf(0f) }
     var distance by remember { mutableStateOf<Float?>(null) }
     var bearing by remember { mutableStateOf<Float?>(null) }
 
@@ -94,15 +92,15 @@ fun CompassScreen(
 
     // Increase smoothing by reducing alpha value
     val alpha = 0.08f // More smoothing (was 0.15f)
-    var filteredAzimuth by remember { mutableFloatStateOf(0f) }
+    var filteredAzimuth by remember { mutableStateOf(0f) }
 
     // Smooth arrow rotation
-    var targetRotation by remember { mutableFloatStateOf(0f) }
-    var currentRotation by remember { mutableFloatStateOf(0f) }
-    var currentVelocity by remember { mutableFloatStateOf(0f) }
+    var targetRotation by remember { mutableStateOf(0f) }
+    var currentRotation by remember { mutableStateOf(0f) }
+    var currentVelocity by remember { mutableStateOf(0f) }
     val maxRotationSpeed = 360f // doubled from 180 degrees per second
     val baseAcceleration = 720f // doubled from 360 degrees per second squared
-    var lastUpdateTime by remember { mutableLongStateOf(System.nanoTime()) }
+    var lastUpdateTime by remember { mutableStateOf(System.nanoTime()) }
 
     // Calculate bearing and distance whenever location changes
     fun updateBearingAndDistance() {
@@ -450,7 +448,7 @@ fun CompassScreen(
                     // Use currentRotation instead of raw compass reading
                     val normalizedRotation = (currentRotation + 360) % 360
                     normalizedRotation in 340f..360f || normalizedRotation in 0f..20f
-                } == true
+                } ?: false
 
                 // Create and draw the filled area first
                 val fillPath = Path().apply {

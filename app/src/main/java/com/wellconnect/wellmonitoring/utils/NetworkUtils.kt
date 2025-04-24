@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui
+package com.wellconnect.wellmonitoring.utils
 
 import android.content.Context
 import android.net.ConnectivityManager

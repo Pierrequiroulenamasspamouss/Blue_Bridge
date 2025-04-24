@@ -47,7 +47,6 @@ import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.Base64
-import com.wellconnect.wellmonitoring.utils.InputSanitizer
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,27 +158,21 @@ fun LoginScreen(
                 onClick = {
                     scope.launch {
                         try {
-                            // Validate inputs
-                            val validationResults = InputSanitizer.validateUserInput(
-                                email = email,
-                                password = password
-                            )
-
-                            // Check if any validation failed
-                            val failedValidations = validationResults.filter { !it.value.isValid }
-                            if (failedValidations.isNotEmpty()) {
-                                errorMessage = failedValidations.values.first().errorMessage
+                            if (!validateFields(email, password, isRegistrationMode, firstName, lastName, username)) {
+                                errorMessage = "Please fill in all required fields"
                                 snackbarHostState.showSnackbar(errorMessage!!)
                                 return@launch
                             }
 
-                            // Use sanitized values
-                            val sanitizedEmail = validationResults["email"]!!.sanitizedValue!!
-                            val sanitizedPassword = validationResults["password"]!!.sanitizedValue!!
+                            if (!isValidEmail(email)) {
+                                errorMessage = "Please enter a valid email address"
+                                snackbarHostState.showSnackbar(errorMessage!!)
+                                return@launch
+                            }
 
-                            val encryptedPassword = encryptPassword(sanitizedPassword)
+                            val encryptedPassword = encryptPassword(password)
                             val loginRequest = LoginRequest(
-                                email = sanitizedEmail,
+                                email = email,
                                 password = encryptedPassword
                             )
 

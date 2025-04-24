@@ -19,11 +19,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
 import com.wellconnect.wellmonitoring.data.WellDataStore
-import com.wellconnect.wellmonitoring.ui.WellViewModel
-import com.wellconnect.wellmonitoring.ui.WellViewModelFactory
 import com.wellconnect.wellmonitoring.ui.navigation.NavigationGraph
 import com.wellconnect.wellmonitoring.ui.theme.My_second_appTheme
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModelFactory
 import kotlinx.coroutines.launch
+import kotlinx.serialization.InternalSerializationApi
 
 /*TODO :
     - Add a screen to pick from a list of given (with a search bar)
@@ -31,8 +32,6 @@ import kotlinx.coroutines.launch
     - Be able to connect to other servers. Currently data is accessible for 192.168.0.98 only
     - Change app icon and boot screen
     -Map implementation
-
-
 */
 
 
@@ -40,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var userDataStore: UserDataStoreImpl
 
+    @OptIn(InternalSerializationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         userDataStore = UserDataStoreImpl(applicationContext)
