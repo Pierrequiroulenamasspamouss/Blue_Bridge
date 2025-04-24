@@ -22,11 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
 import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
-import com.wellconnect.wellmonitoring.ui.RectangleButton
-import com.wellconnect.wellmonitoring.ui.WellViewModel
+import com.wellconnect.wellmonitoring.ui.components.RectangleButton
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
+import kotlinx.serialization.InternalSerializationApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,

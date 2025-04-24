@@ -12,10 +12,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.ui.TextComponent
-import com.wellconnect.wellmonitoring.ui.TopBar
-import com.wellconnect.wellmonitoring.ui.WellViewModel
-import com.wellconnect.wellmonitoring.ui.theme.BackButton
+import com.wellconnect.wellmonitoring.ui.components.TextComponent
+import com.wellconnect.wellmonitoring.ui.components.TopBar
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
+import com.wellconnect.wellmonitoring.ui.components.BackButton
 
 
 @Composable

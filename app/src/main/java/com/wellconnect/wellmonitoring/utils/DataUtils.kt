@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui
+package com.wellconnect.wellmonitoring.utils
 
 import androidx.compose.runtime.MutableState
 import com.wellconnect.wellmonitoring.data.WellData

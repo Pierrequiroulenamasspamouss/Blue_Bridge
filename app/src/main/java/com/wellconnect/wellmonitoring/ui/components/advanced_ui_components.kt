@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui.theme
+package com.wellconnect.wellmonitoring.ui.components
 
 import android.content.Context
 import androidx.compose.foundation.layout.Spacer
@@ -21,11 +21,7 @@ import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
 import com.wellconnect.wellmonitoring.data.WellConfigEvents
 import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.ui.NumbersFieldComponent
-import com.wellconnect.wellmonitoring.ui.RectangleButton
-import com.wellconnect.wellmonitoring.ui.TextComponent
-import com.wellconnect.wellmonitoring.ui.TextFieldComponent
-import com.wellconnect.wellmonitoring.ui.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -12,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
-import com.wellconnect.wellmonitoring.ui.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
 import com.wellconnect.wellmonitoring.ui.screens.CompassScreen
 import com.wellconnect.wellmonitoring.ui.screens.CreditsScreen
 import com.wellconnect.wellmonitoring.ui.screens.HomeScreen

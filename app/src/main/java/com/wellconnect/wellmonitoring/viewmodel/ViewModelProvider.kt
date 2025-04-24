@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui
+package com.wellconnect.wellmonitoring.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
