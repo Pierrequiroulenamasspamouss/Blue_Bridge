@@ -1,12 +1,23 @@
 package com.wellconnect.wellmonitoring.ui.components
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
@@ -15,14 +26,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
 import com.wellconnect.wellmonitoring.data.WellConfigEvents
 import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
-import kotlinx.coroutines.delay
+import com.wellconnect.wellmonitoring.utils.PasswordStrength
+import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,14 +65,10 @@ fun SaveDataButton(
 
             coroutineScope.launch {
                 try {
-                    // 1. Validate input
-                    if (well.ipAddress.isBlank()) {
-                        snackbarHostState.showSnackbar("IP address cannot be empty")
-                        return@launch
-                    }
 
-                    // 2. Check for duplicate IP
-                    if (userViewModel.checkDuplicateIpAddress(well.ipAddress, well.id)) {
+
+                    // 2. Check for duplicate espId
+                    if (userViewModel.isUniqueEspId(well.espId, well.id)) {
                         snackbarHostState.showSnackbar("IP address already used by another well.")
                         return@launch
                     }
@@ -68,16 +79,11 @@ fun SaveDataButton(
                     userViewModel.resetWellDataState()
                     onSave()
 
-                    // 5. Navigate back first
+
+
                     navController.popBackStack()
+                    Log.e("SaveDataButton", "Well saved successfully")
 
-                    // 6. Then refresh the specific well after a small delay
-                    delay(300) // Small delay to ensure navigation completes
-                    val success = userViewModel.refreshSingleWell(well.id, context)
-
-                    if (!success) {
-                        snackbarHostState.showSnackbar("Data saved but refresh failed")
-                    }
                 } catch (e: Exception) {
                     snackbarHostState.showSnackbar("Save failed: ${e.localizedMessage}")
                 }
@@ -156,4 +162,58 @@ fun <T> WellField(
     }
 }
 
+@Composable
 
+fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isVisible: Boolean,
+    onVisibilityChange: () -> Unit,
+    passwordStrength: PasswordStrength? = null // Optional parameter
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        trailingIcon = {
+            IconButton(onClick = onVisibilityChange) {
+                Icon(
+                    imageVector = if (isVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = if (isVisible) "Hide password" else "Show password"
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    // Display password strength if provided
+    passwordStrength?.let {
+        if (value.isNotEmpty()) {
+            LinearProgressIndicator(
+                progress = when (it.strength) {
+                    "Very Weak" -> 0.2f
+                    "Weak" -> 0.4f
+                    "Medium" -> 0.6f
+                    "Strong" -> 0.8f
+                    "Very Strong" -> 1f
+                    else -> 0f
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                color = it.color,
+            )
+            Text(
+                text = "${it.strength}: ${it.message}",
+                color = it.color,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}

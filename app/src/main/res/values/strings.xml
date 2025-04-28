@@ -2,7 +2,7 @@
     <string name="app_name">WellConnect</string>
     <string name="app_dev">Pierre Sluse</string>
     <string name="app_designer">Pierre Sluse</string>
-    <string name="helper">ChatGPT, Claude 3.5 Sonnet, DeepSeek</string>
+    <string name="helper">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
     <string name="standard_top_bar_text">Hello there</string>
     <string name="Configure_top_bar_text">Configuration</string>
     <string name="Welcome_top_bar_text">Welcome !</string>
@@ -12,7 +12,8 @@
     <string name="unsaved_changes_dialog_confirm">Yes, save</string>
     <string name="unsaved_changes_dialog_dismiss">No, do not save</string>
     <string name="create_new_well">New well</string>
-    <string name="Well_ip_address_field_text">192.168.0.1</string>
+    <string name="GeneralIp">http://wellconnect.homeonthewater.com/</string>
+
 
     <string name="Well_name_field_text">Well Name</string>
     <string name="Well_owner_field_text">Well Owner</string>

@@ -1,0 +1,41 @@
+{
+    "esp32-01": {
+        "wellName": "Simulated Well 1",
+        "wellOwner": "Owner A",
+        "wellLocation": "Location:\nlat: 0.000000\nlon: 25.000000",
+        "wellWaterType": "Clean",
+        "wellCapacity": 5000,
+        "wellWaterLevel": 2206.4494215248305,
+        "wellWaterConsumption": 300,
+        "espId": "esp32-01",
+        "wellStatus": "Active",
+        "waterQuality": {
+            "ph": 7.054581839739053,
+            "turbidity": 1.0970817510682556,
+            "tds": 210.67265073067156
+        },
+        "lastUpdated": "2025-04-27T20:42:40.347182"
+    },
+    "esp32-02": {
+        "wellName": "Simulated Well 2",
+        "wellOwner": "Owner B",
+        "wellLocation": "Location:\nlat: 1.234567\nlon: 26.234567",
+        "wellWaterType": "Grey",
+        "wellCapacity": 6000,
+        "wellWaterLevel": 3000,
+        "wellWaterConsumption": 350,
+        "espId": "esp32-02",
+        "wellStatus": "Maintenance"
+    },
+    "esp32-03": {
+        "wellName": "Simulated Well 3",
+        "wellOwner": "Owner C",
+        "wellLocation": "Location:\nlat: -0.987654\nlon: 24.987654",
+        "wellWaterType": "Clean",
+        "wellCapacity": 4500,
+        "wellWaterLevel": 2000,
+        "wellWaterConsumption": 250,
+        "espId": "esp32-03",
+        "wellStatus": "Inactive"
+    }
+}

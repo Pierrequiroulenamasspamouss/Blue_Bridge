@@ -24,10 +24,7 @@ fun persistWellData(
                 return@launch
             }
 
-            if (data.ipAddress.isBlank()) {
-                errorMessage.value = "IP address cannot be empty"
-                return@launch
-            }
+
 
             // Create updated data with proper ID
             val currentData = data.copy(id = wellId)

@@ -5,19 +5,31 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
+import com.wellconnect.wellmonitoring.R
+import com.wellconnect.wellmonitoring.data.ShortenedWellData
+import com.wellconnect.wellmonitoring.data.WellData
 import com.wellconnect.wellmonitoring.data.WellDataStore
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
-suspend fun checkDuplicateIpAddress(ip: String, currentWellId: Int, wellDataStore: WellDataStore): Boolean {
-    return wellDataStore.wellListFlow.first().any { it.ipAddress == ip && it.id != currentWellId }
+private const val TAG = "NetworkUtils"
+
+/**
+ * Get the base API URL from strings.xml
+ */
+fun getBaseApiUrl(context: Context): String {
+    return context.getString(R.string.GeneralIp)
 }
 
+/**
+ * Check if internet connection is available
+ */
 fun checkInternetConnection(context: Context): Boolean {
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val activeNetwork = connectivityManager.activeNetwork
@@ -25,29 +37,121 @@ fun checkInternetConnection(context: Context): Boolean {
     return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
 }
 
+/**
+ * Fetch all available wells from the server
+ * Returns a list of minimal well data objects
+ */
+suspend fun fetchAllWellsFromServer(
+    snackbarHostState: SnackbarHostState,
+    context: Context,
+    maxRetries: Int = 3
+): List<ShortenedWellData> = withContext(Dispatchers.IO) {
+    val baseUrl = getBaseApiUrl(context)
+    Log.d(TAG, "Fetching wells from server at URL: $baseUrl")
+    var retryCount = 0
+    
+    while (retryCount < maxRetries) {
+        try {
+            return@withContext withTimeout(30_000L) {
+                // Use createFresh to get a new client instance each time
+                val apiService = RetrofitBuilder.createFresh(baseUrl)
+                val response = apiService.getAllWells()
+                
+                // Handle response based on how the API actually returns data
+                Log.d(TAG, "Successfully fetched ${response.size} wells from server")
+                response
+            }
+        } catch (e: TimeoutCancellationException) {
+            retryCount++
+            val remainingRetries = maxRetries - retryCount
+            
+            if (remainingRetries > 0) {
+                val backoffDelay = 1000L * retryCount
+                Log.w(TAG, "Timeout fetching wells, attempt ${retryCount}/$maxRetries. Retrying in ${backoffDelay}ms... (${remainingRetries} attempts remaining)")
+                delay(backoffDelay)
+            } else {
+                Log.e(TAG, "Failed to fetch wells after $maxRetries attempts due to timeout")
+                return@withContext listOf<ShortenedWellData>()
+            }
+        } catch (e: Exception) {
+            retryCount++
+            val remainingRetries = maxRetries - retryCount
+            
+            if (remainingRetries > 0) {
+                val backoffDelay = 1000L * retryCount
+                Log.w(TAG, "Error fetching wells, attempt ${retryCount}/$maxRetries. Error: ${e.message}. Retrying in ${backoffDelay}ms... (${remainingRetries} attempts remaining)")
+                delay(backoffDelay)
+            } else {
+                Log.e(TAG, "Failed to fetch wells after $maxRetries attempts", e)
+                return@withContext listOf<ShortenedWellData>()
+            }
+        }
+    }
+    
+    listOf<ShortenedWellData>() // Return empty list instead of throwing exception
+}
 
+/**
+ * Fetch details for a specific well by ESP ID
+ */
+suspend fun fetchWellDetailsFromServer(
+    espId: String,
+    snackbarHostState: SnackbarHostState,
+    context: Context
+): WellData? = withContext(Dispatchers.IO) {
+    try {
+        if (!checkInternetConnection(context)) {
+            withContext(Dispatchers.Main) {
+                snackbarHostState.showSnackbar("No internet connection")
+            }
+            Log.d("fetchWellDetails", "No internet connection")
+            return@withContext null
+        }
 
+        val baseUrl = getBaseApiUrl(context)
+        val api = RetrofitBuilder.create(baseUrl)
+        Log.d("fetchWellDetails", "Fetching details for well $espId from server")
+        val wellData = withTimeout(5_000) {
+            api.getWellDataById(espId)
+        }
 
+        Log.d("fetchWellDetails", "Fetched well details: $wellData")
+        wellData
+    } catch (e: TimeoutCancellationException) {
+        withContext(Dispatchers.Main) {
+            snackbarHostState.showSnackbar("Connection timeout")
+        }
+        Log.e("fetchWellDetails", "Timeout: ${e.message}")
+        null
+    } catch (e: Exception) {
+        withContext(Dispatchers.Main) {
+            snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Unknown error"}")
+        }
+        Log.e("fetchWellDetails", "Error: ${e.message}", e)
+        null
+    }
+}
+
+/**
+ * Retrieve data from server for a specific well and update it in the data store
+ */
 suspend fun retrieveDataFromServer(
     id: Int = 0,
-    ip: String,
     snackbarHostState: SnackbarHostState,
     wellDataStore: WellDataStore,
     context: Context
 ): Boolean {
     return withContext(Dispatchers.IO) {
-
         try {
-            if (checkInternetConnection(context) == false) {
+            if (!checkInternetConnection(context)) {
                 withContext(Dispatchers.Main) {
                     snackbarHostState.showSnackbar("No internet connection")
                 }
                 Log.d("InternetConnection", "No internet connection")
-                false
-
+                return@withContext false
             }
 
-            // 1. Get current well data by IP
+            // 1. Get current well data by ID
             val currentList = wellDataStore.wellListFlow.first()
             val matchingWell = currentList.find { it.id == id } ?: run {
                 withContext(Dispatchers.Main) {
@@ -56,34 +160,24 @@ suspend fun retrieveDataFromServer(
                 return@withContext false
             }
 
-            // 2. Fetch new data from server
-            val baseUrl = "http://$ip/"
-            val api = RetrofitBuilder.create(baseUrl)
-
-            val newData = withTimeout(5_000) {
-                api.getWellData()
-            }
+            // 2. Fetch new data from server by endpoint /data/wells/{espId}
+            val espId = matchingWell.espId
+            Log.d("DataFetch", "Fetching data for ESP ID: $espId")
+            
+            val newData = fetchWellDetailsFromServer(espId, snackbarHostState, context) ?: return@withContext false
 
             // 3. Update only the timestamp and the id
             val updatedWell = newData
             updatedWell.lastRefreshTime = System.currentTimeMillis()
             updatedWell.id = matchingWell.id
-            updatedWell.ipAddress = matchingWell.ipAddress
+            updatedWell.espId = matchingWell.espId
+
             // 4. Save back to datastore
             Log.d("DataSave", "Saving updated data: $updatedWell")
             wellDataStore.saveWell(updatedWell)
 
             Log.d("DataSave", "Successfully saved data for well ID ${matchingWell.id}")
-
-            Log.d("DataSave", "Verification:  ${wellDataStore.getWell(matchingWell.id)}}")
-
             true
-
-        } catch (e: TimeoutCancellationException) {
-            withContext(Dispatchers.Main) {
-                snackbarHostState.showSnackbar("Connection timeout")
-            }
-            false
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Unknown error"}")
@@ -93,6 +187,9 @@ suspend fun retrieveDataFromServer(
     }
 }
 
+/**
+ * Refresh all wells in the data store
+ */
 suspend fun refreshAllWells(context: Context, wellDataStore: WellDataStore): Pair<Int, Int> {
     val wells = wellDataStore.wellListFlow.first()
     var successCount = 0
@@ -106,6 +203,9 @@ suspend fun refreshAllWells(context: Context, wellDataStore: WellDataStore): Pai
     return Pair(successCount, wells.size)
 }
 
+/**
+ * Refresh a single well by ID
+ */
 suspend fun refreshSingleWell(
     wellId: Int,
     wellDataStore: WellDataStore,
@@ -120,9 +220,9 @@ suspend fun refreshSingleWell(
             return false
         }
 
-        // Only refresh if IP is available
-        if (currentWell.ipAddress.isBlank()) {
-            Log.e("RefreshDebug", "IP address is blank")
+        // Only refresh if ESP ID is available
+        if (currentWell.espId.isBlank()) {
+            Log.e("RefreshDebug", "No Esp ID. Cannot refresh")
             return false
         }
 
@@ -131,7 +231,6 @@ suspend fun refreshSingleWell(
         val success = withTimeoutOrNull(5_000) {
             retrieveDataFromServer(
                 id = wellId,
-                ip = currentWell.ipAddress,
                 snackbarHostState = SnackbarHostState(),
                 wellDataStore = wellDataStore,
                 context = context

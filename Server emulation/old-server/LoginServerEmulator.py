@@ -36,9 +36,11 @@ class AuthServer(BaseHTTPRequestHandler):
                 self.send_error_response(400, "Invalid JSON format")
                 return
 
-            if self.path == '/login':
+            if self.path == '/api/login':
                 self.handle_login(request_data)
-            elif self.path == '/register':
+            elif self.path == '/api/register' or self.path == '/register':
+                # Handle both endpoint paths for backward compatibility
+                print(f"Processing registration request from endpoint: {self.path}")
                 self.handle_register(request_data)
             else:
                 self.send_error_response(404, "Endpoint not found")
@@ -59,20 +61,44 @@ class AuthServer(BaseHTTPRequestHandler):
             user = users.get(credentials['email'])
 
             if user and user['password'] == credentials['password']:
+                # Create response data structure that matches ServerData structure
+                user_data = {
+                    'email': user['email'],
+                    'firstName': user['firstName'],
+                    'lastName': user['lastName'],
+                    'username': user['username'],
+                    'role': user.get('role', 'user')
+                }
+                
+                # Extract location data if it exists
+                location = None
+                if 'location' in user:
+                    location = {
+                        'latitude': user['location'].get('latitude', 0.0),
+                        'longitude': user['location'].get('longitude', 0.0)
+                    }
+                
+                # Extract water needs data if it exists
+                water_needs = []
+                if 'waterNeeds' in user and user['waterNeeds']:
+                    water_needs = [
+                        {
+                            'amount': need.get('amount', 0.0),
+                            'usageType': need.get('usageType', 'Unknown'),
+                            'description': need.get('description', ''),
+                            'priority': need.get('priority', 0)
+                        }
+                        for need in user['waterNeeds']
+                    ]
+                
                 response = {
                     'status': 'success',
-                    'timestamp': datetime.now().isoformat(),
+                    'message': 'Login successful',
                     'data': {
-                        'user': {
-                            'email': credentials['email'],
-                            'firstName': user.get('firstName', ''),
-                            'lastName': user.get('lastName', ''),
-                            'username': user.get('username', ''),
-                            'role': user.get('role', 'user'),
-                            'lastLogin': datetime.now().isoformat()
-                        }
-                    },
-                    'message': 'Login successful'
+                        'user': user_data,
+                        'location': location,
+                        'waterNeeds': water_needs
+                    }
                 }
                 self.send_success_response(response)
             else:
@@ -106,13 +132,34 @@ class AuthServer(BaseHTTPRequestHandler):
                 self.send_error_response(409, "User already exists")
                 return
 
-            # Add new user
+            # Create new user with all fields
             users[user_data['email']] = {
+                'email': user_data['email'],
                 'password': user_data['password'],
                 'firstName': user_data['firstName'],
                 'lastName': user_data['lastName'],
                 'username': user_data['username'],
-                'role': 'user',
+                'location': {
+                    'latitude': 0.0,
+                    'longitude': 0.0,
+                    'lastUpdated': datetime.now().isoformat()
+                },
+                'waterNeeds': [
+                    {
+                        'amount': 100.0,
+                        'usageType': 'Drinking',
+                        'description': 'Daily drinking water',
+                        'priority': 1
+                    },
+                    {
+                        'amount': 500.0,
+                        'usageType': 'Domestic',
+                        'description': 'Household use',
+                        'priority': 2
+                    }
+                ],
+                'isWellOwner': user_data.get('isWellOwner', False),
+                'role': user_data.get('role', 'user'),
                 'registeredAt': datetime.now().isoformat()
             }
 
@@ -122,7 +169,6 @@ class AuthServer(BaseHTTPRequestHandler):
 
             response = {
                 'status': 'success',
-                'timestamp': datetime.now().isoformat(),
                 'message': 'Registration successful'
             }
             self.send_success_response(response)
@@ -171,11 +217,7 @@ class AuthServer(BaseHTTPRequestHandler):
             self.send_common_headers()
             error_response = {
                 'status': 'error',
-                'timestamp': datetime.now().isoformat(),
-                'error': {
-                    'code': status_code,
-                    'message': message
-                }
+                'message': message
             }
             response_json = json.dumps(error_response)
             response_bytes = response_json.encode()

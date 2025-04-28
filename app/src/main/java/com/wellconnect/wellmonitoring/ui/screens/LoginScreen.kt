@@ -13,13 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
@@ -34,22 +29,28 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wellconnect.wellmonitoring.data.UserData
 import com.wellconnect.wellmonitoring.data.UserDataStore
 import com.wellconnect.wellmonitoring.network.LoginRequest
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
+import com.wellconnect.wellmonitoring.ui.components.PasswordField
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.utils.encryptPassword
+import com.wellconnect.wellmonitoring.utils.getBaseApiUrl
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.security.MessageDigest
-import java.util.Base64
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.serialization.InternalSerializationApi
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun LoginScreen(
     userDataStore: UserDataStore,
@@ -57,16 +58,14 @@ fun LoginScreen(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    var isRegistrationMode by remember { mutableStateOf(false) }
-    val api = RetrofitBuilder.create("http://192.168.0.98:8090")
+    val baseUrl = getBaseApiUrl(context)
+    val api = RetrofitBuilder.create(baseUrl)
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -78,127 +77,134 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = if (isRegistrationMode) "Register" else "Login",
+                text = "Login",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
-
-            if (isRegistrationMode) {
-                OutlinedTextField(
-                    value = firstName,
-                    onValueChange = { firstName = it },
-                    label = { Text("First Name") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = lastName,
-                    onValueChange = { lastName = it },
-                    label = { Text("Last Name") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
+            // Use PasswordField for password input
+            PasswordField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
+                label = "Password",
+                isVisible = passwordVisible,
+                onVisibilityChange = { passwordVisible = !passwordVisible },
+                passwordStrength = null // No strength display for login
             )
 
             Button(
                 onClick = {
                     scope.launch {
                         try {
-                            if (!validateFields(email, password, isRegistrationMode, firstName, lastName, username)) {
-                                errorMessage = "Please fill in all required fields"
+                            if (email.isBlank() || password.isBlank()) {
+                                errorMessage = "Please enter email and password"
                                 snackbarHostState.showSnackbar(errorMessage!!)
                                 return@launch
                             }
-
-                            if (!isValidEmail(email)) {
+                            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                                 errorMessage = "Please enter a valid email address"
                                 snackbarHostState.showSnackbar(errorMessage!!)
                                 return@launch
                             }
-
-                            val encryptedPassword = encryptPassword(password)
-                            val loginRequest = LoginRequest(
-                                email = email,
-                                password = encryptedPassword
-                            )
-
-                            val response = api.login(loginRequest)
                             
-                            if (response.isSuccessful && response.body() != null) {
-                                val loginResponse = response.body()!!
-                                if (loginResponse.status == "success" && loginResponse.userData?.user != null) {
-                                    userDataStore.saveUserData(
-                                        com.wellconnect.wellmonitoring.data.UserData(
-                                            email = loginResponse.userData.user.email,
-                                            firstName = loginResponse.userData.user.firstName,
-                                            lastName = loginResponse.userData.user.lastName,
-                                            username = loginResponse.userData.user.username,
-                                            role = loginResponse.userData.user.role
-                                        )
-                                    )
-                                    navController.navigate(Routes.HOME_SCREEN) {
-                                        popUpTo(Routes.LOGIN_SCREEN) { inclusive = true }
+                            Log.d("LoginScreen", "Attempting to login with email: $email")
+                            
+                            try {
+                                val encrypted = encryptPassword(password)
+                                val req = LoginRequest(email.trim(), encrypted)
+                                Log.d("LoginScreen", "Base URL: $baseUrl")
+                                
+                                // Add a timeout to the request
+                                withContext(Dispatchers.IO) {
+                                    val res = try {
+                                        // Use a timeout for the request
+                                        withTimeout(10000L) { // 10 second timeout
+                                            api.login(req)
+                                        }
+                                    } catch (e: TimeoutCancellationException) {
+                                        Log.e("LoginScreen", "Login request timed out", e)
+                                        errorMessage = "Login request timed out. The server may be unavailable."
+                                        withContext(Dispatchers.Main) {
+                                            snackbarHostState.showSnackbar(errorMessage!!)
+                                        }
+                                        return@withContext
+                                    } catch (e: Exception) {
+                                        Log.e("LoginScreen", "Exception during login request", e)
+                                        errorMessage = "Connection error: ${e.localizedMessage ?: "Unknown error"}"
+                                        withContext(Dispatchers.Main) {
+                                            snackbarHostState.showSnackbar(errorMessage!!)
+                                        }
+                                        return@withContext
                                     }
-                                } else {
-                                    errorMessage = loginResponse.message
-                                    snackbarHostState.showSnackbar(errorMessage!!)
+                                    
+                                    if (res == null) return@withContext
+                                    
+                                    if (res.isSuccessful && res.body()?.status == "success" && res.body()?.data?.user != null) {
+                                        Log.d("LoginScreen", "Login successful")
+                                        val serverData = res.body()!!.data!!
+                                        val user = serverData.user
+                                        
+                                        // Create UserData with data from server
+                                        val userData = UserData(
+                                            email = user.email,
+                                            firstName = user.firstName,
+                                            lastName = user.lastName,
+                                            username = user.username,
+                                            role = user.role,
+                                            location = serverData.location?.let {
+                                                com.wellconnect.wellmonitoring.data.Location(
+                                                    latitude = it.latitude ?: 0.0, 
+                                                    longitude = it.longitude ?: 0.0
+                                                )
+                                            } ?: com.wellconnect.wellmonitoring.data.Location(0.0, 0.0),
+                                            waterNeeds = serverData.waterNeeds?.map {
+                                                com.wellconnect.wellmonitoring.data.WaterNeed(
+                                                    amount = it.amount,
+                                                    usageType = it.usageType,
+                                                    description = it.description,
+                                                    priority = it.priority
+                                                )
+                                            } ?: emptyList()
+                                        )
+                                        
+                                        userDataStore.saveUserData(userData)
+                                        
+                                        withContext(Dispatchers.Main) {
+                                            navController.navigate(Routes.HOME_SCREEN) {
+                                                popUpTo(Routes.LOGIN_SCREEN) { inclusive = true }
+                                            }
+                                        }
+                                    } else {
+                                        val responseCode = res.code()
+                                        val responseBody = res.errorBody()?.string() ?: "Unknown error"
+                                        Log.e("LoginScreen", "Login failed with code $responseCode: $responseBody")
+                                        
+                                        errorMessage = when (responseCode) {
+                                            401 -> "Invalid email or password"
+                                            403 -> "Account locked. Please contact support."
+                                            404 -> "User not found"
+                                            500 -> "Server error. Please try again later."
+                                            503 -> "Server unavailable. Please try again later."
+                                            else -> res.body()?.message ?: "Login failed (Error $responseCode)"
+                                        }
+                                        
+                                        withContext(Dispatchers.Main) {
+                                            snackbarHostState.showSnackbar(errorMessage!!)
+                                        }
+                                    }
                                 }
-                            } else {
-                                errorMessage = "Login failed. Please check your credentials."
+                            } catch (e: Exception) {
+                                Log.e("LoginScreen", "Unexpected error during login", e)
+                                errorMessage = "Login failed: ${e.localizedMessage ?: e.message ?: "Unknown error"}"
                                 snackbarHostState.showSnackbar(errorMessage!!)
                             }
                         } catch (e: Exception) {
@@ -212,52 +218,16 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(vertical = 16.dp)
             ) {
-                Text(if (isRegistrationMode) "Register" else "Login")
+                Text("Login")
             }
 
-            TextButton(
-                onClick = { isRegistrationMode = !isRegistrationMode }
-            ) {
-                Text(
-                    if (isRegistrationMode) 
-                        "Already have an account? Login" 
-                    else 
-                        "Don't have an account? Sign up"
-                )
+            TextButton(onClick = { navController.navigate(Routes.SIGNUP_SCREEN) }) {
+                Text("Don't have an account? Sign up")
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
-fun isValidEmail(email: String): Boolean {
-    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
-}
-
-private fun validateFields(
-    email: String,
-    password: String,
-    isRegistration: Boolean,
-    firstName: String,
-    lastName: String,
-    username: String
-): Boolean {
-    if (email.isBlank() || password.isBlank()) return false
-    if (isRegistration) {
-        if (firstName.isBlank() || lastName.isBlank() || username.isBlank()) return false
-    }
-    return true
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-private fun encryptPassword(password: String): String {
-    val bytes = password.toByteArray()
-    val md = MessageDigest.getInstance("SHA-256")
-    val digest = md.digest(bytes)
-    return Base64.getEncoder().encodeToString(digest)
-}
 

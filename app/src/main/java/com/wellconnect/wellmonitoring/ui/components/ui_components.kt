@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.wellconnect.wellmonitoring.R
 
 @Composable
-fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawable.water_well_icon) {
+fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawable.splash_icon) {
     Row(modifier = Modifier.fillMaxWidth().padding(18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

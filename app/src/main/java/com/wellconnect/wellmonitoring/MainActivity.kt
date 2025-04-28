@@ -1,8 +1,10 @@
 package com.wellconnect.wellmonitoring
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
@@ -21,18 +24,10 @@ import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
 import com.wellconnect.wellmonitoring.data.WellDataStore
 import com.wellconnect.wellmonitoring.ui.navigation.NavigationGraph
 import com.wellconnect.wellmonitoring.ui.theme.My_second_appTheme
-import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
-import com.wellconnect.wellmonitoring.viewmodel.WellViewModelFactory
+import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodels.WellViewModelFactory
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
-
-/*TODO :
-    - Add a screen to pick from a list of given (with a search bar)
-        - Server side too
-    - Be able to connect to other servers. Currently data is accessible for 192.168.0.98 only
-    - Change app icon and boot screen
-    -Map implementation
-*/
 
 
 class MainActivity : ComponentActivity() {
@@ -41,7 +36,14 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(InternalSerializationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install the splash screen
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
+        
+        // Keep the splash screen visible while we initialize
+        splashScreen.setKeepOnScreenCondition { false }
+        
         userDataStore = UserDataStoreImpl(applicationContext)
 
         // Create instance of WellDataStore
@@ -92,6 +94,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun App(
         userViewModel: WellViewModel,
