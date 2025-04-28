@@ -14,7 +14,7 @@ import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
 import com.wellconnect.wellmonitoring.ui.components.TextComponent
 import com.wellconnect.wellmonitoring.ui.components.TopBar
-import com.wellconnect.wellmonitoring.viewmodel.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 import com.wellconnect.wellmonitoring.ui.components.BackButton
 
 

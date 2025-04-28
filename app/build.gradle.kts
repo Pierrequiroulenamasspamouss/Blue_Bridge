@@ -37,11 +37,18 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
+    dependenciesInfo {
+        includeInApk = true
+        includeInBundle = true
+    }
+    //buildToolsVersion = "33.0.1"
+    ndkVersion = "27.0.12077973"
 }
 
 dependencies {
-
+    implementation (libs.hilt.android)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit)
@@ -55,6 +62,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose.v277)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -66,6 +75,11 @@ dependencies {
     implementation(libs.androidx.benchmark.common)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.google.play.services.location)
+    
+    // OSMDroid dependencies
+    implementation(libs.osmdroid.android)
+    implementation(libs.osmdroid.mapsforge)
+
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
     androidTestImplementation(libs.androidx.junit)

@@ -2,6 +2,7 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.0.98</domain>
+        <domain includeSubdomains="true">wellconnect.homeonthewater.com</domain>
         <domain includeSubdomains="true">localhost</domain>
 
     </domain-config>
