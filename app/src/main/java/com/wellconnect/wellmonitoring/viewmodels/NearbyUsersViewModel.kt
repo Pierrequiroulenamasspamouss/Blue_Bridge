@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wellconnect.wellmonitoring.data.NearbyUser
+import com.wellconnect.wellmonitoring.data.UpdateLocationRequest
+import com.wellconnect.wellmonitoring.data.UpdateWaterNeedsRequest
 import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
 import com.wellconnect.wellmonitoring.data.WaterNeed
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
-import com.wellconnect.wellmonitoring.network.UpdateLocationRequest
-import com.wellconnect.wellmonitoring.network.UpdateWaterNeedsRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -27,8 +27,7 @@ class NearbyUsersViewModel(context: Context) : ViewModel() {
     private val userDataStore = UserDataStoreImpl(context)
     private val _uiState = MutableStateFlow<NearbyUsersState>(NearbyUsersState.Loading)
     val uiState: StateFlow<NearbyUsersState> = _uiState
-
-    private val api = RetrofitBuilder.create("http://192.168.0.98:8090")
+    private val api = RetrofitBuilder.getServerApi(context)
 
     @OptIn(InternalSerializationApi::class)
     fun refreshNearbyUsers(latitude: Double, longitude: Double, radius: Double = 50.0) {

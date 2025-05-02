@@ -38,7 +38,7 @@ fun checkInternetConnection(context: Context): Boolean {
 }
 
 /**
- * Fetch all available wells from the server
+ * Fetch all available wells from the server_crt
  * Returns a list of minimal well data objects
  */
 suspend fun fetchAllWellsFromServer(
@@ -47,7 +47,7 @@ suspend fun fetchAllWellsFromServer(
     maxRetries: Int = 3
 ): List<ShortenedWellData> = withContext(Dispatchers.IO) {
     val baseUrl = getBaseApiUrl(context)
-    Log.d(TAG, "Fetching wells from server at URL: $baseUrl")
+    Log.d(TAG, "Fetching wells from server_crt at URL: $baseUrl")
     var retryCount = 0
     
     while (retryCount < maxRetries) {
@@ -58,7 +58,7 @@ suspend fun fetchAllWellsFromServer(
                 val response = apiService.getAllWells()
                 
                 // Handle response based on how the API actually returns data
-                Log.d(TAG, "Successfully fetched ${response.size} wells from server")
+                Log.d(TAG, "Successfully fetched ${response.size} wells from server_crt")
                 response
             }
         } catch (e: TimeoutCancellationException) {
@@ -108,9 +108,8 @@ suspend fun fetchWellDetailsFromServer(
             return@withContext null
         }
 
-        val baseUrl = getBaseApiUrl(context)
-        val api = RetrofitBuilder.create(baseUrl)
-        Log.d("fetchWellDetails", "Fetching details for well $espId from server")
+        val api = RetrofitBuilder.getServerApi(context)
+        Log.d("fetchWellDetails", "Fetching details for well $espId from server_crt")
         val wellData = withTimeout(5_000) {
             api.getWellDataById(espId)
         }
@@ -133,7 +132,7 @@ suspend fun fetchWellDetailsFromServer(
 }
 
 /**
- * Retrieve data from server for a specific well and update it in the data store
+ * Retrieve data from server_crt for a specific well and update it in the data store
  */
 suspend fun retrieveDataFromServer(
     id: Int = 0,
@@ -160,7 +159,7 @@ suspend fun retrieveDataFromServer(
                 return@withContext false
             }
 
-            // 2. Fetch new data from server by endpoint /data/wells/{espId}
+            // 2. Fetch new data from server_crt by endpoint /data/wells/{espId}
             val espId = matchingWell.espId
             Log.d("DataFetch", "Fetching data for ESP ID: $espId")
             
@@ -227,7 +226,7 @@ suspend fun refreshSingleWell(
         }
 
         // Fetch fresh data with timeout
-        Log.d("RefreshDebug", "Fetching data from server...")
+        Log.d("RefreshDebug", "Fetching data from server_crt...")
         val success = withTimeoutOrNull(5_000) {
             retrieveDataFromServer(
                 id = wellId,

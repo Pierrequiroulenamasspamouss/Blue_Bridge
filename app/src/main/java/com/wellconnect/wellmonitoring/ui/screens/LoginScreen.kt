@@ -34,19 +34,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wellconnect.wellmonitoring.data.LoginRequest
 import com.wellconnect.wellmonitoring.data.UserData
 import com.wellconnect.wellmonitoring.data.UserDataStore
-import com.wellconnect.wellmonitoring.network.LoginRequest
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
 import com.wellconnect.wellmonitoring.ui.components.PasswordField
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.utils.encryptPassword
 import com.wellconnect.wellmonitoring.utils.getBaseApiUrl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.serialization.InternalSerializationApi
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -65,7 +65,7 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val baseUrl = getBaseApiUrl(context)
-    val api = RetrofitBuilder.create(baseUrl)
+    val api = RetrofitBuilder.getServerApi(context)
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -132,7 +132,7 @@ fun LoginScreen(
                                         }
                                     } catch (e: TimeoutCancellationException) {
                                         Log.e("LoginScreen", "Login request timed out", e)
-                                        errorMessage = "Login request timed out. The server may be unavailable."
+                                        errorMessage = "Login request timed out. The server_crt may be unavailable."
                                         withContext(Dispatchers.Main) {
                                             snackbarHostState.showSnackbar(errorMessage!!)
                                         }
@@ -146,14 +146,13 @@ fun LoginScreen(
                                         return@withContext
                                     }
                                     
-                                    if (res == null) return@withContext
-                                    
+
                                     if (res.isSuccessful && res.body()?.status == "success" && res.body()?.data?.user != null) {
                                         Log.d("LoginScreen", "Login successful")
                                         val serverData = res.body()!!.data!!
                                         val user = serverData.user
                                         
-                                        // Create UserData with data from server
+                                        // Create UserData with data from server_crt
                                         val userData = UserData(
                                             email = user.email,
                                             firstName = user.firstName,
@@ -162,18 +161,11 @@ fun LoginScreen(
                                             role = user.role,
                                             location = serverData.location?.let {
                                                 com.wellconnect.wellmonitoring.data.Location(
-                                                    latitude = it.latitude ?: 0.0, 
-                                                    longitude = it.longitude ?: 0.0
+                                                    latitude = it.latitude,
+                                                    longitude = it.longitude
                                                 )
                                             } ?: com.wellconnect.wellmonitoring.data.Location(0.0, 0.0),
-                                            waterNeeds = serverData.waterNeeds?.map {
-                                                com.wellconnect.wellmonitoring.data.WaterNeed(
-                                                    amount = it.amount,
-                                                    usageType = it.usageType,
-                                                    description = it.description,
-                                                    priority = it.priority
-                                                )
-                                            } ?: emptyList()
+
                                         )
                                         
                                         userDataStore.saveUserData(userData)
@@ -221,7 +213,11 @@ fun LoginScreen(
                 Text("Login")
             }
 
-            TextButton(onClick = { navController.navigate(Routes.SIGNUP_SCREEN) }) {
+            TextButton(
+                onClick = {
+
+                    navController.navigate(Routes.REGISTER_SCREEN)
+                }) {
                 Text("Don't have an account? Sign up")
             }
         }

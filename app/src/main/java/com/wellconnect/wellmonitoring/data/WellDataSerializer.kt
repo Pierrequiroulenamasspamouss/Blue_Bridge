@@ -28,11 +28,34 @@ object WellDataSerializer : KSerializer<WellData> {
         val knownFields = listOf(
             "id", "wellName", "wellOwner", "wellLocation", "wellWaterType",
             "wellCapacity", "wellWaterLevel", "wellWaterConsumption",
-            "espId", "ipAddress", "lastRefreshTime", "wellStatus", "waterQuality"
+            "espId", "lastRefreshTime", "wellStatus", "waterQuality"
         )
+        val wellLocationJson = jsonObject["waterLocation"]?.jsonObject
+        val wellLocation = if (wellLocationJson != null) {
+            Location(
+                latitude = wellLocationJson["latitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                longitude = wellLocationJson["longitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+            )
 
+        } else {
+            // Try to get from extraData if it exists there
+            val extraData = jsonObject.filterKeys { it !in knownFields }.toMap()
+            if (extraData.containsKey("waterQuality")) {
+                val extraWaterLocationJson = extraData["waterQuality"]?.jsonObject
+                Location(
+                    latitude = extraWaterLocationJson?.get("latitude")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    longitude = extraWaterLocationJson?.get("longitude")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                )
+
+            } else {
+                Location(
+                    latitude = 0.0,
+                    longitude = 0.0
+                )
+            }
+        }
         // Parse water quality data
-        val waterQualityJson = jsonObject["waterQuality"]?.jsonObject
+            val waterQualityJson = jsonObject["waterQuality"]?.jsonObject
         val waterQuality = if (waterQualityJson != null) {
             WaterQuality(
                 ph = waterQualityJson["ph"]?.jsonPrimitive?.doubleOrNull ?: 7.0,
@@ -58,13 +81,12 @@ object WellDataSerializer : KSerializer<WellData> {
             id = jsonObject["id"]?.jsonPrimitive?.intOrNull ?: 0,
             wellName = jsonObject["wellName"]?.jsonPrimitive?.contentOrNull ?: "",
             wellOwner = jsonObject["wellOwner"]?.jsonPrimitive?.contentOrNull ?: "",
-            wellLocation = jsonObject["wellLocation"]?.jsonPrimitive?.contentOrNull ?: "",
+            wellLocation = wellLocation,
             wellWaterType = jsonObject["wellWaterType"]?.jsonPrimitive?.contentOrNull ?: "",
             wellCapacity = jsonObject["wellCapacity"]?.jsonPrimitive?.contentOrNull ?: "",
             wellWaterLevel = jsonObject["wellWaterLevel"]?.jsonPrimitive?.contentOrNull ?: "",
             wellWaterConsumption = jsonObject["wellWaterConsumption"]?.jsonPrimitive?.contentOrNull ?: "",
             espId = jsonObject["espId"]?.jsonPrimitive?.contentOrNull ?: "",
-//            ipAddress = jsonObject["ipAddress"]?.jsonPrimitive?.contentOrNull ?: "",
             lastRefreshTime = jsonObject["lastRefreshTime"]?.jsonPrimitive?.longOrNull ?: 0L,
             wellStatus = jsonObject["wellStatus"]?.jsonPrimitive?.contentOrNull ?: "Unknown",
             waterQuality = waterQuality,
@@ -81,14 +103,16 @@ object WellDataSerializer : KSerializer<WellData> {
             put("id", JsonPrimitive(value.id))
             put("wellName", JsonPrimitive(value.wellName))
             put("wellOwner", JsonPrimitive(value.wellOwner))
-            put("wellLocation", JsonPrimitive(value.wellLocation))
+            put("wellLocation", buildJsonObject {
+                put("longitude", JsonPrimitive(value.wellLocation.longitude))
+                put("latitude", JsonPrimitive(value.wellLocation.latitude))
+            })
             put("wellWaterType", JsonPrimitive(value.wellWaterType))
             put("wellCapacity", JsonPrimitive(value.wellCapacity))
             put("wellWaterLevel", JsonPrimitive(value.wellWaterLevel))
             put("wellWaterConsumption", JsonPrimitive(value.wellWaterConsumption))
             put("lastRefreshTime", JsonPrimitive(value.lastRefreshTime))
             put("espId", JsonPrimitive(value.espId))
-//            put("ipAddress", JsonPrimitive(value.ipAddress))
             put("wellStatus", JsonPrimitive(value.wellStatus))
             
             // Serialize water quality
