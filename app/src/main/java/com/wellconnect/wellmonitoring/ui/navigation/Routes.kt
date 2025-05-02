@@ -12,7 +12,7 @@ object Routes {
     const val MONITORING_SCREEN = "monitoring_screen"
     const val SETTINGS_SCREEN = "settings_screen"
     const val LOGIN_SCREEN = "login_screen"
-    const val SIGNUP_SCREEN = "signup_screen"
+    const val REGISTER_SCREEN = "signup_screen"
     const val COMPASS_SCREEN = "compass_screen"
     const val NEARBY_USERS_SCREEN = "nearby_users_screen"
     const val MAP_SCREEN = "map_screen"

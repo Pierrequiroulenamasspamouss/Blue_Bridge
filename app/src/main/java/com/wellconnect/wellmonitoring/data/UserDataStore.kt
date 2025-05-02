@@ -10,9 +10,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.wellconnect.wellmonitoring.network.LoginRequest
+
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
-import com.wellconnect.wellmonitoring.utils.getBaseApiUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -51,8 +50,7 @@ class UserDataStoreImpl(private val context: Context) : UserDataStore {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Attempting login for email: $email")
-                val baseUrl = getBaseApiUrl(context)
-                val api = RetrofitBuilder.create(baseUrl)
+                val api = RetrofitBuilder.getServerApi(context)
                 val response = api.login(LoginRequest(email = email, password = password))
                 
                 if (response.isSuccessful && response.body() != null) {
@@ -63,7 +61,7 @@ class UserDataStoreImpl(private val context: Context) : UserDataStore {
                         val serverData = loginResponse.data
                         Log.d(TAG, "Login successful. User data received: ${serverData.user.username}")
                         
-                        // Create userData with server data
+                        // Create userData with server_crt data
                         val userData = UserData(
                             email = serverData.user.email,
                             firstName = serverData.user.firstName,
@@ -78,15 +76,8 @@ class UserDataStoreImpl(private val context: Context) : UserDataStore {
                                 )
                             } else {
                                 Location(0.0, 0.0)
-                            },
-                            waterNeeds = serverData.waterNeeds?.map { need ->
-                                WaterNeed(
-                                    amount = need.amount,
-                                    usageType = need.usageType,
-                                    description = need.description,
-                                    priority = need.priority
-                                )
-                            } ?: emptyList()
+                            }
+
                         )
                         
                         Log.d(TAG, "Saving user data to preferences")

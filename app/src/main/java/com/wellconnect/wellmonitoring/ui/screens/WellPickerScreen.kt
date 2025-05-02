@@ -119,7 +119,7 @@ fun WellPickerScreen(
         }
     }
 
-    // Fetch all wells from server on first load
+    // Fetch all wells from server_crt on first load
     LaunchedEffect(Unit) {
         isLoading = true
         allWells = fetchAllWellsFromServer(
@@ -482,7 +482,7 @@ fun EnhancedWellCard(
     onNavigateClick: () -> Unit
 ) {
     // Calculate water level percentage safely outside composable
-    val waterLevelInfo = if (well.wellWaterLevel.isNotBlank() && well.wellCapacity.isNotBlank()) {
+    val waterLevelInfo = if (well.wellWaterLevel.toString().isNotBlank() && well.wellCapacity.isNotBlank()) {
         calculateWaterLevelInfo(well.wellWaterLevel, well.wellCapacity)
     } else null
 
@@ -503,11 +503,7 @@ fun EnhancedWellCard(
                 }
             }
             
-            if (well.wellOwner.isNotBlank()) {
-                Text(well.wellOwner, style = MaterialTheme.typography.bodyMedium)
-            }
-            
-            Text(well.wellLocation, style = MaterialTheme.typography.bodySmall)
+            Text(text = "Latitude: ${well.wellLocation.latitude}\n Longitude: ${well.wellLocation.longitude}" , style = MaterialTheme.typography.bodySmall)
             
             Row(
                 Modifier.fillMaxWidth(),

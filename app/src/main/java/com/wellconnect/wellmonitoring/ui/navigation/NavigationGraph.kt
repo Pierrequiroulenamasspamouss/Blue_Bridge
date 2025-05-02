@@ -27,7 +27,7 @@ import com.wellconnect.wellmonitoring.ui.screens.MonitorScreen
 import com.wellconnect.wellmonitoring.ui.screens.NearbyUsersScreen
 import com.wellconnect.wellmonitoring.ui.screens.ProfileScreen
 import com.wellconnect.wellmonitoring.ui.screens.SettingsScreen
-import com.wellconnect.wellmonitoring.ui.screens.SignUpScreen
+import com.wellconnect.wellmonitoring.ui.screens.RegisterScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellConfigScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellDetailsScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellPickerScreen
@@ -171,8 +171,8 @@ fun NavigationGraph(
         }
 
         // Signup Screen
-        composable(Routes.SIGNUP_SCREEN) {
-            SignUpScreen(
+        composable(Routes.REGISTER_SCREEN) {
+            RegisterScreen(
                 navController = navController
             )
         }

@@ -1,27 +1,19 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">WellConnect</string>
     <string name="app_dev">Pierre Sluse</string>
-    <string name="app_designer">Pierre Sluse</string>
+    <string name="app_designer">Joel Wandege</string>
     <string name="helper">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
-    <string name="standard_top_bar_text">Hello there</string>
-    <string name="Configure_top_bar_text">Configuration</string>
-    <string name="Welcome_top_bar_text">Welcome !</string>
-    <string name="Monitoring_top_bar_text">Well information</string>
-    <string name="unsaved_changes_dialog_title">Warning: Data not saved</string>
-    <string name="unsaved_changes_dialog_message">Leave without saving ?</string>
-    <string name="unsaved_changes_dialog_confirm">Yes, save</string>
-    <string name="unsaved_changes_dialog_dismiss">No, do not save</string>
-    <string name="create_new_well">New well</string>
-    <string name="GeneralIp">http://wellconnect.homeonthewater.com/</string>
 
 
-    <string name="Well_name_field_text">Well Name</string>
-    <string name="Well_owner_field_text">Well Owner</string>
-    <string name="Well_location_field_text">Well Location</string>
-    <string name="Water_type_field_text">Water Type</string>
-    <string name="Well_capacity_field_text">Well Capacity (L)</string>
-    <string name="Water_level_field_text">Water Level (L)</string>
-    <string name="Water_consumption_field_text">Daily Consumption (L)</string>
+    <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string>
+    <string name="ProductionServerUrl">https://wellconnect.homeonthewater.com/</string>
+    <string name="GeneralIp">http://192.168.0.204:3000/</string>
+
+    <string name="GeneralIp_secure">https://wellconnect.homeonthewater.com/</string>
+    <string name="DevelopmentServerUrl_secure">https://192.168.0.204:3443/</string>
+    <string name="ProductionServerUrl_secure">https://wellconnect.homeonthewater.com/</string>
+
+
 
 <!--    <string name=""></string>-->
 </resources>

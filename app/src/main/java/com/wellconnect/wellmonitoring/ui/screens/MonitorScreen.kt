@@ -59,7 +59,6 @@ import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.formatLocation
 import com.wellconnect.wellmonitoring.data.getLatitude
 import com.wellconnect.wellmonitoring.data.getLongitude
 import com.wellconnect.wellmonitoring.data.hasValidCoordinates

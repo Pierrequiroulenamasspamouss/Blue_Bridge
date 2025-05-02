@@ -1,5 +1,7 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +54,7 @@ import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WellDetailsScreen(
@@ -133,9 +136,9 @@ fun WellDetailsScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -149,9 +152,9 @@ fun WellDetailsScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(4.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -167,7 +170,7 @@ fun WellDetailsScreen(
                         }
                     }
                 }
-                
+
                 // Water Specifications
                 Card(
                     modifier = Modifier.fillMaxWidth()
@@ -180,9 +183,9 @@ fun WellDetailsScreen(
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -196,9 +199,9 @@ fun WellDetailsScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(4.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -212,9 +215,9 @@ fun WellDetailsScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(4.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -228,9 +231,9 @@ fun WellDetailsScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(4.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -246,7 +249,7 @@ fun WellDetailsScreen(
                         }
                     }
                 }
-                
+
                 // Location
                 Card(
                     modifier = Modifier.fillMaxWidth()
@@ -259,16 +262,22 @@ fun WellDetailsScreen(
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        
+
+
+
                         Text(
-                            text = well!!.wellLocation.ifBlank { "Location not specified" },
+                            text = if (well!!.hasValidCoordinates())
+                                "${well!!.wellLocation.latitude}, ${well!!.wellLocation.longitude}"
+                            else
+                                "Location not specified",
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        
+
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -300,7 +309,7 @@ fun WellDetailsScreen(
                                 Spacer(modifier = Modifier.padding(4.dp))
                                 Text("Show directions")
                             }
-                            
+
                             // Map Button
                             Button(
                                 onClick = {

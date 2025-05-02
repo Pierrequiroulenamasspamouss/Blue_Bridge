@@ -2,16 +2,12 @@ package com.wellconnect.wellmonitoring.utils
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
 import com.wellconnect.wellmonitoring.data.WellDataStore
-import com.wellconnect.wellmonitoring.network.LocationData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Base64
 
 fun exchangeWells(fromIndex: Int, toIndex: Int, wellDataStore: WellDataStore, scope: CoroutineScope) {
@@ -28,9 +24,7 @@ fun exchangeWells(fromIndex: Int, toIndex: Int, wellDataStore: WellDataStore, sc
 }
 
 
-fun resetErrorMessage(errorMessage: MutableState<String?>) {
-    errorMessage.value = null
-}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun encryptPassword(password: String): String {
@@ -41,27 +35,7 @@ fun encryptPassword(password: String): String {
 }
 
 
-// Add this function to parse the location input
-@RequiresApi(Build.VERSION_CODES.O)
-fun parseLocationInput(input: String): LocationData? {
-    val latRegex = Regex("""lat:\s*(-?\d+\.\d+)""")
-    val lonRegex = Regex("""lon:\s*(-?\d+\.\d+)""")
 
-    val latMatch = latRegex.find(input)
-    val lonMatch = lonRegex.find(input)
-
-    return if (latMatch != null && lonMatch != null) {
-        val latitude = latMatch.groups[1]?.value?.toDoubleOrNull()
-        val longitude = lonMatch.groups[1]?.value?.toDoubleOrNull()
-        if (latitude != null && longitude != null) {
-            LocationData(latitude, longitude, LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
-        } else {
-            null // Return null if parsing fails
-        }
-    } else {
-        null // Return null if regex doesn't match
-    }
-}
 
 
 // Password strength logic reused for signup

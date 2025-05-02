@@ -191,7 +191,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(90.dp),
                     backgroundColor = MaterialTheme.colorScheme.primary,
-                    function = { navController.navigate(Routes.SIGNUP_SCREEN) },
+                    function = { navController.navigate(Routes.REGISTER_SCREEN) },
                     functionName = "Navigate to Sign Up Screen",
                     textColor = MaterialTheme.colorScheme.onPrimary
                 )

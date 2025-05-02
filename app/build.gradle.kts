@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+
 }
 
 android {
@@ -48,12 +49,14 @@ android {
 }
 
 dependencies {
-    implementation (libs.hilt.android)
+
+    // Kotlin serialization
+    implementation(libs.hilt.android)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit)
     implementation(libs.converter.scalars)
-    implementation (libs.jakewharton.retrofit2.kotlinx.serialization.converter)
+    implementation(libs.jakewharton.retrofit2.kotlinx.serialization.converter)
     implementation(libs.kotlinx.serialization.json.v163)
     implementation(libs.androidx.datastore.preferences.v114)
     implementation(libs.kotlinx.serialization.json)

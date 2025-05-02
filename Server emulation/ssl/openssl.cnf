@@ -1,0 +1,25 @@
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+x509_extensions = v3_req
+distinguished_name = dn
+
+[dn]
+C = FR
+ST = IDF
+L = Paris
+O = WellConnect Development
+OU = Development
+# Set CN to your dev server's IP address
+CN = 192.168.0.204
+
+[v3_req]
+subjectAltName = @alt_names
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+
+[alt_names]
+# Set IP.1 to your dev server's IP address
+IP.1 = 192.168.0.204
+DNS.1 = localhost

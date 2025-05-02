@@ -117,7 +117,7 @@ def main():
         )
         updater_thread.start()
 
-        # Start HTTP server thread
+        # Start HTTP server_crt thread
         server_thread = threading.Thread(
             target=run_server,
             args=(port, shared_data),

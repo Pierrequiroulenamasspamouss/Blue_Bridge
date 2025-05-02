@@ -1,6 +1,7 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
@@ -47,25 +48,25 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.wellconnect.wellmonitoring.data.Location
+import com.wellconnect.wellmonitoring.data.RegisterRequest
 import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
-import com.wellconnect.wellmonitoring.network.LocationData
-import com.wellconnect.wellmonitoring.network.RegisterRequest
+import com.wellconnect.wellmonitoring.data.WaterNeed
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
-import com.wellconnect.wellmonitoring.network.WaterNeed
 import com.wellconnect.wellmonitoring.ui.components.PasswordField
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.utils.encryptPassword
-import com.wellconnect.wellmonitoring.utils.getBaseApiUrl
 import com.wellconnect.wellmonitoring.utils.getPasswordStrength
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+@SuppressLint("MutableCollectionMutableState", "AutoboxingStateCreation")
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
-fun SignUpScreen(
+fun RegisterScreen(
     navController: NavController,
     initialLoginMode: Boolean = false
 ) {
@@ -95,8 +96,7 @@ fun SignUpScreen(
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val baseUrl = getBaseApiUrl(context)
-    val api = RetrofitBuilder.create(baseUrl)
+    val api = RetrofitBuilder.getServerApi(context)
 
     var locationInput by remember { mutableStateOf("") } // New state for location input
 
@@ -393,11 +393,11 @@ fun SignUpScreen(
                                         longitude = lonStr.toDoubleOrNull() ?: 0.0
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("SignUpScreen", "Error parsing location", e)
+                                    Log.e("RegisterScreen", "Error parsing location", e)
                                 }
                                 
                                 // Create request
-                                val locationData = LocationData(
+                                val locationData = Location(
                                     latitude = latitude,
                                     longitude = longitude,
                                     lastUpdated = currentTime
@@ -417,7 +417,7 @@ fun SignUpScreen(
                                 )
                                 
                                 // Send registration request
-                                Log.d("SignUpScreen", "Sending registration request: $request")
+                                Log.d("RegisterScreen", "Sending registration request: $request")
                                 val response = api.register(request)
                                 
                                 if (response.isSuccessful && response.body()?.status == "success") {
@@ -427,7 +427,7 @@ fun SignUpScreen(
                                     if (loginSuccess) {
                                         snackbarHostState.showSnackbar("Account created successfully!")
                                         navController.navigate(Routes.HOME_SCREEN) {
-                                            popUpTo(Routes.SIGNUP_SCREEN) { inclusive = true }
+                                            popUpTo(Routes.REGISTER_SCREEN) { inclusive = true }
                                         }
                                     } else {
                                         snackbarHostState.showSnackbar("Account created! Please login.")
@@ -437,13 +437,13 @@ fun SignUpScreen(
                                     val msg = response.body()?.message ?: "Registration failed"
                                     errorMessage = msg
                                     snackbarHostState.showSnackbar(errorMessage!!)
-                                    Log.e("SignUpScreen", "Registration failed: $msg")
+                                    Log.e("RegisterScreen", "Registration failed: $msg")
                                 }
                             }
                         } catch (e: Exception) {
                             errorMessage = "Authentication failed: ${e.message}"
                             snackbarHostState.showSnackbar(errorMessage!!)
-                            Log.e("SignUpScreen", "Auth failed", e)
+                            Log.e("RegisterScreen", "Auth failed", e)
                         }
                     }
                 },

@@ -99,13 +99,10 @@ class WellViewModel(private val wellDataStore: WellDataStore) : ViewModel() {
         }
     }
 
-    suspend fun isUniqueEspId(espId: String, currentWellId: Int): Boolean {
+    fun isUniqueEspId(espId: String, currentWellId: Int): Boolean {
         return wellList.value.none { it.id != currentWellId && it.espId == espId }
     }
 
-    fun restorePreviousWellData() {
-        _wellData.value = _lastSavedData.value
-    }
 
     fun resetWellDataState() {
         _wellData.value = WellData()
@@ -130,10 +127,4 @@ class WellViewModel(private val wellDataStore: WellDataStore) : ViewModel() {
         )
     }
 
-    fun clearAllWellData() {
-        viewModelScope.launch {
-            wellDataStore.saveWellList(emptyList())
-            resetWellDataState()
-        }
-    }
 }
