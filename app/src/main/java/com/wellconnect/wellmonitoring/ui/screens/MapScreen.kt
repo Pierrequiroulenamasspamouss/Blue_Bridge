@@ -2,6 +2,7 @@
 
 package com.wellconnect.wellmonitoring.ui.screens
 
+import WellData
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -30,7 +31,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,12 +44,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
-import com.wellconnect.wellmonitoring.data.hasValidCoordinates
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import getLatitude
+import getLongitude
+import hasValidCoordinates
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -76,7 +75,12 @@ fun MapScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val wells by wellViewModel.wellList.collectAsState()
+    val wellsState = wellViewModel.wellsListState.value
+    val wells: List<WellData> = when (wellsState) {
+        is com.wellconnect.wellmonitoring.viewmodels.UiState.Success -> wellsState.data
+        else -> emptyList()
+    }
+
     var isLoading by remember { mutableStateOf(true) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
@@ -257,7 +261,7 @@ fun MapScreen(
                                             val lon = firstWellWithCoords.getLongitude() ?: 0.0
                                             GeoPoint(lat, lon)
                                         } else {
-                                            GeoPoint(0.0, 0.0)  // Default fallback
+                                            GeoPoint(0.0, 0.0)
                                         }
                                     }
                                 }
@@ -299,16 +303,12 @@ fun MapScreen(
                                 
                                 // Add well markers
                                 for (well in wells) {
-                                    // Skip wells that aren't the target well if target coordinates are provided
                                     if (targetLat != null && targetLon != null) {
-                                        // Only display the well we're navigating to
                                         continue
                                     }
-                                    
                                     if (well.hasValidCoordinates()) {
                                         val lat = well.getLatitude()
                                         val lon = well.getLongitude()
-                                        
                                         if (lat != null && lon != null) {
                                             try {
                                                 val wellMarker = Marker(this)
@@ -318,15 +318,13 @@ fun MapScreen(
                                                 wellMarker.title = well.wellName
                                                 wellMarker.snippet = "Status: ${well.wellStatus}"
                                                 wellMarker.icon = ContextCompat.getDrawable(context, R.drawable.small_water_drop_icon)
-                                                wellMarker.setInfoWindowAnchor(0.5f, 0f) // Center info window
-                                                
+                                                wellMarker.setInfoWindowAnchor(0.5f, 0f)
                                                 wellMarker.setOnMarkerClickListener { marker, _ ->
                                                     scope.launch {
                                                         selectedWell = well
                                                     }
                                                     true
                                                 }
-                                                
                                                 overlays.add(wellMarker)
                                             } catch (e: Exception) {
                                                 Log.e(TAG, "Error adding well marker: ${e.message}")

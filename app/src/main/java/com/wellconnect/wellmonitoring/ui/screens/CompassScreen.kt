@@ -1,7 +1,7 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import WellData
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,20 +50,19 @@ import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
 import com.wellconnect.wellmonitoring.ui.components.TopBar
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.ui.screens.compass.CompassView
 import com.wellconnect.wellmonitoring.ui.screens.compass.DistanceInfo
 import com.wellconnect.wellmonitoring.ui.screens.compass.MiniMapView
-import com.wellconnect.wellmonitoring.ui.screens.compass.calculateDistance
-import com.wellconnect.wellmonitoring.ui.screens.compass.findNearestWells
-import com.wellconnect.wellmonitoring.ui.screens.compass.formatDistance
-import com.wellconnect.wellmonitoring.ui.screens.compass.lastKnownLocation
+import com.wellconnect.wellmonitoring.utils.calculateDistance
+import com.wellconnect.wellmonitoring.utils.findNearestWells
+import com.wellconnect.wellmonitoring.utils.formatDistance
+import com.wellconnect.wellmonitoring.utils.lastKnownLocation
 import com.wellconnect.wellmonitoring.ui.screens.compass.rememberCompassSensor
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import getLatitude
+import getLongitude
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
@@ -74,7 +74,7 @@ fun CompassScreen(
     latitude: Double? = null,
     longitude: Double? = null,
     locationName: String? = null,
-    wellViewModel: WellViewModel? = null
+    wellViewModel: WellViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -97,7 +97,7 @@ fun CompassScreen(
             locationName?.replace("+", " ")?.let { 
                 java.net.URLDecoder.decode(it, "UTF-8") 
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             locationName // Fallback to original name if decoding fails
         }
     }
@@ -106,7 +106,7 @@ fun CompassScreen(
     val isPointingNorth = decodedLocationName == "North"
     
     // Rotation values
-    var currentRotation by remember { mutableStateOf(0f) }
+    var currentRotation by remember { mutableFloatStateOf(0f) }
     var isInTargetZone by remember { mutableStateOf(false) }
     
     // Calculate distance and bearing
@@ -176,7 +176,7 @@ fun CompassScreen(
                 locationCallback,
                 null
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // If we can't get updates, fall back to getCurrentLocation
             fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                 .addOnSuccessListener { location ->
@@ -186,37 +186,6 @@ fun CompassScreen(
                     }
             }
         }
-    }
-
-    // Permission dialog
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            title = { Text("Location Permission Required") },
-            text = { Text("The compass needs location permission to show directions accurately.") },
-            confirmButton = {
-                Button(onClick = {
-                    showPermissionDialog = false
-                    (context as? Activity)?.requestPermissions(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        ),
-                        1001
-                    )
-                }) {
-                    Text("Grant Permission")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { 
-                    showPermissionDialog = false
-                    navController.navigateUp()
-                }) {
-                    Text("Go Back")
-                }
-            }
-        )
     }
 
     // Nearest wells dialog
@@ -285,7 +254,7 @@ fun CompassScreen(
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -384,7 +353,7 @@ fun CompassScreen(
                     
                     Button(
                     onClick = {
-                            if (currentLocation != null && wellViewModel != null) {
+                            if (currentLocation != null) {
                                 nearestWells = findNearestWells(currentLocation!!, wellViewModel)
                                 showNearestWellsDialog = true
                             } else {

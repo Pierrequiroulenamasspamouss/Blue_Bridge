@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import WellData
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -45,7 +46,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,13 +58,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
-import com.wellconnect.wellmonitoring.data.hasValidCoordinates
 import com.wellconnect.wellmonitoring.ui.components.TopBar
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import getLatitude
+import getLongitude
+import hasValidCoordinates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -73,8 +72,11 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonitorScreen(wellViewModel: WellViewModel, navController: NavController) {
-    val wells by wellViewModel.wellList.collectAsState()
-    val errorMessage by wellViewModel.errorMessage
+    val wellsState = wellViewModel.wellsListState.value
+    val wells: List<WellData> = when (wellsState) {
+        is com.wellconnect.wellmonitoring.viewmodels.UiState.Success -> wellsState.data
+        else -> emptyList()
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -93,16 +95,6 @@ fun MonitorScreen(wellViewModel: WellViewModel, navController: NavController) {
                 null
             ).addOnSuccessListener { location ->
                 currentLocation = location
-            }
-        }
-    }
-
-    // Handle error messages
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let { message ->
-            scope.launch {
-                snackbarHostState.showSnackbar(message)
-                wellViewModel.resetErrorMessage()
             }
         }
     }
@@ -145,15 +137,21 @@ fun MonitorScreen(wellViewModel: WellViewModel, navController: NavController) {
             ) {
                 Button(
                     onClick = {
-                            scope.launch {
-                                isRefreshingAll.value = true
-                                try {
-                                    val (success, total) = wellViewModel.refreshAllWells(context)
-                                    snackbarHostState.showSnackbar("Refreshed $success/$total wells")
-                                } finally {
-                                    isRefreshingAll.value = false
+                        scope.launch {
+                            isRefreshingAll.value = true
+                            try {
+                                wellViewModel.repository.wellListFlow.collect { wells ->
+                                    wells.forEach { well ->
+                                        wellViewModel.loadWell(well.id)
+                                    }
                                 }
+                                snackbarHostState.showSnackbar("All wells refreshed!")
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Failed to refresh all wells: ${e.localizedMessage}")
+                            } finally {
+                                isRefreshingAll.value = false
                             }
+                        }
                     },
                     modifier = Modifier.weight(3f),
                     enabled = !isRefreshingAll.value
@@ -206,18 +204,17 @@ fun MonitorScreen(wellViewModel: WellViewModel, navController: NavController) {
                             }
                             navController.navigate("${Routes.MAP_SCREEN}$queryParams")
                         },
-                        onMoveUp = { wellViewModel.exchangeWells(index, index - 1) },
-                        onMoveDown = { wellViewModel.exchangeWells(index, index + 1) },
-                        onDelete = { wellViewModel.removeWellByIndex(index) },
+                        onMoveUp = { wellViewModel.swapWells(index, index - 1) },
+                        onMoveDown = { wellViewModel.swapWells(index, index + 1) },
+                        onDelete = { wellViewModel.deleteWell(well.id) },
                         onRefresh = {
                             scope.launch {
-                                val success = wellViewModel.refreshSingleWell(well.id, context)
-                                val message = if (success) {
-                                    "Successfully refreshed ${well.wellName}"
-                                } else {
-                                    wellViewModel.errorMessage.value ?: "Refresh failed"
+                                try {
+                                    wellViewModel.loadWell(well.id)
+                                    snackbarHostState.showSnackbar("Well refreshed!")
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Failed to refresh well: ${e.localizedMessage}")
                                 }
-                                snackbarHostState.showSnackbar(message)
                             }
                         },
                         currentLocation = currentLocation,
@@ -436,6 +433,15 @@ private fun WellCard(
                 text = "Water Level: ${well.wellWaterLevel} L",
                 style = MaterialTheme.typography.bodyMedium
             )
+            
+            // Add last refresh time back
+            if (well.lastRefreshTime > 0) {
+                Text(
+                    text = "Last updated: ${getRelativeTimeSpanString(well.lastRefreshTime)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
 
             // Add current distance if available
             if (well.hasValidCoordinates() && currentLocation != null) {
@@ -473,15 +479,6 @@ private fun WellCard(
                         )
                     }
                 }
-            }
-
-            if (well.lastRefreshTime > 0) {
-                Text(
-                    text = "Last updated: ${getRelativeTimeSpanString(well.lastRefreshTime)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
             }
         }
     }

@@ -1,16 +1,17 @@
-package com.wellconnect.wellmonitoring.data
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.wellconnect.wellmonitoring.data.model.Location
+import com.wellconnect.wellmonitoring.data.model.WaterQuality
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-@Serializable(with = WellDataSerializer::class)
+@Serializable
 data class WellData(
     var id: Int = 0,
     val wellName: String = "",
     val wellOwner: String = "",
-    val wellLocation: Location = Location(latitude = 0.0, longitude =  0.0),
+    val wellLocation: Location = Location(latitude = 0.0, longitude = 0.0),
     val wellWaterType: String = "",
     val wellCapacity: String = "",
     val wellWaterLevel: String = "",
@@ -40,13 +41,10 @@ fun WellData.getLongitude(): Double? {
 }
 
 
-
-
-
 @Serializable
 data class ShortenedWellData(
     val wellName: String = "Well",
-    val wellLocation: Location = Location(latitude = 0.0, longitude =  0.0),
+    val wellLocation: Location = Location(latitude = 0.0, longitude = 0.0),
     val wellWaterType: String = "None",
     val espId: String,
     val wellStatus: String = "Unknown",
@@ -55,7 +53,7 @@ data class ShortenedWellData(
 
 
 
-)
+    )
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun ShortenedWellData.getLatitude(): Double? {

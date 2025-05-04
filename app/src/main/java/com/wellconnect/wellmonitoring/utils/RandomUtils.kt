@@ -3,22 +3,22 @@ package com.wellconnect.wellmonitoring.utils
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
-import com.wellconnect.wellmonitoring.data.WellDataStore
+import com.wellconnect.wellmonitoring.data.repository.WellRepositoryImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.Base64
 
-fun exchangeWells(fromIndex: Int, toIndex: Int, wellDataStore: WellDataStore, scope: CoroutineScope) {
+fun exchangeWells(fromIndex: Int, toIndex: Int, wellRepo: WellRepositoryImpl, scope: CoroutineScope) {
     scope.launch {
-        val currentList = wellDataStore.wellListFlow.first().toMutableList()
+        val currentList = wellRepo.wellListFlow.first().toMutableList()
         if (fromIndex in currentList.indices && toIndex in currentList.indices) {
             val temp = currentList[fromIndex]
             currentList[fromIndex] = currentList[toIndex]
             currentList[toIndex] = temp
 
-            wellDataStore.saveWellList(currentList)
+            wellRepo.saveWellList(currentList)
         }
     }
 }

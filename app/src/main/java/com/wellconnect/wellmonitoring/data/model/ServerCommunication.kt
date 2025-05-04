@@ -1,0 +1,112 @@
+package com.wellconnect.wellmonitoring.data.model
+
+import UserData
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class BasicRequest(
+    val status: String,
+    val message: String,
+    val email: String? = null,
+    val timestamp: String,
+    val loginToken: String? = null,
+)
+
+@Serializable
+data class BasicResponse(
+    val status: String, //success or not
+    val message: String,
+    val timestamp: String
+)
+
+@Serializable
+data class RegisterRequest(
+    val email: String,
+    val password: String,
+    val firstName: String,
+    val lastName: String,
+    val username: String,
+    val location: Location,
+    val waterNeeds: List<WaterNeed>,
+    val phoneNumber: String? = null,
+    val isWellOwner: Boolean = false,
+    val role: String = "user",
+    val themePreference: Int = 0, // 0: System Default, 1: Light, 2: Dark
+)
+
+@Serializable
+data class RegisterResponse(
+    val status: String,
+    val message: String,
+    val userData: UserData? = null,
+    val loginToken: String? = null // to store locally for future authentication
+)
+
+
+@Serializable
+data class LoginRequest(
+    val email: String,
+    val password: String
+)
+
+@Serializable
+data class LoginResponse(
+    val status: String,
+    val message: String? = null,
+    // The login token is stored locally and when the user tries to log from a second device, the login token gets updated
+    // and the first user automatically gets logout because the token isn't his login data
+    val userData: UserData // Get back the user data stored in the database
+)
+
+
+@Serializable
+data class UpdateLocationRequest(
+    val email: String,
+    val latitude: Double,
+    val longitude: Double,
+    val token: String? = null
+)
+
+@Serializable
+data class UpdateWaterNeedsRequest(
+    val email: String,
+    val waterNeeds: List<WaterNeed>,
+    val token: String
+)
+
+@Serializable
+data class UpdateProfileRequest(
+    val email: String,
+    val firstName: String,
+    val lastName: String,
+    val username: String,
+    val location: Location,
+    val token: String
+)
+
+
+
+@Serializable
+data class WellsStatistics(
+    val number : Int,
+    val waterType : String,
+    val totalCapacity : String,
+)
+/**
+ * Request model for deleting a user account
+ */
+@Serializable
+data class DeleteAccountRequest(
+    val email: String,
+    val password: String,
+    val token: String
+)
+
+/**
+ * Response model for delete account operation
+ */
+@Serializable
+data class DeleteAccountResponse(
+    val status: String,
+    val message: String? = null
+)

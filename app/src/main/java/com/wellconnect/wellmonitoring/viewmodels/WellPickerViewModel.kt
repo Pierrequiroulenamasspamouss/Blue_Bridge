@@ -1,86 +1,128 @@
 package com.wellconnect.wellmonitoring.viewmodels
 
-import android.content.Context
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.getValue
+import WellData
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.utils.fetchWellDetailsFromServer
+import com.wellconnect.wellmonitoring.data.WellPickerEvent
+import com.wellconnect.wellmonitoring.data.`interface`.WellRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class WellPickerViewModel : ViewModel() {
-    private val _wellList = MutableStateFlow<List<WellData>>(emptyList())
-    val wellList: StateFlow<List<WellData>> = _wellList.asStateFlow()
-    
-    var isLoading by mutableStateOf(false)
-        private set
-    
-    var searchQuery by mutableStateOf("")
-        private set
-    
-    var selectedWaterType by mutableStateOf<String?>(null)
-        private set
-    
-    var selectedStatus by mutableStateOf<String?>(null)
-        private set
-    
-//    fun setSearchQuery(query: String) {
-//        searchQuery = query
-//    }
-    
-    fun setWaterTypeFilter(waterType: String?) {
-        selectedWaterType = waterType
+class WellPickerViewModel(private val repository: WellRepository) : ViewModel() {
+    // State management
+    private val _state = mutableStateOf<UiState<List<WellData>>>(UiState.Loading)
+    val state: State<UiState<List<WellData>>> = _state
+
+    // Filter state
+    data class WellFilters(
+        val query: String = "",
+        val waterType: String? = null,
+        val status: String? = null
+    )
+
+    private val _filters = MutableStateFlow(WellFilters())
+    val filters: StateFlow<WellFilters> = _filters.asStateFlow()
+
+    // Loading state
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        loadWells()
     }
-    
-    fun setStatusFilter(status: String?) {
-        selectedStatus = status
+
+    fun handleEvent(event: WellPickerEvent) {
+        when (event) {
+            is WellPickerEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
+            is WellPickerEvent.UpdateWaterTypeFilter -> updateWaterTypeFilter(event.waterType)
+            is WellPickerEvent.UpdateStatusFilter -> updateStatusFilter(event.status)
+            is WellPickerEvent.Refresh -> refreshWells()
+            is WellPickerEvent.ResetFilters -> resetFilters()
+        }
     }
-    
-    fun getFilteredWells(): List<WellData> {
-        return wellList.value.filter { well ->
-            val matchesQuery = searchQuery.isEmpty() || 
-                well.wellName.contains(searchQuery, ignoreCase = true) ||
-                well.wellOwner.contains(searchQuery, ignoreCase = true) ||
-                well.espId.contains(searchQuery, ignoreCase = true)
-            
-            val matchesWaterType = selectedWaterType == null || 
-                well.wellWaterType == selectedWaterType
-            
-            val matchesStatus = selectedStatus == null || 
-                well.wellStatus == selectedStatus
-            
+
+    private fun loadWells() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                repository.wellListFlow.collect { wells ->
+                    _state.value = if (wells.isEmpty()) {
+                        UiState.Empty
+                    } else {
+                        UiState.Success(applyFilters(wells))
+                    }
+                }
+            } catch (e: Exception) {
+                _state.value = UiState.Error(e.message ?: "Failed to load wells")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    private fun refreshWells() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // Force repository refresh if needed
+                val wells = repository.getWells()
+                _state.value = UiState.Success(applyFilters(wells))
+            } catch (e: Exception) {
+                _state.value = UiState.Error("Refresh failed: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+
+        }
+    }
+
+    private fun applyFilters(wells: List<WellData>): List<WellData> {
+        return wells.filter { well ->
+            val matchesQuery = _filters.value.query.isEmpty() ||
+                    well.wellName.contains(_filters.value.query, ignoreCase = true) ||
+                    well.wellOwner?.contains(_filters.value.query, ignoreCase = true) ?: false ||
+                    well.espId?.contains(_filters.value.query, ignoreCase = true) ?: false
+
+            val matchesWaterType = _filters.value.waterType == null ||
+                    well.wellWaterType == _filters.value.waterType
+
+            val matchesStatus = _filters.value.status == null ||
+                    well.wellStatus == _filters.value.status
+
             matchesQuery && matchesWaterType && matchesStatus
         }
     }
-    
-//    fun fetchWells(context: Context, snackbarHostState: SnackbarHostState) {
-//        viewModelScope.launch {
-//            isLoading = true
-//            val wells = fetchAllWellsFromServer(snackbarHostState, context)
-//            _wellList.value = wells
-//            isLoading = false
-//        }
-//    }
-    
-    fun fetchWellDetails(
-        espId: String,
-        context: Context,
-        snackbarHostState: SnackbarHostState,
-        onResult: (WellData?) -> Unit
-    ) {
-        viewModelScope.launch {
-            isLoading = true
-            val wellData = fetchWellDetailsFromServer(espId, snackbarHostState, context)
-            onResult(wellData)
-            isLoading = false
+
+    private fun updateSearchQuery(query: String) {
+        _filters.update { it.copy(query = query) }
+        refreshFilteredWells()
+    }
+
+    private fun updateWaterTypeFilter(waterType: String?) {
+        _filters.update { it.copy(waterType = waterType) }
+        refreshFilteredWells()
+    }
+
+    private fun updateStatusFilter(status: String?) {
+        _filters.update { it.copy(status = status) }
+        refreshFilteredWells()
+    }
+
+    private fun resetFilters() {
+        _filters.value = WellFilters()
+        refreshFilteredWells()
+    }
+
+    private fun refreshFilteredWells() {
+        val currentWells = when (val current = _state.value) {
+            is UiState.Success -> current.data
+            else -> emptyList()
         }
+        _state.value = UiState.Success(applyFilters(currentWells))
     }
 }
-
-

@@ -1,143 +1,69 @@
+@file:Suppress("DEPRECATION")
+
 package com.wellconnect.wellmonitoring.ui.components
 
-import android.content.Context
+
+import android.annotation.SuppressLint
+import android.os.Build
+import android.preference.PreferenceManager
 import android.util.Log
+import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.compose.ui.viewinterop.AndroidView
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.data.WellConfigEvents
-import com.wellconnect.wellmonitoring.data.WellData
+import com.wellconnect.wellmonitoring.data.model.Location
 import com.wellconnect.wellmonitoring.utils.PasswordStrength
-import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
-import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun SaveDataButton(
-    userViewModel: WellViewModel,
-    onSave: () -> Unit,
-    navController: NavController,
-    well: WellData,
-    context: Context,
-    snackbarHostState: SnackbarHostState
-) {
-    val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
-
-    RectangleButton(
-        textValue = "Save",
-        modifier = Modifier
-            .height(110.dp)
-            .fillMaxWidth(0.5f),
-        backgroundColor = colorResource(id = R.color.light_gray),
-        elevation = 1.dp,
-        textSize = 20.sp,
-        function = {
-            focusManager.clearFocus(force = true)
-
-            coroutineScope.launch {
-                try {
-
-
-                    // 2. Check for duplicate espId
-                    if (userViewModel.isUniqueEspId(well.espId, well.id)) {
-                        snackbarHostState.showSnackbar("IP address already used by another well.")
-                        return@launch
-                    }
-
-                    // 3. Save the data
-                    userViewModel.handleConfigEvent(WellConfigEvents.SaveWell(well.id))
-                    // 4. Clean up
-                    userViewModel.resetWellDataState()
-                    onSave()
-
-
-
-                    navController.popBackStack()
-                    Log.e("SaveDataButton", "Well saved successfully")
-
-                } catch (e: Exception) {
-                    snackbarHostState.showSnackbar("Save failed: ${e.localizedMessage}")
-                }
-            }
-        },
-        functionName = "Save Data",
-        textColor = MaterialTheme.colorScheme.onBackground
-    )
-}
-
-@Composable
-fun BackButton(
-    navController: NavController,
-    userViewModel: WellViewModel,
-    clickable: Boolean = true,
-    onBack: (() -> Unit)? = null
-) {
-    val lastClickTime = remember { mutableLongStateOf(0L) }
-    val clickCooldown = 100L
-
-    if (!clickable) {
-        TextComponent(text = "Save in order to go back", fontSize = 20.sp)
-        return
-    }
-
-    RectangleButton(
-        textValue = "Go back",
-        modifier = Modifier
-            .height(110.dp)
-            .fillMaxWidth(1f),
-        backgroundColor = colorResource(id = R.color.light_gray),
-        elevation = 1.dp,
-        textSize = 20.sp,
-        function = {
-            val currentTime = System.currentTimeMillis()
-            val canGoBack = navController.previousBackStackEntry != null
-
-            if (canGoBack && (currentTime - lastClickTime.longValue > clickCooldown)) {
-                onBack?.invoke() ?: navController.popBackStack()
-                lastClickTime.longValue = currentTime
-            } else {
-                println("Cannot go back")
-            }
-        },
-        functionName = "Go back",
-        textColor = MaterialTheme.colorScheme.onBackground
-    )
-}
-
-
-@Composable
-fun <T> WellField(
+fun WellField(
     label: String,
-    value: T,
+    value: String,
     keyId: Int,
     onValueChange: (String) -> Unit,
     isNumeric: Boolean = false
@@ -147,14 +73,14 @@ fun <T> WellField(
 
     key(keyId) {
         if (isNumeric) {
-            NumbersFieldComponent(
-                initialValue = value.toString(),
+            AdvancedNumbersFieldComponent(
+                initialValue = value,
                 defaultInputMessage = label,
                 onTextChanged = onValueChange
             )
         } else {
-            TextFieldComponent(
-                initialValue = value.toString(),
+            AdvancedTextFieldComponent(
+                initialValue = value,
                 defaultInputMessage = label,
                 onTextChanged = onValueChange
             )
@@ -163,7 +89,6 @@ fun <T> WellField(
 }
 
 @Composable
-
 fun PasswordField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -217,3 +142,300 @@ fun PasswordField(
         }
     }
 }
+
+/**
+ * An improved MiniMap component that uses OSMDroid for OpenStreetMap
+ */
+@SuppressLint("ClickableViewAccessibility", "DefaultLocale")
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun MiniMap(
+    currentLocation: Location? = null,
+    selectedLocation: Location? = null,
+    onLocationSelected: (Location) -> Unit,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val tag = "MiniMap"
+
+    // State to hold reference to the mapView
+    var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
+    
+    // Keep direct references to markers
+    var userMarkerRef by remember { mutableStateOf<Marker?>(null) }
+    var selectedMarkerRef by remember { mutableStateOf<Marker?>(null) }
+    
+    // State for zoom level
+    var zoomLevel by remember { mutableFloatStateOf(15f) }
+    
+    // Card with the mini map
+    Card(
+        modifier = modifier,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp) // Default height, can be overridden by the modifier parameter
+        ) {
+            // Setup OpenStreetMap view
+            AndroidView(
+                factory = { ctx ->
+                    try {
+                        // Configure OSMDroid
+                        Configuration.getInstance().apply {
+                            load(context, PreferenceManager.getDefaultSharedPreferences(context))
+                            userAgentValue = context.packageName
+                        }
+                        
+                        // Create MapView
+                        MapView(ctx).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            setMultiTouchControls(true)
+                            
+                            // Set minimum zoom level
+                            minZoomLevel = 2.0
+                            maxZoomLevel = 19.0
+                            
+                            // Set initial zoom level
+                            controller.setZoom(zoomLevel.toDouble())
+                            
+                            // Add user marker if location is available
+                            currentLocation?.let { loc ->
+                                val userPoint = GeoPoint(loc.latitude, loc.longitude)
+                                val marker = Marker(this)
+                                marker.position = userPoint
+                                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                                marker.title = "Your Location"
+                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                overlays.add(marker)
+                                controller.setCenter(userPoint)
+                                userMarkerRef = marker
+                            }
+                            
+                            // Add selected location marker if available
+                            selectedLocation?.let { loc ->
+                                val selectedPoint = GeoPoint(loc.latitude, loc.longitude)
+                                val marker = Marker(this)
+                                marker.position = selectedPoint
+                                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                marker.title = "Selected Location"
+                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                overlays.add(marker)
+                                selectedMarkerRef = marker
+                                
+                                // If no user location, center on selected location
+                                if (currentLocation == null) {
+                                    controller.setCenter(selectedPoint)
+                                }
+                            }
+                            
+                            // Set onTap listener to select location
+                            setOnTouchListener { _, event ->
+                                val action = event.action
+                                if (action == android.view.MotionEvent.ACTION_UP) {
+                                    val projection = projection
+                                    val geoPoint = projection.fromPixels(event.x.toInt(), event.y.toInt()) as GeoPoint
+                                    
+                                    // Create a new selected location
+                                    val location = Location(
+                                        latitude = geoPoint.latitude,
+                                        longitude = geoPoint.longitude,
+                                        lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                                    )
+                                    
+                                    // Update or create selected marker
+                                    if (selectedMarkerRef != null) {
+                                        selectedMarkerRef?.position = geoPoint
+                                    } else {
+                                        val marker = Marker(this)
+                                        marker.position = geoPoint
+                                        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                        marker.title = "Selected Location"
+                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                        overlays.add(marker)
+                                        selectedMarkerRef = marker
+                                    }
+                                    
+                                    // Notify callback
+                                    onLocationSelected(location)
+                                    invalidate()
+                                }
+                                false
+                            }
+                            
+                            // Set map instance for later updates
+                            mapViewInstance = this
+                            
+                            // Return the MapView
+                            this
+                        }
+                    } catch (e: Exception) {
+                        Log.e(tag, "Error creating map view: ${e.message}")
+                        // Return a dummy view in case of error
+                        FrameLayout(ctx).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        }
+                    }
+                },
+                update = { mapView ->
+                    // Update markers if locations change
+                    try {
+                        // Update user marker if location changes
+                        currentLocation?.let { loc ->
+                            val userPoint = GeoPoint(loc.latitude, loc.longitude)
+                            if (userMarkerRef != null) {
+                                userMarkerRef?.position = userPoint
+                            } else {
+                                val marker = Marker(mapView as MapView?)
+                                marker.position = userPoint
+                                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                                marker.title = "Your Location"
+                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                mapView.overlays.add(marker)
+                                userMarkerRef = marker
+                            }
+                        }
+                        
+                        // Update selected marker if location changes
+                        selectedLocation?.let { loc ->
+                            val selectedPoint = GeoPoint(loc.latitude, loc.longitude)
+                            if (selectedMarkerRef != null) {
+                                selectedMarkerRef?.position = selectedPoint
+                            } else {
+                                val marker = Marker(mapView as MapView?)
+                                marker.position = selectedPoint
+                                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                marker.title = "Selected Location"
+                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                mapView.overlays.add(marker)
+                                selectedMarkerRef = marker
+                            }
+                        }
+                        
+                        // Force redraw
+                        mapView.invalidate()
+                    } catch (e: Exception) {
+                        Log.e(tag, "Error updating map: ${e.message}")
+                    }
+                }
+            )
+            
+            // Information display for selected location
+            selectedLocation?.let {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 8.dp)
+                        .fillMaxWidth(0.8f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                    )
+                ) {
+                    Text(
+                        text = "Lat: ${String.format("%.6f", it.latitude)}, Lon: ${String.format("%.6f", it.longitude)}",
+                        modifier = Modifier.padding(8.dp),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            
+            // Current location button
+            FloatingActionButton(
+                onClick = {
+                    currentLocation?.let {
+                        // Set selected location to current location
+                        onLocationSelected(it.copy(
+                            lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                        ))
+                        
+                        // Center map on current location
+                        mapViewInstance?.let { mapView ->
+                            val userPoint = GeoPoint(it.latitude, it.longitude)
+                            mapView.controller.animateTo(userPoint)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(40.dp),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = "Use Current Location",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+    
+    // Clean up map resources when the composable is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                // Clear references
+                userMarkerRef = null
+                selectedMarkerRef = null
+                mapViewInstance?.onDetach()
+                mapViewInstance = null
+            } catch (e: Exception) {
+                Log.e(tag, "Error cleaning up map resources: ${e.message}")
+            }
+        }
+    }
+}
+
+// Helper composable functions needed for WellField
+@Composable
+fun TextComponent(text: String, fontSize: androidx.compose.ui.unit.TextUnit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize),
+        modifier = Modifier.padding(bottom = 4.dp)
+    )
+}
+
+// Renamed to avoid conflict with ui_components.kt
+@Composable
+fun AdvancedTextFieldComponent(
+    initialValue: String,
+    defaultInputMessage: String,
+    onTextChanged: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = initialValue,
+        onValueChange = onTextChanged,
+        label = { Text(defaultInputMessage) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+}
+
+// Renamed to avoid conflict with ui_components.kt
+@Composable
+fun AdvancedNumbersFieldComponent(
+    initialValue: String,
+    defaultInputMessage: String,
+    onTextChanged: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = initialValue,
+        onValueChange = onTextChanged,
+        label = { Text(defaultInputMessage) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+}
+

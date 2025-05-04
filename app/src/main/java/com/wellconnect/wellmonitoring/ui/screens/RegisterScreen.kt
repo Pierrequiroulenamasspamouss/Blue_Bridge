@@ -34,6 +34,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,15 +49,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.wellconnect.wellmonitoring.data.Location
-import com.wellconnect.wellmonitoring.data.RegisterRequest
-import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
-import com.wellconnect.wellmonitoring.data.WaterNeed
+import com.wellconnect.wellmonitoring.data.UserEvent.Register
+import com.wellconnect.wellmonitoring.data.model.Location
+import com.wellconnect.wellmonitoring.data.model.RegisterRequest
+import com.wellconnect.wellmonitoring.data.model.WaterNeed
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
+import com.wellconnect.wellmonitoring.ui.components.MiniMap
 import com.wellconnect.wellmonitoring.ui.components.PasswordField
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.utils.encryptPassword
 import com.wellconnect.wellmonitoring.utils.getPasswordStrength
+import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 import java.time.LocalDateTime
@@ -68,43 +71,60 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun RegisterScreen(
     navController: NavController,
-    initialLoginMode: Boolean = false
+    initialLoginMode: Boolean = false,
+    userViewModel: UserViewModel
 ) {
     val currentTime = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
-    var isLoginMode by remember { mutableStateOf(initialLoginMode) }
     val context = LocalContext.current
-    val userDataStore = remember { UserDataStoreImpl(context) }
     val scope = rememberCoroutineScope()
     var currentPriority by remember { mutableStateOf(6) }  // Default priority for "Other"
     var customType by remember { mutableStateOf("") }  // For custom type input
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     val waterNeeds = remember { mutableStateOf(mutableListOf<WaterNeed>()) }
     var currentWaterNeedAmount by remember { mutableStateOf("") }
     var currentWaterNeedType by remember { mutableStateOf("") }
     var currentWaterNeedDescription by remember { mutableStateOf("") }
     var isWellOwner by remember { mutableStateOf(false) }
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val api = RetrofitBuilder.getServerApi(context)
 
-    var locationInput by remember { mutableStateOf("") } // New state for location input
+    // State for location
+    var currentLocation by remember { mutableStateOf<Location?>(null) }
+    var selectedLocation by remember { mutableStateOf<Location?>(null) }
+
+    // Get current location if permission is granted
+    LaunchedEffect(Unit) {
+        if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                null
+            ).addOnSuccessListener { location ->
+                if (location != null) {
+                    currentLocation = Location(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        lastUpdated = currentTime
+                    )
+                }
+            }
+        }
+    }
 
     val passwordStrength = getPasswordStrength(password)
 
     Box(modifier = Modifier.fillMaxSize()) {
-    Column(
-        modifier = Modifier
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
@@ -112,16 +132,23 @@ fun RegisterScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = if (isLoginMode) "Login" else "Create Account",
+                text = "Create Account",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Common fields: email & password
+            // Required fields section
+            Text(
+                text = "Required Information",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // Email (required)
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text("Email *") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
@@ -130,124 +157,142 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            // Use PasswordField component for password
+            // Password (required)
             PasswordField(
                 value = password,
                 onValueChange = { password = it },
-                label = "Password",
+                label = "Password *",
                 isVisible = passwordVisible,
                 onVisibilityChange = { passwordVisible = !passwordVisible },
-                passwordStrength = if (!isLoginMode) passwordStrength else null // Only show strength for signup
+                passwordStrength = passwordStrength
             )
             
-            // Confirm password field for signup
-            if (!isLoginMode) {
-                PasswordField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = "Confirm Password",
-                    isVisible = confirmPasswordVisible,
-                    onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible }
-                    // No password strength indicator for confirm password
-                )
-                
-                OutlinedTextField(
-                    value = firstName,
-                    onValueChange = { firstName = it },
-                    label = { Text("First Name") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = lastName,
-                    onValueChange = { lastName = it },
-                    label = { Text("Last Name") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = locationInput,
-                    onValueChange = { locationInput = it },
-                    label = { Text("Location (format: Location:\nlat: 0.000000\nlon: 25.000000)") },
-                    singleLine = false,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            // Check if we have location permission
-                            val hasLocationPermission = context.checkSelfPermission(
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                            ) == PackageManager.PERMISSION_GRANTED
-                            
-                            if (hasLocationPermission) {
-                                // Request current location
-                                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                                fusedLocationClient.getCurrentLocation(
-                                    Priority.PRIORITY_HIGH_ACCURACY,
-                                    null
-                                ).addOnSuccessListener { location ->
-                                    if (location != null) {
-                                        locationInput = "Location:\nlat: ${location.latitude}\nlon: ${location.longitude}"
-                                    } else {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Unable to get current location")
-                                        }
-                                    }
-                                }.addOnFailureListener {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Failed to get location: ${it.localizedMessage}")
-                                    }
-                                }
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Location permission needed")
-                                }
-                                // Request permission
-                                (context as? Activity)?.requestPermissions(
-                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                                    1002
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Use My Current Location")
-                }
+            // Confirm password (required)
+            PasswordField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = "Confirm Password *",
+                isVisible = confirmPasswordVisible,
+                onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible }
+            )
+            
+            // First Name (required)
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = { Text("First Name *") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // Last Name (required)
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = { Text("Last Name *") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // Optional fields section
+            Text(
+                text = "Optional Information",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            )
+            
+            // Username (optional)
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username (Optional)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                OutlinedTextField(
-                    value = phoneNumber,
-                    onValueChange = { phoneNumber = it },
-                    label = { Text("Phone Number (Optional)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Next
-                    ),
+            // Location selection using MiniMap
+            Text(
+                text = "Your Location",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // MiniMap component
+            MiniMap(
+                currentLocation = currentLocation,
+                selectedLocation = selectedLocation,
+                onLocationSelected = { location ->
+                    selectedLocation = location
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+            )
+            
+            // Phone Number (optional)
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                label = { Text("Phone Number (Optional)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // Water Needs (optional)
+            if (waterNeeds.value.isNotEmpty()) {
+                Text(
+                    text = "Water Needs",
+                    style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Water Needs")
+                
+                // Display added water needs
+                waterNeeds.value.forEach { need ->
+                    androidx.compose.material3.Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text("Amount: ${need.amount} liters", style = MaterialTheme.typography.bodyMedium)
+                            Text("Type: ${need.usageType}", style = MaterialTheme.typography.bodySmall)
+                            Text("Priority: P${need.priority}", style = MaterialTheme.typography.bodySmall)
+                            Text("Description: ${need.description ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // Collapsible water needs section
+            var showWaterNeedsSection by remember { mutableStateOf(false) }
+            
+            Button(
+                onClick = { showWaterNeedsSection = !showWaterNeedsSection },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (showWaterNeedsSection) "Hide Water Needs Form" else "Add Water Needs (Optional)")
+            }
+            
+            if (showWaterNeedsSection) {
                 OutlinedTextField(
                     value = currentWaterNeedAmount,
                     onValueChange = {
@@ -261,6 +306,7 @@ fun RegisterScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                
                 WaterUsageTypeSelector(
                     currentWaterNeedType = currentWaterNeedType,
                     onWaterNeedTypeChange = { currentWaterNeedType = it },
@@ -269,6 +315,7 @@ fun RegisterScreen(
                     customType = customType,
                     onCustomTypeChange = { customType = it }
                 )
+                
                 OutlinedTextField(
                     value = currentWaterNeedDescription,
                     onValueChange = { currentWaterNeedDescription = it },
@@ -276,6 +323,7 @@ fun RegisterScreen(
                     singleLine = false,
                     modifier = Modifier.fillMaxWidth()
                 )
+                
                 Button(
                     onClick = {
                         val amount = currentWaterNeedAmount.toIntOrNull()
@@ -309,137 +357,90 @@ fun RegisterScreen(
                 ) {
                     Text("Add Water Need")
                 }
-
-
-                // Display added water needs
-                waterNeeds.value.forEach { need ->
-                    Text("Amount: ${need.amount} liters, Type: ${need.usageType}, Priority: P${need.priority}, Description: ${need.description ?: "N/A"}")
-                }
             }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Are you a well owner?")
-                    Switch(checked = isWellOwner, onCheckedChange = { isWellOwner = it })
+            // Well owner toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Are you a well owner?")
+                Switch(checked = isWellOwner, onCheckedChange = { isWellOwner = it })
             }
 
-
-
+            // Register button
             Button(
                 onClick = {
                     scope.launch {
                         try {
-                            if (isLoginMode) {
-                                // Handle login
-                                if (email.isBlank() || password.isBlank()) {
-                                    errorMessage = "Please enter email and password"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    return@launch
-                                }
-                                
-                                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                    errorMessage = "Please enter a valid email address"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    return@launch
-                                }
-                                
-                                val encrypted = encryptPassword(password)
-                                val success = userDataStore.login(email.trim(), encrypted)
-                                
-                                if (success) {
+                            // Validate required inputs
+                            if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank()) {
+                                errorMessage = "Please fill in all required fields (marked with *)"
+                                snackbarHostState.showSnackbar(errorMessage!!)
+                                return@launch
+                            }
+
+                            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                errorMessage = "Please enter a valid email address"
+                                snackbarHostState.showSnackbar(errorMessage!!)
+                                return@launch
+                            }
+
+                            if (password != confirmPassword) {
+                                errorMessage = "Passwords do not match"
+                                snackbarHostState.showSnackbar(errorMessage!!)
+                                return@launch
+                            }
+
+                            // Use default values for optional fields
+                            val actualUsername = username.takeIf { it.isNotBlank() } ?: firstName.lowercase()
+                            
+                            // Use selected location or current location or default
+                            val locationData = selectedLocation ?: currentLocation ?: Location(
+                                latitude = 0.0,
+                                longitude = 0.0,
+                                lastUpdated = currentTime
+                            )
+
+                            val encrypted = encryptPassword(password)
+                            val request = RegisterRequest(
+                                email = email.trim(),
+                                password = encrypted,
+                                firstName = firstName.trim(),
+                                lastName = lastName.trim(),
+                                username = actualUsername,
+                                location = locationData,
+                                waterNeeds = waterNeeds.value,
+                                isWellOwner = isWellOwner,
+                                role = "user",
+                                phoneNumber = phoneNumber.trim().ifBlank { null },
+                                themePreference = 0 // Default theme
+                            )
+
+                            // Send registration request
+                            Log.d("RegisterScreen", "Sending registration request: $request")
+
+                            userViewModel.handleEvent(Register(request))
+                            
+                            // After registration attempt, observe the state changes
+                            scope.launch {
+                                val currentState = userViewModel.state.value
+                                if (currentState is com.wellconnect.wellmonitoring.viewmodels.UiState.Error) {
+                                    snackbarHostState.showSnackbar("Registration failed: ${currentState.message}")
+                                } else if (currentState is com.wellconnect.wellmonitoring.viewmodels.UiState.Success) {
+                                    snackbarHostState.showSnackbar("Registration successful!")
+                                    // Navigate to home screen
                                     navController.navigate(Routes.HOME_SCREEN) {
-                                        popUpTo(Routes.LOGIN_SCREEN) { inclusive = true }
-                                    }
-                                } else {
-                                    errorMessage = "Login failed: Invalid credentials"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                }
-                            } else {
-                                // Handle registration
-                                // Validate inputs
-                                if (email.isBlank() || password.isBlank() || firstName.isBlank() || 
-                                    lastName.isBlank() || username.isBlank()) {
-                                    errorMessage = "Please fill in all required fields"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    return@launch
-                                }
-                                
-                                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                    errorMessage = "Please enter a valid email address"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    return@launch
-                                }
-                                
-                                if (password != confirmPassword) {
-                                    errorMessage = "Passwords do not match"
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    return@launch
-                                }
-                                
-                                // Parse location
-                                var latitude = 0.0
-                                var longitude = 0.0
-                                
-                                try {
-                                    if (locationInput.contains("lat:") && locationInput.contains("lon:")) {
-                                        val latStr = locationInput.substringAfter("lat:").substringBefore("\n").trim()
-                                        val lonStr = locationInput.substringAfter("lon:").trim()
-                                        latitude = latStr.toDoubleOrNull() ?: 0.0
-                                        longitude = lonStr.toDoubleOrNull() ?: 0.0
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("RegisterScreen", "Error parsing location", e)
-                                }
-                                
-                                // Create request
-                                val locationData = Location(
-                                    latitude = latitude,
-                                    longitude = longitude,
-                                    lastUpdated = currentTime
-                                )
-                                
-                                val encrypted = encryptPassword(password)
-                                val request = RegisterRequest(
-                                    email = email.trim(),
-                                    password = encrypted,
-                                    firstName = firstName.trim(),
-                                    lastName = lastName.trim(),
-                                    username = username.trim(),
-                                    location = locationData,
-                                    waterNeeds = waterNeeds.value,
-                                    isWellOwner = isWellOwner,
-                                    role = "user"
-                                )
-                                
-                                // Send registration request
-                                Log.d("RegisterScreen", "Sending registration request: $request")
-                                val response = api.register(request)
-                                
-                                if (response.isSuccessful && response.body()?.status == "success") {
-                                    // Registration successful, now login
-                                    val loginSuccess = userDataStore.login(email.trim(), encrypted)
-                                    
-                                    if (loginSuccess) {
-                                        snackbarHostState.showSnackbar("Account created successfully!")
-                                        navController.navigate(Routes.HOME_SCREEN) {
-                                            popUpTo(Routes.REGISTER_SCREEN) { inclusive = true }
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            inclusive = true
                                         }
-                                    } else {
-                                        snackbarHostState.showSnackbar("Account created! Please login.")
-                                        isLoginMode = true
                                     }
-                                } else {
-                                    val msg = response.body()?.message ?: "Registration failed"
-                                    errorMessage = msg
-                                    snackbarHostState.showSnackbar(errorMessage!!)
-                                    Log.e("RegisterScreen", "Registration failed: $msg")
                                 }
                             }
+
                         } catch (e: Exception) {
                             errorMessage = "Authentication failed: ${e.message}"
                             snackbarHostState.showSnackbar(errorMessage!!)
@@ -447,29 +448,29 @@ fun RegisterScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
             ) {
-                Text(if (isLoginMode) "Login" else "Sign Up")
+                Text("Sign Up")
             }
 
             TextButton(
-                onClick = { isLoginMode = !isLoginMode },
+                onClick = { navController.navigate(Routes.LOGIN_SCREEN) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Already have an account? Login")
             }
+            
             Spacer(modifier = Modifier.height(20.dp))
-
         }
-
-
-
     }
-
-
-    SnackbarHost(hostState = snackbarHostState)
+    
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.padding(16.dp)
+    )
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

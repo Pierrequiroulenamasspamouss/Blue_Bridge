@@ -1,45 +1,84 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import UserData
 import android.util.Log
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.WaterDrop
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wellconnect.wellmonitoring.data.UserData
-import com.wellconnect.wellmonitoring.data.UserDataStore
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.viewmodels.UiState
+import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    userData: UserData?,
-    userDataStore: UserDataStore,
-    navController: NavController
+    userViewModel: UserViewModel,
+    navController: NavController,
+    userState: UiState<UserData>
 ) {
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountConfirmationDialog by remember { mutableStateOf(false) }
+    var passwordForDeletion by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
-    
+    val userData = (userState as? UiState.Success<UserData>)?.data
+
     // Log userData state for debugging
     val isGuest = userData == null
-    Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData?.email}"}")
+    Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData.email}"}")
     
     // Default values for guest mode
-    val displayName = if (isGuest) "Guest" else "${userData?.firstName} ${userData?.lastName}"
+    val displayName = if (isGuest) "Guest" else "${userData.firstName} ${userData.lastName}"
     val email = userData?.email ?: "Not logged in"
-    val role = userData?.role?.capitalize() ?: "Guest"
+    val role = userData?.role?.replaceFirstChar { it.uppercase() } ?: "Guest"
     val themePreference = userData?.themePreference ?: 0
     val latitude = userData?.location?.latitude ?: 0.0
     val longitude = userData?.location?.longitude ?: 0.0
@@ -119,11 +158,35 @@ fun SettingsScreen(
                     userData.waterNeeds.forEach { need ->
                         SettingsItem(
                             icon = Icons.Default.Opacity,
-                            title = need.usageType.capitalize(),
+                            title = need.usageType.capitalize(Locale.getDefault()),
                             subtitle = "${need.amount}L - Priority: ${need.priority}"
                         )
                     }
+                    // Edit Water Needs Button
+                    TextButton(
+                        onClick = { navController.navigate(Routes.EDIT_WATER_NEEDS_SCREEN) },
+                        modifier = Modifier.padding(start = 16.dp)
+                    ) {
+                        Text("Edit Water Needs")
+                    }
                 }
+            }
+            
+            // Support Section
+            SettingsSection(title = "Support") {
+                SettingsItem(
+                    icon = Icons.Default.MonetizationOn,
+                    title = "Support WellConnect",
+                    subtitle = "Help us by viewing ads",
+                    onClick = { navController.navigate(Routes.ADMOB_SCREEN) }
+                )
+                
+                SettingsItem(
+                    icon = Icons.Default.Badge,
+                    title = "Credits",
+                    subtitle = "View app credits",
+                    onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
+                )
             }
             
             // Account Actions Section
@@ -141,6 +204,15 @@ fun SettingsScreen(
                         title = "Logout",
                         subtitle = "Sign out of your account",
                         onClick = { showLogoutDialog = true },
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    
+                    // Add Delete Account option
+                    SettingsItem(
+                        icon = Icons.Default.Delete,
+                        title = "Delete Account",
+                        subtitle = "Permanently delete your account and all data",
+                        onClick = { showDeleteAccountDialog = true },
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -162,7 +234,7 @@ fun SettingsScreen(
                                 selected = themePreference == 0,
                                 onClick = { 
                                     coroutineScope.launch {
-                                        userDataStore.updateThemePreference(0)
+                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(0))
                                     }
                                     showThemeDialog = false
                                 }
@@ -178,7 +250,7 @@ fun SettingsScreen(
                                 selected = themePreference == 1,
                                 onClick = { 
                                     coroutineScope.launch {
-                                        userDataStore.updateThemePreference(1)
+                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(1))
                                     }
                                     showThemeDialog = false
                                 }
@@ -194,7 +266,7 @@ fun SettingsScreen(
                                 selected = themePreference == 2,
                                 onClick = { 
                                     coroutineScope.launch {
-                                        userDataStore.updateThemePreference(2)
+                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(2))
                                     }
                                     showThemeDialog = false
                                 }
@@ -221,8 +293,8 @@ fun SettingsScreen(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
-                                userDataStore.clearUserData()
-                                navController.navigate(Routes.LOGIN_SCREEN) {
+                                userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.Logout)
+                                navController.navigate(com.wellconnect.wellmonitoring.ui.navigation.Routes.LOGIN_SCREEN) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
@@ -233,6 +305,101 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+        
+        // Delete Account Dialog (Password Verification)
+        if (showDeleteAccountDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showDeleteAccountDialog = false
+                    passwordForDeletion = ""
+                },
+                title = { Text("Delete Account") },
+                text = { 
+                    Column {
+                        Text(
+                            "To delete your account, please enter your password to confirm. This action is permanent and cannot be undone.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        OutlinedTextField(
+                            value = passwordForDeletion,
+                            onValueChange = { passwordForDeletion = it },
+                            label = { Text("Password") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (passwordForDeletion.isNotEmpty()) {
+                                showDeleteAccountDialog = false
+                                showDeleteAccountConfirmationDialog = true
+                            }
+                        }
+                    ) {
+                        Text("Continue", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { 
+                            showDeleteAccountDialog = false
+                            passwordForDeletion = ""
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+        
+        // Final Delete Account Confirmation Dialog
+        if (showDeleteAccountConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showDeleteAccountConfirmationDialog = false
+                    passwordForDeletion = ""
+                },
+                title = { Text("Confirm Delete Account") },
+                text = { 
+                    Text(
+                        "WARNING: This will permanently delete your account and all associated data. This action cannot be undone. Are you absolutely sure?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                // TODO: Call delete account API
+                                userViewModel.deleteAccount(userData?.email ?: "", passwordForDeletion)
+                                showDeleteAccountConfirmationDialog = false
+                                passwordForDeletion = ""
+                                // Navigate to login screen after account deletion
+                                navController.navigate(Routes.LOGIN_SCREEN) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Delete Account", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { 
+                            showDeleteAccountConfirmationDialog = false
+                            passwordForDeletion = ""
+                        }
+                    ) {
                         Text("Cancel")
                     }
                 }

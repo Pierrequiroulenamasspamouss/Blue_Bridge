@@ -15,7 +15,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -91,4 +91,11 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Google AdMob
+    implementation("com.google.android.gms:play-services-ads:22.6.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.33.2-alpha")
 }

@@ -1,5 +1,8 @@
 package com.wellconnect.wellmonitoring.data
 
+import WellData
+import com.wellconnect.wellmonitoring.data.model.Location
+import com.wellconnect.wellmonitoring.data.model.WaterQuality
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -16,7 +19,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
-object WellDataSerializer : KSerializer<WellData> {
+// TODO : DO NOT USE THIS PACKAGE,I DO NOT WANT JSON STORAGE ANYMORE? THERE ARE BETTER WAYS TO STORE WELL DATA ON THE PHONE I THINK (I changed it to private objct in order to not use it)
+
+private object WellDataSerializer : KSerializer<WellData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("WellData")
 
     override fun deserialize(decoder: Decoder): WellData {
@@ -43,8 +48,10 @@ object WellDataSerializer : KSerializer<WellData> {
             if (extraData.containsKey("waterQuality")) {
                 val extraWaterLocationJson = extraData["waterQuality"]?.jsonObject
                 Location(
-                    latitude = extraWaterLocationJson?.get("latitude")?.jsonPrimitive?.doubleOrNull ?: 0.0,
-                    longitude = extraWaterLocationJson?.get("longitude")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    latitude = extraWaterLocationJson?.get("latitude")?.jsonPrimitive?.doubleOrNull
+                        ?: 0.0,
+                    longitude = extraWaterLocationJson?.get("longitude")?.jsonPrimitive?.doubleOrNull
+                        ?: 0.0,
                 )
 
             } else {
@@ -69,7 +76,8 @@ object WellDataSerializer : KSerializer<WellData> {
                 val extraWaterQuality = extraData["waterQuality"]?.jsonObject
                 WaterQuality(
                     ph = extraWaterQuality?.get("ph")?.jsonPrimitive?.doubleOrNull ?: 7.0,
-                    turbidity = extraWaterQuality?.get("turbidity")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    turbidity = extraWaterQuality?.get("turbidity")?.jsonPrimitive?.doubleOrNull
+                        ?: 0.0,
                     tds = extraWaterQuality?.get("tds")?.jsonPrimitive?.intOrNull ?: 0
                 )
             } else {

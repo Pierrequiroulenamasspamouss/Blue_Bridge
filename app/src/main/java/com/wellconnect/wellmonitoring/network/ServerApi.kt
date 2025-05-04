@@ -1,16 +1,19 @@
 package com.wellconnect.wellmonitoring.network
 
-import com.wellconnect.wellmonitoring.data.BasicResponse
-import com.wellconnect.wellmonitoring.data.LoginRequest
-import com.wellconnect.wellmonitoring.data.LoginResponse
-import com.wellconnect.wellmonitoring.data.NearbyUsersResponse
-import com.wellconnect.wellmonitoring.data.RegisterRequest
-import com.wellconnect.wellmonitoring.data.RegisterResponse
-import com.wellconnect.wellmonitoring.data.ShortenedWellData
-import com.wellconnect.wellmonitoring.data.UpdateLocationRequest
-import com.wellconnect.wellmonitoring.data.UpdateWaterNeedsRequest
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.WellsStatistics
+import ShortenedWellData
+import WellData
+import com.wellconnect.wellmonitoring.data.model.BasicResponse
+import com.wellconnect.wellmonitoring.data.model.DeleteAccountRequest
+import com.wellconnect.wellmonitoring.data.model.DeleteAccountResponse
+import com.wellconnect.wellmonitoring.data.model.LoginRequest
+import com.wellconnect.wellmonitoring.data.model.LoginResponse
+import com.wellconnect.wellmonitoring.data.model.NearbyUsersResponse
+import com.wellconnect.wellmonitoring.data.model.RegisterRequest
+import com.wellconnect.wellmonitoring.data.model.RegisterResponse
+import com.wellconnect.wellmonitoring.data.model.UpdateLocationRequest
+import com.wellconnect.wellmonitoring.data.model.UpdateProfileRequest
+import com.wellconnect.wellmonitoring.data.model.UpdateWaterNeedsRequest
+import com.wellconnect.wellmonitoring.data.model.WellsStatistics
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -19,7 +22,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 
-interface EspApiService {
+interface ServerApi {
 
 
     @GET("/api/wells/{espId}")
@@ -40,7 +43,7 @@ interface EspApiService {
     @GET("/api/wells")
     suspend fun getAllWells(): List<ShortenedWellData>
 
-    @GET("/api/stats")
+    @GET("/api/wells/stats/summary")
     suspend fun getWellStats(): List<WellsStatistics>
 
     @GET("/api/nearby-users")
@@ -60,4 +63,14 @@ interface EspApiService {
     suspend fun updateWaterNeeds(
         @Body request: UpdateWaterNeedsRequest
     ): Response<BasicResponse>
+
+    @POST("/api/update-profile")
+    suspend fun updateProfile(
+        @Body request: UpdateProfileRequest
+    ): Response<BasicResponse>
+    
+    @POST("/api/delete-account")
+    suspend fun deleteAccount(
+        @Body request: DeleteAccountRequest
+    ): Response<DeleteAccountResponse>
 }

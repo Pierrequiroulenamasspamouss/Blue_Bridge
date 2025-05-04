@@ -7,8 +7,22 @@ async function init() {
         // Sync database (create tables if not present)
         await sequelize.sync({ force: true });
         console.log('Database synced (all tables dropped and recreated)');
-
         // Create example users
+        const admin = await User.create({
+                    email: 'pierresluse@gmail.com',
+                    password: 'Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=',
+                    firstName: 'Pierre',
+                    lastName: 'Sluse',
+                    username: 'P2R_Admin',
+                    role: 'admin',
+                    themePreference: 0,
+                    latitude: 48.8589,
+                    longitude: 2.3469,
+                    location: { latitude: 48.8589, longitude: 2.3469, lastUpdated: new Date().toISOString() },
+                    waterNeeds: [{ amount: 50, usageType: 'Farming', description: 'Irrigation', priority: 2 },{ amount: 9999999, usageType: 'ChatGPT', description: 'ChatGPT is kinda thirsty', priority: 0 }],
+                    isWellOwner: true
+                });
+
         const user1 = await User.create({
             email: 'user1@wellconnect.com',
             password: 'password1',

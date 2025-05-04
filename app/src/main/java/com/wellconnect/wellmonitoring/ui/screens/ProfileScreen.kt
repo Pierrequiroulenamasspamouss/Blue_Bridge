@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import UserData
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,12 +36,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import com.wellconnect.wellmonitoring.data.Location
-import com.wellconnect.wellmonitoring.data.UserData
-import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
 import com.wellconnect.wellmonitoring.ui.components.TopBar
-import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import com.wellconnect.wellmonitoring.viewmodels.UiState
+import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
 
 private const val TAG = "NewProfileScreen"
@@ -50,53 +47,31 @@ private const val TAG = "NewProfileScreen"
 @Composable
 fun ProfileScreen(
     navController: NavController,
-    userViewModel: WellViewModel
+    userViewModel: UserViewModel
 ) {
     val context = LocalContext.current
-    val userDataStore = remember { UserDataStoreImpl(context) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // State for user data
-    var userData by remember { mutableStateOf<UserData?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
+    val userState = userViewModel.state.value
+    val userData = (userState as? UiState.Success<UserData>)?.data
+    var isLoading by remember { mutableStateOf(userState is UiState.Loading) }
 
     // Form fields
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-
-    // Load user data
-    LaunchedEffect(Unit) {
-        userDataStore.getUserData().collect { data ->
-            userData = data
-
-            // Initialize form fields if data exists
-            data?.let {
-                firstName = it.firstName
-                lastName = it.lastName
-                username = it.username
-                email = it.email
-                latitude = it.location.latitude.toString()
-                longitude = it.location.longitude.toString()
-            }
-
-            isLoading = false
-        }
-    }
+    var firstName by remember { mutableStateOf(userData?.firstName ?: "") }
+    var lastName by remember { mutableStateOf(userData?.lastName ?: "") }
+    var username by remember { mutableStateOf(userData?.username ?: "") }
+    var email by remember { mutableStateOf(userData?.email ?: "") }
+    var latitude by remember { mutableStateOf(userData?.location?.latitude?.toString() ?: "") }
+    var longitude by remember { mutableStateOf(userData?.location?.longitude?.toString() ?: "") }
 
     // Check if user is logged in
-    val isLoggedIn = userData != null && userData?.email?.isNotBlank() == true
+    val isLoggedIn = userData != null && userData.email.isNotBlank()
 
     // Handle back navigation
     BackHandler {
-        navController.navigate("settings") {
-            popUpTo(navController.graph.findStartDestination().id)
-            launchSingleTop = true
-        }
+        navController.popBackStack()
     }
 
     // Loading state
@@ -148,10 +123,7 @@ fun ProfileScreen(
 
                 Button(
                     onClick = {
-                        navController.navigate("settings") {
-                            popUpTo(navController.graph.findStartDestination().id)
-                            launchSingleTop = true
-                        }
+                        navController.navigate("settings")
                     }
                 ) {
                     Text("Go to Settings")
@@ -261,19 +233,16 @@ fun ProfileScreen(
                                 firstName = firstName,
                                 lastName = lastName,
                                 username = username,
-                                location = Location(
+                                location = com.wellconnect.wellmonitoring.data.model.Location(
                                     latitude = latitude.toDoubleOrNull() ?: 0.0,
                                     longitude = longitude.toDoubleOrNull() ?: 0.0
                                 )
                             )
 
                             if (updatedUserData != null) {
-                                userDataStore.saveUserData(updatedUserData)
+                                userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateProfile(updatedUserData))
                                 snackbarHostState.showSnackbar("Profile updated successfully")
-                                navController.navigate("settings") {
-                                    popUpTo(navController.graph.findStartDestination().id)
-                                    launchSingleTop = true
-                                }
+                                navController.popBackStack()
                             } else {
                                 snackbarHostState.showSnackbar("Error: User data is not available")
                             }

@@ -1,130 +1,112 @@
 package com.wellconnect.wellmonitoring.viewmodels
 
-import android.content.Context
+import WellData
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wellconnect.wellmonitoring.data.WellConfigEvents
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.WellDataStore
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import com.wellconnect.wellmonitoring.data.WellEvents
+import com.wellconnect.wellmonitoring.data.`interface`.WellRepository
 import kotlinx.coroutines.launch
 
-class WellViewModel(private val wellDataStore: WellDataStore) : ViewModel() {
-    // State
-    private val _wellData = mutableStateOf(WellData())
-    val wellData: State<WellData> = _wellData
+class WellViewModel(val repository: WellRepository) : ViewModel() {
+    // Current well state
+    private val _currentWellState = mutableStateOf<UiState<WellData>>(UiState.Empty)
+    val currentWellState: State<UiState<WellData>> = _currentWellState
 
-    private val _lastSavedData = mutableStateOf(WellData())
-    val lastSavedData: State<WellData> = _lastSavedData
+    // List of wells state
+    private val _wellsListState = mutableStateOf<UiState<List<WellData>>>(UiState.Loading)
+    val wellsListState: State<UiState<List<WellData>>> = _wellsListState
 
-    private val _wellLoaded = mutableStateOf(false)
-    val wellLoaded: State<Boolean> = _wellLoaded
-
-    private val _errorMessage = mutableStateOf<String?>(null)
-    val errorMessage: State<String?> = _errorMessage
-
-    // Well List from Data Store
-    val wellList: StateFlow<List<WellData>> = wellDataStore.wellListFlow.stateIn(
-        viewModelScope,
-        SharingStarted.Eagerly,
-        emptyList()
-    )
-
-    // Event Handling
-    fun handleConfigEvent(event: WellConfigEvents) {
-        _wellData.value = when (event) {
-            is WellConfigEvents.WellNameEntered -> _wellData.value.copy(wellName = event.wellName)
-            is WellConfigEvents.OwnerEntered -> _wellData.value.copy(wellOwner = event.wellOwner)
-            is WellConfigEvents.WellLocationEntered -> _wellData.value.copy(wellLocation = event.wellLocation)
-            is WellConfigEvents.WellCapacityEntered -> _wellData.value.copy(wellCapacity = event.wellCapacity)
-            is WellConfigEvents.WaterLevelEntered -> _wellData.value.copy(wellWaterLevel = event.wellWaterLevel)
-            is WellConfigEvents.ConsumptionEntered -> _wellData.value.copy(wellWaterConsumption = event.wellWaterConsumption)
-            is WellConfigEvents.WaterTypeEntered -> _wellData.value.copy(wellWaterType = event.wellWaterType)
-            is WellConfigEvents.EspIdEntered -> _wellData.value.copy(espId = event.espId)
-            is WellConfigEvents.SaveWell -> {
-                val dataToSave = _wellData.value.copy(id = event.wellId)
-                saveWell(dataToSave)
-                dataToSave
-            }
-            else -> _wellData.value
-        }
+    init {
+        loadWells()
     }
-
-    // Well Operations
-    fun loadWellData(wellId: Int) {
+    private fun loadWells() {
         viewModelScope.launch {
-            val data = wellDataStore.getWell(wellId) ?: WellData(id = wellId)
-            _wellData.value = data
-            _lastSavedData.value = data
-            _wellLoaded.value = true
+            _wellsListState.value = UiState.Loading
+            try {
+                repository.wellListFlow.collect { wells ->
+                    _wellsListState.value = if (wells.isEmpty()) {
+                        UiState.Empty
+                    } else {
+                        UiState.Success(wells)
+                    }
+                }
+            } catch (e: Exception) {
+                _wellsListState.value = UiState.Error(e.message ?: "Failed to load wells")
+            }
+        }
+    }
+    private fun saveCurrentWell() {
+        viewModelScope.launch {
+            val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return@launch
+            _currentWellState.value = UiState.Loading
+            try {
+                repository.saveWell(currentWell)
+                _currentWellState.value = UiState.Success(currentWell)
+                loadWells() // Refresh the list
+            } catch (e: Exception) {
+                _currentWellState.value = UiState.Error(e.message ?: "Failed to save well")
+            }
+        }
+    }
+    private fun updateCurrentWell(transform: WellData.() -> WellData) {
+        val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return
+        _currentWellState.value = UiState.Success(currentWell.transform())
+    }
+
+    fun handleEvent(event: WellEvents) {
+        when (event) {
+            is WellEvents.SaveWell -> saveCurrentWell()
+            is WellEvents.WellNameEntered -> updateCurrentWell { copy(wellName = event.wellName) }
+            is WellEvents.OwnerEntered -> updateCurrentWell { copy(wellOwner = event.wellOwner) }
+            is WellEvents.WellLocationEntered -> updateCurrentWell { copy(wellLocation = event.wellLocation) }
+            is WellEvents.WaterTypeEntered -> updateCurrentWell { copy(wellWaterType = event.wellWaterType) }
+            is WellEvents.WellCapacityEntered -> updateCurrentWell { copy(wellCapacity = event.wellCapacity) }
+            is WellEvents.WaterLevelEntered -> updateCurrentWell { copy(wellWaterLevel = event.wellWaterLevel) }
+            is WellEvents.ConsumptionEntered -> updateCurrentWell { copy(wellWaterConsumption = event.wellWaterConsumption) }
+            is WellEvents.EspIdEntered -> updateCurrentWell { copy(espId = event.espId) }
         }
     }
 
-    private fun saveWell(well: WellData) {
+    fun loadWell(wellId: Int) {
+        viewModelScope.launch {
+            _currentWellState.value = UiState.Loading
+            try {
+                val well = repository.getWell(wellId) ?: WellData(id = wellId)
+                _currentWellState.value = UiState.Success(well)
+            } catch (e: Exception) {
+                _currentWellState.value = UiState.Error(e.message ?: "Failed to load well")
+            }
+        }
+    }
+
+    fun deleteWell(wellId: Int) {
         viewModelScope.launch {
             try {
-                wellDataStore.saveWell(well)
-                _lastSavedData.value = well
-                _errorMessage.value = null
+                // First find the index of the well to delete
+                val wells = (_wellsListState.value as? UiState.Success)?.data ?: return@launch
+                val index = wells.indexOfFirst { it.id == wellId }
+                if (index != -1) {
+                    repository.deleteWellAt(index)
+                    loadWells() // Refresh the list
+                }
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to save well: ${e.localizedMessage}"
+                _wellsListState.value = UiState.Error(e.message ?: "Failed to delete well")
             }
         }
     }
 
-    fun removeWellByIndex(index: Int) {
+    fun swapWells(from: Int, to: Int) {
         viewModelScope.launch {
-            val currentList = wellList.value.toMutableList()
-            if (index in currentList.indices) {
-                val wellToDelete = currentList[index]
-                val updatedList = currentList.filterNot { it.id == wellToDelete.id }
-                wellDataStore.saveWellList(updatedList)
+            try {
+                repository.swapWells(from, to)
+                loadWells() // Refresh the list
+            } catch (e: Exception) {
+                _wellsListState.value = UiState.Error(e.message ?: "Failed to swap wells")
             }
         }
     }
 
-    fun exchangeWells(fromIndex: Int, toIndex: Int) {
-        viewModelScope.launch {
-            val currentList = wellList.value.toMutableList()
-            if (fromIndex in currentList.indices && toIndex in currentList.indices) {
-                val temp = currentList[fromIndex]
-                currentList[fromIndex] = currentList[toIndex]
-                currentList[toIndex] = temp
-                wellDataStore.saveWellList(currentList)
-            }
-        }
-    }
-
-    fun isUniqueEspId(espId: String, currentWellId: Int): Boolean {
-        return wellList.value.none { it.id != currentWellId && it.espId == espId }
-    }
-
-
-    fun resetWellDataState() {
-        _wellData.value = WellData()
-        _lastSavedData.value = WellData()
-        _wellLoaded.value = false
-    }
-
-    fun resetErrorMessage() {
-        _errorMessage.value = null
-    }
-
-    suspend fun refreshAllWells(context: Context): Pair<Int, Int> {
-        """ refresh all the wells in the list """
-        return com.wellconnect.wellmonitoring.utils.refreshAllWells(context, wellDataStore)
-    }
-    suspend fun refreshSingleWell(wellId: Int, context: Context): Boolean {
-        """ refresh a single well in the list """
-        return com.wellconnect.wellmonitoring.utils.refreshSingleWell(
-            wellId,
-            wellDataStore,
-            context
-        )
-    }
 
 }
