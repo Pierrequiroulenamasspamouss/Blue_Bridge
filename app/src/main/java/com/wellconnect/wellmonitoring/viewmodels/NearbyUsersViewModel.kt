@@ -1,122 +1,130 @@
 package com.wellconnect.wellmonitoring.viewmodels
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wellconnect.wellmonitoring.data.NearbyUser
-import com.wellconnect.wellmonitoring.data.UpdateLocationRequest
-import com.wellconnect.wellmonitoring.data.UpdateWaterNeedsRequest
-import com.wellconnect.wellmonitoring.data.UserDataStoreImpl
-import com.wellconnect.wellmonitoring.data.WaterNeed
-import com.wellconnect.wellmonitoring.network.RetrofitBuilder
+import com.wellconnect.wellmonitoring.data.NearbyUserEvent
+import com.wellconnect.wellmonitoring.data.`interface`.NearbyUsersRepository
+import com.wellconnect.wellmonitoring.data.model.NearbyUser
+import com.wellconnect.wellmonitoring.data.model.NearbyUsersState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.InternalSerializationApi
 
-sealed class NearbyUsersState {
-    object Loading : NearbyUsersState()
-    data class Success(val users: List<NearbyUser>) : NearbyUsersState()
-    data class Error(val message: String) : NearbyUsersState()
-    object NoUsers : NearbyUsersState()
-    object LocationPermissionDenied : NearbyUsersState()
-}
 
-class NearbyUsersViewModel(context: Context) : ViewModel() {
-    private val userDataStore = UserDataStoreImpl(context)
+class NearbyUsersViewModel(
+    private val repository: NearbyUsersRepository
+) : ViewModel() {
+
+    // Store the last known list of users for persistence during refreshes
+    val lastKnownUsers = mutableListOf<NearbyUser>()
+
+    fun handleEvent(event: NearbyUserEvent) {
+        when (event) {
+            is NearbyUserEvent.SearchUser -> searchUser(event.latitude, event.longitude, event.radius)
+            is NearbyUserEvent.UpdateRadius -> updateRadius(event.radius)
+            is NearbyUserEvent.ApplyFilters -> applyFilters(event.filters)
+            is NearbyUserEvent.ResetFilters -> resetFilters()
+            is NearbyUserEvent.Refresh -> refreshNearbyUsers(event.latitude, event.longitude, event.radius)
+        }
+    }
+
     private val _uiState = MutableStateFlow<NearbyUsersState>(NearbyUsersState.Loading)
     val uiState: StateFlow<NearbyUsersState> = _uiState
-    private val api = RetrofitBuilder.getServerApi(context)
 
-    @OptIn(InternalSerializationApi::class)
-    fun refreshNearbyUsers(latitude: Double, longitude: Double, radius: Double = 50.0) {
+    fun searchUser(latitude: Double, longitude: Double, radius: Double) {
+        viewModelScope.launch {
+
+            _uiState.value = NearbyUsersState.Loading
+            val result = runCatching { repository.getNearbyUsers(latitude, longitude, radius) }
+            val users = result.getOrNull()?.getOrNull() ?: emptyList()
+            val exception = result.getOrNull()?.exceptionOrNull() ?: result.exceptionOrNull()
+            _uiState.value = when {
+                users.isNotEmpty() -> {
+                    // Save successful results
+                    lastKnownUsers.clear()
+                    lastKnownUsers.addAll(users)
+                    NearbyUsersState.Success(users)
+                }
+                exception != null -> NearbyUsersState.Error(exception.message ?: "Unknown error")
+                else -> NearbyUsersState.NoUsers
+            }
+        }
+    }
+
+    fun updateRadius(radius: Double) {
         viewModelScope.launch {
             _uiState.value = NearbyUsersState.Loading
-            try {
-                val userData = userDataStore.getUserData().first()
-                if (userData == null) {
-                    _uiState.value = NearbyUsersState.Error("User not logged in")
-                    return@launch
-                }
-
-                val response = api.getNearbyUsers(
-                    latitude = latitude,
-                    longitude = longitude,
-                    radius = radius,
-                    email = userData.email
-                )
-
-                if (response.isSuccessful && response.body() != null) {
-                    val nearbyUsers = response.body()!!.users
-                    if (nearbyUsers.isEmpty()) {
-                        _uiState.value = NearbyUsersState.NoUsers
-                    } else {
-                        _uiState.value = NearbyUsersState.Success(nearbyUsers)
-                    }
+            val result = runCatching { repository.updateRadius(radius) }
+            // After update, fetch the latest users
+            val users = repository.getNearbyUsersFlow()
+            users.collect { list ->
+                if (list.isNotEmpty()) {
+                    // Save successful results
+                    lastKnownUsers.clear() 
+                    lastKnownUsers.addAll(list)
+                    _uiState.value = NearbyUsersState.Success(list)
                 } else {
-                    _uiState.value = NearbyUsersState.Error(
-                        response.errorBody()?.string() ?: "Unknown error"
-                    )
+                    _uiState.value = NearbyUsersState.NoUsers
                 }
-            } catch (e: Exception) {
-                _uiState.value = NearbyUsersState.Error(e.message ?: "Unknown error")
             }
         }
     }
 
-    @OptIn(InternalSerializationApi::class)
-    fun updateLocation(latitude: Double, longitude: Double) {
+    fun applyFilters(filters: Map<String, String>) {
         viewModelScope.launch {
-            try {
-                val userData = userDataStore.getUserData().first()
-                if (userData == null) {
-                    _uiState.value = NearbyUsersState.Error("User not logged in")
-                    return@launch
+            _uiState.value = NearbyUsersState.Loading
+            repository.applyFilters(filters)
+            val users = repository.getNearbyUsersFlow()
+            users.collect { list ->
+                if (list.isNotEmpty()) {
+                    // Save successful results
+                    lastKnownUsers.clear()
+                    lastKnownUsers.addAll(list)
+                    _uiState.value = NearbyUsersState.Success(list)
+                } else {
+                    _uiState.value = NearbyUsersState.NoUsers
                 }
-
-                val request = UpdateLocationRequest(
-                    email = userData.email,
-                    latitude = latitude,
-                    longitude = longitude
-                )
-
-                val response = api.updateLocation(request)
-                if (!response.isSuccessful) {
-                    _uiState.value = NearbyUsersState.Error(
-                        response.errorBody()?.string() ?: "Failed to update location"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = NearbyUsersState.Error(e.message ?: "Unknown error")
             }
         }
     }
-
-    @OptIn(InternalSerializationApi::class)
-    fun updateWaterNeeds(waterNeeds: List<WaterNeed>) {
+    
+    fun resetFilters() {
         viewModelScope.launch {
-            try {
-                val userData = userDataStore.getUserData().first()
-                if (userData == null) {
-                    _uiState.value = NearbyUsersState.Error("User not logged in")
-                    return@launch
+            _uiState.value = NearbyUsersState.Loading
+            repository.resetFilters()
+            val users = repository.getNearbyUsersFlow()
+            users.collect { list ->
+                if (list.isNotEmpty()) {
+                    // Save successful results
+                    lastKnownUsers.clear()
+                    lastKnownUsers.addAll(list)
+                    _uiState.value = NearbyUsersState.Success(list)
+                } else {
+                    _uiState.value = NearbyUsersState.NoUsers
                 }
-
-                val request = UpdateWaterNeedsRequest(
-                    email = userData.email,
-                    waterNeeds = waterNeeds
-                )
-
-                val response = api.updateWaterNeeds(request)
-                if (!response.isSuccessful) {
-                    _uiState.value = NearbyUsersState.Error(
-                        response.errorBody()?.string() ?: "Failed to update water needs"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = NearbyUsersState.Error(e.message ?: "Unknown error")
             }
         }
     }
-} 
+
+    // Refresh nearby users using the repository
+    fun refreshNearbyUsers(latitude: Double, longitude: Double, radius: Double = 50.0) {
+        viewModelScope.launch {
+            //Set the state as loading nearby users
+            _uiState.value = NearbyUsersState.Loading
+
+            val result = runCatching { repository.getNearbyUsers(latitude, longitude, radius) }
+            val users = result.getOrNull()?.getOrNull() ?: emptyList()
+            val exception = result.getOrNull()?.exceptionOrNull() ?: result.exceptionOrNull()
+            _uiState.value = when {
+                users.isNotEmpty() -> {
+                    // Save successful results
+                    lastKnownUsers.clear()
+                    lastKnownUsers.addAll(users)
+                    NearbyUsersState.Success(users)
+                }
+                exception != null -> NearbyUsersState.Error(exception.message ?: "Unknown error")
+                else -> NearbyUsersState.NoUsers
+            }
+        }
+    }
+}

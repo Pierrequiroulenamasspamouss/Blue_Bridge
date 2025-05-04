@@ -65,19 +65,6 @@ fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawab
 }
 
 
-
-@Composable
-fun TextComponent(text: String,
-                  fontSize : TextUnit = 24.sp,
-                  textColor: Color = MaterialTheme.colorScheme.onBackground,
-                  textFont : FontWeight = FontWeight.Light,
-){
-    Text(text = text,
-        fontSize = fontSize,
-        color = textColor,
-        fontWeight = textFont)
-}
-
 @Composable
 fun NumbersFieldComponent(
     onTextChanged: (String) -> Unit,
@@ -154,7 +141,7 @@ fun TextFieldComponent(
     }
 }
 
-
+// TODO : remove if of no use
 @Composable
 fun RectangleButton(
     textValue: String = "Rectangle Button",

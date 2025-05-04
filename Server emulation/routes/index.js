@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Import sub-routers
 const wellsRouter = require('./wells');
-const authRouter = require('./auth');
+const { router: authRouter } = require('./auth');
 const certificatesRouter = require('./certificates');
 const usersRouter = require('./users');
 

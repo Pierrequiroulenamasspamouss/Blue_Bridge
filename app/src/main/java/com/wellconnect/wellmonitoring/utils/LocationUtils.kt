@@ -1,14 +1,15 @@
-package com.wellconnect.wellmonitoring.ui.screens.compass
+package com.wellconnect.wellmonitoring.utils
 
+import WellData
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
-import com.wellconnect.wellmonitoring.data.hasValidCoordinates
+import com.wellconnect.wellmonitoring.viewmodels.UiState
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import getLatitude
+import getLongitude
+import hasValidCoordinates
 
 /**
  * Helper functions for location and distance calculations
@@ -50,7 +51,8 @@ fun formatDistance(meters: Float): String {
  */
 @RequiresApi(Build.VERSION_CODES.O)
 fun findNearestWells(location: Location, wellViewModel: WellViewModel): List<WellData> {
-    return wellViewModel.wellList.value
+    val wells = (wellViewModel.wellsListState.value as? UiState.Success<List<WellData>>)?.data ?: emptyList()
+    return wells
         .filter { it.hasValidCoordinates() }
         .map { well -> well to calculateDistance(location, well) }
         .sortedBy { it.second }

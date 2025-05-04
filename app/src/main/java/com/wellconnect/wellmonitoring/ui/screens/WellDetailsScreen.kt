@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import WellData
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
@@ -34,22 +35,18 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
-import com.wellconnect.wellmonitoring.data.hasValidCoordinates
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
+import getLatitude
+import getLongitude
+import hasValidCoordinates
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -65,16 +62,13 @@ fun WellDetailsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    
-    var well by remember { mutableStateOf<WellData?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    
+    val wellState = wellViewModel.currentWellState.value
+    val well = (wellState as? com.wellconnect.wellmonitoring.viewmodels.UiState.Success<WellData>)?.data
+    val isLoading = wellState is com.wellconnect.wellmonitoring.viewmodels.UiState.Loading
+
     // Load well data
     LaunchedEffect(wellId) {
-        wellViewModel.loadWellData(wellId)
-        val loadedWell = wellViewModel.wellData.value
-        well = loadedWell
-        isLoading = false
+        wellViewModel.loadWell(wellId)
     }
     
     Scaffold(
@@ -83,7 +77,7 @@ fun WellDetailsScreen(
                 title = { Text(well?.wellName ?: "Well Details") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
@@ -132,7 +126,7 @@ fun WellDetailsScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = well!!.wellName,
+                            text = well.wellName,
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -148,7 +142,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = well!!.wellOwner.ifBlank { "Not specified" },
+                                text = well.wellOwner.ifBlank { "Not specified" },
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -164,7 +158,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = well!!.wellStatus,
+                                text = well.wellStatus,
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -195,7 +189,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = well!!.wellWaterType.ifBlank { "Not specified" },
+                                text = well.wellWaterType.ifBlank { "Not specified" },
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -211,7 +205,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (well!!.wellWaterLevel.isBlank()) "Not specified" else "${well!!.wellWaterLevel}L",
+                                text = if (well.wellWaterLevel.isBlank()) "Not specified" else "${well.wellWaterLevel}L",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -227,7 +221,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (well!!.wellCapacity.isBlank()) "Not specified" else "${well!!.wellCapacity}L",
+                                text = if (well.wellCapacity.isBlank()) "Not specified" else "${well.wellCapacity}L",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -243,7 +237,7 @@ fun WellDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (well!!.wellWaterConsumption.isBlank()) "Not specified" else "${well!!.wellWaterConsumption}L/day",
+                                text = if (well.wellWaterConsumption.isBlank()) "Not specified" else "${well.wellWaterConsumption}L/day",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -268,8 +262,8 @@ fun WellDetailsScreen(
 
 
                         Text(
-                            text = if (well!!.hasValidCoordinates())
-                                "${well!!.wellLocation.latitude}, ${well!!.wellLocation.longitude}"
+                            text = if (well.hasValidCoordinates())
+                                "${well.wellLocation.latitude}, ${well.wellLocation.longitude}"
                             else
                                 "Location not specified",
                             style = MaterialTheme.typography.bodyLarge
@@ -285,11 +279,11 @@ fun WellDetailsScreen(
                             // Compass Button
                             Button(
                                 onClick = {
-                                    if (well!!.hasValidCoordinates()) {
-                                        val lat = well!!.getLatitude()
-                                        val lon = well!!.getLongitude()
+                                    if (well.hasValidCoordinates()) {
+                                        val lat = well.getLatitude()
+                                        val lon = well.getLongitude()
                                         if (lat != null && lon != null) {
-                                            val encodedName = URLEncoder.encode(well!!.wellName, StandardCharsets.UTF_8.toString())
+                                            val encodedName = URLEncoder.encode(well.wellName, StandardCharsets.UTF_8.toString())
                                             navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
                                         } else {
                                             scope.launch {
@@ -302,7 +296,7 @@ fun WellDetailsScreen(
                                         }
                                     }
                                 },
-                                enabled = well!!.hasValidCoordinates(),
+                                enabled = well.hasValidCoordinates(),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Default.LocationOn, contentDescription = "Navigate")
@@ -313,9 +307,9 @@ fun WellDetailsScreen(
                             // Map Button
                             Button(
                                 onClick = {
-                                    if (well!!.hasValidCoordinates()) {
-                                        val lat = well!!.getLatitude()
-                                        val lon = well!!.getLongitude()
+                                    if (well.hasValidCoordinates()) {
+                                        val lat = well.getLatitude()
+                                        val lon = well.getLongitude()
                                         if (lat != null && lon != null) {
                                             navController.navigate("${Routes.MAP_SCREEN}?targetLat=$lat&targetLon=$lon")
                                         } else {
@@ -329,7 +323,7 @@ fun WellDetailsScreen(
                                         }
                                     }
                                 },
-                                enabled = well!!.hasValidCoordinates(),
+                                enabled = well.hasValidCoordinates(),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Default.Map, contentDescription = "Show on Map")

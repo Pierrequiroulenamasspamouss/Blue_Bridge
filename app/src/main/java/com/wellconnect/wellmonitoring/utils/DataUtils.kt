@@ -1,8 +1,10 @@
 package com.wellconnect.wellmonitoring.utils
 
+//TODO : DO NOT USE THIS PACKAGE IT IS OBSOLETE
+
+import WellData
 import androidx.compose.runtime.MutableState
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.WellDataStore
+import com.wellconnect.wellmonitoring.data.repository.WellRepositoryImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -10,7 +12,7 @@ import kotlinx.coroutines.launch
 fun persistWellData(
     wellId: Int,
     data: WellData,
-    wellDataStore: WellDataStore,
+    wellDataStore: WellRepositoryImpl,
     scope: CoroutineScope,
     errorMessage: MutableState<String?>,
     lastSavedData: MutableState<WellData>,
@@ -63,7 +65,7 @@ fun restorePreviousWellData(
     wellData.value = lastSavedData.value
 }
 
-fun removeWellByIndex(index: Int, wellDataStore: WellDataStore, scope: CoroutineScope) {
+fun removeWellByIndex(index: Int, wellDataStore: WellRepositoryImpl, scope: CoroutineScope) {
     scope.launch {
         val currentList = wellDataStore.wellListFlow.first().toMutableList()
         if (index in currentList.indices) {
@@ -74,13 +76,8 @@ fun removeWellByIndex(index: Int, wellDataStore: WellDataStore, scope: Coroutine
     }
 }
 
-fun clearAllWellData(wellDataStore: WellDataStore, scope: CoroutineScope) {
-    scope.launch {
-        wellDataStore.clearAllWells()
-    }
-}
 
-fun loadWellData(wellId: Int, wellDataStore: WellDataStore, scope: CoroutineScope, wellData: MutableState<WellData>, lastSavedData: MutableState<WellData>, wellLoaded: MutableState<Boolean>) {
+fun loadWellData(wellId: Int, wellDataStore: WellRepositoryImpl, scope: CoroutineScope, wellData: MutableState<WellData>, lastSavedData: MutableState<WellData>, wellLoaded: MutableState<Boolean>) {
     scope.launch {
         val data = wellDataStore.getWell(wellId) ?: WellData(id = wellId)
         wellData.value = data

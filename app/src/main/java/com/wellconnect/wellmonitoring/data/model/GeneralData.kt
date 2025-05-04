@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.data
+package com.wellconnect.wellmonitoring.data.model
 
 import kotlinx.serialization.Serializable
 
@@ -8,8 +8,6 @@ data class Location(
     val longitude: Double,
     val lastUpdated: String = "never"
 )
-
-
 
 @Serializable
 data class MovementSpeeds(

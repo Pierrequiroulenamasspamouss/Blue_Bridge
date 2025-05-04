@@ -1,14 +1,14 @@
 package com.wellconnect.wellmonitoring.utils
 
+import ShortenedWellData
+import WellData
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.data.ShortenedWellData
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.WellDataStore
+import com.wellconnect.wellmonitoring.data.repository.WellRepositoryImpl
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -137,9 +137,10 @@ suspend fun fetchWellDetailsFromServer(
 suspend fun retrieveDataFromServer(
     id: Int = 0,
     snackbarHostState: SnackbarHostState,
-    wellDataStore: WellDataStore,
+    wellRepositoryImpl: WellRepositoryImpl,
     context: Context
 ): Boolean {
+
     return withContext(Dispatchers.IO) {
         try {
             if (!checkInternetConnection(context)) {
@@ -151,7 +152,7 @@ suspend fun retrieveDataFromServer(
             }
 
             // 1. Get current well data by ID
-            val currentList = wellDataStore.wellListFlow.first()
+            val currentList = wellRepositoryImpl.wellListFlow.first()
             val matchingWell = currentList.find { it.id == id } ?: run {
                 withContext(Dispatchers.Main) {
                     snackbarHostState.showSnackbar("Well with ID $id not found")
@@ -173,7 +174,7 @@ suspend fun retrieveDataFromServer(
 
             // 4. Save back to datastore
             Log.d("DataSave", "Saving updated data: $updatedWell")
-            wellDataStore.saveWell(updatedWell)
+            wellRepositoryImpl.saveWell(updatedWell)
 
             Log.d("DataSave", "Successfully saved data for well ID ${matchingWell.id}")
             true
@@ -189,7 +190,7 @@ suspend fun retrieveDataFromServer(
 /**
  * Refresh all wells in the data store
  */
-suspend fun refreshAllWells(context: Context, wellDataStore: WellDataStore): Pair<Int, Int> {
+suspend fun refreshAllWells(context: Context, wellDataStore: WellRepositoryImpl): Pair<Int, Int> {
     val wells = wellDataStore.wellListFlow.first()
     var successCount = 0
 
@@ -207,14 +208,14 @@ suspend fun refreshAllWells(context: Context, wellDataStore: WellDataStore): Pai
  */
 suspend fun refreshSingleWell(
     wellId: Int,
-    wellDataStore: WellDataStore,
+    wellRepositoryImpl: WellRepositoryImpl,
     context: Context,
 ): Boolean {
     return try {
         Log.d("RefreshDebug", "Starting refresh for well ID: $wellId")
 
         // Get current well data
-        val currentWell = wellDataStore.getWell(wellId) ?: run {
+        val currentWell = wellRepositoryImpl.getWell(wellId) ?: run {
             Log.e("RefreshDebug", "Well not found")
             return false
         }
@@ -231,7 +232,7 @@ suspend fun refreshSingleWell(
             retrieveDataFromServer(
                 id = wellId,
                 snackbarHostState = SnackbarHostState(),
-                wellDataStore = wellDataStore,
+                wellRepositoryImpl = wellRepositoryImpl,
                 context = context
             )
         } ?: false

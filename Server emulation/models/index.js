@@ -1,12 +1,19 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-// Initialize Sequelize with SQLite
+// Create database directory if it doesn't exist
+const dbDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// Initialize Sequelize with SQLite - use local path
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: '/opt/wellconnect/database.sqlite',
-    logging: false
+    storage: path.join(dbDir, 'database.sqlite'),
+    logging: console.log
 });
 
 const db = {};

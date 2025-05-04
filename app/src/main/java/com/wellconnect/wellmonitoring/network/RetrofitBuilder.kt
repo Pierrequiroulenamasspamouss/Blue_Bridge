@@ -1,19 +1,22 @@
 package com.wellconnect.wellmonitoring.network
 
+import ShortenedWellData
+import WellData
 import android.content.Context
 import android.util.Log
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.wellconnect.wellmonitoring.R
-import com.wellconnect.wellmonitoring.data.BasicResponse
-import com.wellconnect.wellmonitoring.data.LoginRequest
-import com.wellconnect.wellmonitoring.data.LoginResponse
-import com.wellconnect.wellmonitoring.data.NearbyUsersResponse
-import com.wellconnect.wellmonitoring.data.RegisterRequest
-import com.wellconnect.wellmonitoring.data.RegisterResponse
-import com.wellconnect.wellmonitoring.data.ShortenedWellData
-import com.wellconnect.wellmonitoring.data.UpdateLocationRequest
-import com.wellconnect.wellmonitoring.data.UpdateWaterNeedsRequest
-import com.wellconnect.wellmonitoring.data.WellData
+import com.wellconnect.wellmonitoring.data.model.BasicResponse
+import com.wellconnect.wellmonitoring.data.model.DeleteAccountRequest
+import com.wellconnect.wellmonitoring.data.model.DeleteAccountResponse
+import com.wellconnect.wellmonitoring.data.model.LoginRequest
+import com.wellconnect.wellmonitoring.data.model.LoginResponse
+import com.wellconnect.wellmonitoring.data.model.NearbyUsersResponse
+import com.wellconnect.wellmonitoring.data.model.RegisterRequest
+import com.wellconnect.wellmonitoring.data.model.RegisterResponse
+import com.wellconnect.wellmonitoring.data.model.UpdateLocationRequest
+import com.wellconnect.wellmonitoring.data.model.UpdateProfileRequest
+import com.wellconnect.wellmonitoring.data.model.UpdateWaterNeedsRequest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.ConnectionSpec
@@ -37,12 +40,12 @@ import javax.net.ssl.X509TrustManager
  * Singleton object to create and provide a Retrofit instance
  */
 object RetrofitBuilder {
-    private var espApiService: EspApiService? = null
-    private var serverApiService: EspApiService? = null
-    private var devServerApiService: EspApiService? = null
+    private var espApiService: ServerApi? = null
+    private var serverApiService: ServerApi? = null
+    private var devServerApiService: ServerApi? = null
 
     @OptIn(ExperimentalSerializationApi::class)
-    fun create(baseUrl: String): EspApiService {
+    fun create(baseUrl: String): ServerApi {
         if (espApiService == null) {
             val contentType = "application/json".toMediaType()
             
@@ -69,7 +72,7 @@ object RetrofitBuilder {
                 .addConverterFactory(json.asConverterFactory(contentType))
                 .build()
             
-            espApiService = retrofit.create(EspApiService::class.java)
+            espApiService = retrofit.create(ServerApi::class.java)
         }
         return espApiService!!
     }
@@ -79,7 +82,7 @@ object RetrofitBuilder {
      * This helps avoid issues with stale connections.
      */
     @OptIn(ExperimentalSerializationApi::class)
-    fun createFresh(baseUrl: String): EspApiService {
+    fun createFresh(baseUrl: String): ServerApi {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
@@ -105,7 +108,7 @@ object RetrofitBuilder {
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
 
-        return retrofit.create(EspApiService::class.java)
+        return retrofit.create(ServerApi::class.java)
     }
 
     private fun getDevSSLConfiguration(context: Context): Pair<SSLContext, X509TrustManager> {
@@ -160,7 +163,7 @@ object RetrofitBuilder {
      * Get an instance of the server_crt API service with production/development fallback
      */
     @OptIn(ExperimentalSerializationApi::class)
-    fun getServerApi(context: Context): EspApiService {
+    fun getServerApi(context: Context): ServerApi {
         if (serverApiService == null || devServerApiService == null) {
             val contentType = "application/json".toMediaType()
             val prodServerUrl = context.getString(R.string.ProductionServerUrl)
@@ -183,7 +186,7 @@ object RetrofitBuilder {
                 .client(prodClient)
                 .addConverterFactory(json.asConverterFactory(contentType))
                 .build()
-            serverApiService = prodRetrofit.create(EspApiService::class.java)
+            serverApiService = prodRetrofit.create(ServerApi::class.java)
 
             // Create development service
             val devClient = createDevelopmentClient(context, loggingInterceptor)
@@ -192,7 +195,7 @@ object RetrofitBuilder {
                 .client(devClient)
                 .addConverterFactory(json.asConverterFactory(contentType))
                 .build()
-            devServerApiService = devRetrofit.create(EspApiService::class.java)
+            devServerApiService = devRetrofit.create(ServerApi::class.java)
         }
 
         return FallbackEspApiService(serverApiService!!, devServerApiService!!)
@@ -203,9 +206,23 @@ object RetrofitBuilder {
  * Wrapper service that implements automatic fallback from production to development
  */
 class FallbackEspApiService(
-    private val prodService: EspApiService,
-    private val devService: EspApiService
-) : EspApiService {
+    private val prodService: ServerApi,
+    private val devService: ServerApi
+) : ServerApi {
+
+
+    override suspend fun updateProfile(request: UpdateProfileRequest): Response<BasicResponse> =
+        try {
+            prodService.updateProfile(request)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
+                    devService.updateProfile(request)
+                }
+                else -> throw e
+            }
+        }
     override suspend fun getWellDataById(espId: String): WellData =
         try {
             prodService.getWellDataById(espId)
@@ -305,6 +322,18 @@ class FallbackEspApiService(
                 is IOException, is HttpException -> {
                     Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
                     devService.getWellStats()
+                }
+                else -> throw e
+            }
+        }
+    override suspend fun deleteAccount(request: DeleteAccountRequest): Response<DeleteAccountResponse> =
+        try {
+            prodService.deleteAccount(request)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
+                    devService.deleteAccount(request)
                 }
                 else -> throw e
             }

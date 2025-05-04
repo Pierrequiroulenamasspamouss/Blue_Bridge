@@ -1,12 +1,11 @@
 FOR ME WHEN I WILL RESTART THE PROJECT:
 --> i started implementing https but the issue is that the certificates seem to not work.
+--> UPDATE: tha app accepts both http and https. But http is in fallback
+-->the app crashes because of a feature not imlemented yet on the pixel 7
 --> LOGCAT :
 NearbyUsersScreen       com.wellconnect.wellmonitoring       E  Error fetching nearby users: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
 --> this is to fix but for now, I have to STUDY and SLEEP
--->also it seems those : 
-    import com.google.android.gms.location.LocationServices
-    import com.google.android.gms.location.Priority
-are not recognized by Android Studio HOWEVER the project builds so I don't care. I'll fix it later.
+-->
 to change the address it goes to fetch the data, change the GeneralIp in app/src/main/res/values/strings.xml 
 
 # WellConnect - Community Water Well Monitoring

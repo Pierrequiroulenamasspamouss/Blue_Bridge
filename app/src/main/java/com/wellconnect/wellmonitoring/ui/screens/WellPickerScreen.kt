@@ -1,5 +1,8 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import ShortenedWellData
+import UserData
+import WellData
 import android.annotation.SuppressLint
 import android.os.Build
 import android.view.ViewGroup
@@ -63,16 +66,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import com.wellconnect.wellmonitoring.data.Location
-import com.wellconnect.wellmonitoring.data.ShortenedWellData
-import com.wellconnect.wellmonitoring.data.UserData
-import com.wellconnect.wellmonitoring.data.WellData
-import com.wellconnect.wellmonitoring.data.WellDataStore
-import com.wellconnect.wellmonitoring.data.getLatitude
-import com.wellconnect.wellmonitoring.data.getLongitude
+import com.wellconnect.wellmonitoring.data.`interface`.WellRepository
+import com.wellconnect.wellmonitoring.data.model.Location
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.utils.fetchAllWellsFromServer
 import com.wellconnect.wellmonitoring.utils.fetchWellDetailsFromServer
+import getLatitude
+import getLongitude
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
@@ -81,14 +81,15 @@ import java.nio.charset.StandardCharsets
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 @OptIn(InternalSerializationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WellPickerScreen(
     userData: UserData?,
-    wellDataStore: WellDataStore,
-    navController: NavController
+    navController: NavController,
+    wellRepository: WellRepository
 ) {
 
     val context = LocalContext.current
@@ -311,7 +312,7 @@ fun WellPickerScreen(
                     onAdd = {
                         coroutineScope.launch {
                             // Check if we already have a well with this EspId
-                            val currentWells = wellDataStore.wellListFlow.first()
+                            val currentWells = wellRepository.wellListFlow.first()
                             val duplicateExists = currentWells.any { it.espId == well.espId }
                             
                             if (duplicateExists) {
@@ -323,7 +324,7 @@ fun WellPickerScreen(
                                 // Create a new well with the new ID but keep all other properties
                                 val newWell = well.copy(id = newId)
                                 
-                                wellDataStore.saveWell(newWell)
+                                wellRepository.saveWell(newWell)
                                 snackbarHostState.showSnackbar("Well added to your list")
                                 selectedWell = null
                             }
@@ -359,7 +360,7 @@ fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): D
     val a = sin(dLat / 2) * sin(dLat / 2) +
             cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
             sin(dLon / 2) * sin(dLon / 2)
-    val c = 2 * acos(Math.sqrt(a))
+    val c = 2 * acos(sqrt(a))
     return earthRadius * c
 }
 
@@ -498,9 +499,7 @@ fun EnhancedWellCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(well.wellName, style = MaterialTheme.typography.titleMedium)
-                well.wellStatus.let { status ->
-                    StatusIndicator(status)
-                }
+                StatusIndicator(well.wellStatus)
             }
             
             Text(text = "Latitude: ${well.wellLocation.latitude}\n Longitude: ${well.wellLocation.longitude}" , style = MaterialTheme.typography.bodySmall)
@@ -633,7 +632,7 @@ private fun calculateWaterLevelInfo(waterLevelStr: String, capacityStr: String):
         val progress = (waterLevel / capacity).coerceIn(0f, 1f)
         val percentage = (waterLevel / capacity * 100).toInt()
         Pair(progress, percentage)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }
@@ -645,7 +644,7 @@ private fun calculateWaterLevelProgress(waterLevelStr: String, capacityStr: Stri
         if (capacity <= 0) return null
         
         (waterLevel / capacity).coerceIn(0f, 1f)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }

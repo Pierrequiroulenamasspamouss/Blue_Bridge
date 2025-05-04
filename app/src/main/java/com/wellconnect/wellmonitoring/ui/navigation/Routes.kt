@@ -4,6 +4,7 @@ package com.wellconnect.wellmonitoring.ui.navigation
  * Navigation routes for the application
  */
 object Routes {
+    const val EDIT_WATER_NEEDS_SCREEN = "water_needs_edit_screen"
     const val PROFILE_SCREEN = "profile_screen"
     const val HOME_SCREEN = "home_screen"
     const val WELL_PICKER_SCREEN = "well_picker_screen"
@@ -17,5 +18,5 @@ object Routes {
     const val NEARBY_USERS_SCREEN = "nearby_users_screen"
     const val MAP_SCREEN = "map_screen"
     const val CREDITS_SCREEN = "credits_screen"
-
+    const val ADMOB_SCREEN = "admob_screen"
 }

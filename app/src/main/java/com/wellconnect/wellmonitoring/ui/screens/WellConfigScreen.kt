@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import WellData
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -55,9 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.wellconnect.wellmonitoring.data.WellConfigEvents
-import com.wellconnect.wellmonitoring.data.WellData
+import com.wellconnect.wellmonitoring.data.WellEvents
+import com.wellconnect.wellmonitoring.data.model.Location
 import com.wellconnect.wellmonitoring.ui.components.WellField
+import com.wellconnect.wellmonitoring.viewmodels.UiState
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
 
@@ -74,32 +76,33 @@ fun WellConfigScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
-    var locationInput by remember { mutableStateOf("") } // New state for location input
+    var locationInput by remember { mutableStateOf("") }
 
-    val wellData by wellViewModel.wellData
-    val lastSavedData by wellViewModel.lastSavedData
-    val wellLoaded by wellViewModel.wellLoaded
-    val errorMessage by wellViewModel.errorMessage
-    
+    val currentWellState = wellViewModel.currentWellState.value
+    val wellData = (currentWellState as? UiState.Success)?.data ?: WellData(id = wellId)
+    var lastSavedData by remember { mutableStateOf(wellData) }
+    val isLoading = currentWellState is UiState.Loading
+    val errorMessage = (currentWellState as? UiState.Error)?.message
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     var navigateBack by remember { mutableStateOf(false) }
-    
+
     // Load well data when screen is first shown
     LaunchedEffect(wellId) {
-        wellViewModel.loadWellData(wellId)
+        wellViewModel.loadWell(wellId)
     }
-    
+
     // Show error messages in snackbar
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
-            snackbarHostState.showSnackbar(
-                message = it,
-                duration = SnackbarDuration.Short
-            )
-            wellViewModel.resetErrorMessage()
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = it,
+                    duration = SnackbarDuration.Short
+                )
+            }
         }
     }
-    
+
     // Handle navigation with unsaved changes check
     fun onBackPressed() {
         if (wellData != lastSavedData) {
@@ -108,15 +111,14 @@ fun WellConfigScreen(
             navigateBack = true
         }
     }
-    
+
     // Handle actual navigation
     LaunchedEffect(navigateBack) {
         if (navigateBack) {
-            wellViewModel.resetWellDataState()
             navController.popBackStack()
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -134,7 +136,7 @@ fun WellConfigScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        if (!wellLoaded) {
+        if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -152,7 +154,7 @@ fun WellConfigScreen(
             ) {
                 // Basic Info Section
                 SectionHeader(title = "Basic Information", icon = Icons.Default.Person)
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -165,22 +167,21 @@ fun WellConfigScreen(
                             label = "Well Name",
                             value = wellData.wellName,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.WellNameEntered(it)) }
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.WellNameEntered(it)) }
                         )
-                        
+
                         WellField(
                             label = "Well owner",
                             value = wellData.wellOwner,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.OwnerEntered(it)) }
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
                         )
                     }
                 }
-                
+
                 // Location Section
-                // TODO : Fix this part that was copypasted from the signup screen
                 SectionHeader(title = "Location", icon = Icons.Default.LocationOn)
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -195,13 +196,11 @@ fun WellConfigScreen(
                     Button(
                         onClick = {
                             scope.launch {
-                                // Check if we have location permission
                                 val hasLocationPermission = context.checkSelfPermission(
                                     Manifest.permission.ACCESS_FINE_LOCATION
                                 ) == PackageManager.PERMISSION_GRANTED
 
                                 if (hasLocationPermission) {
-                                    // Request current location
                                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                                     fusedLocationClient.getCurrentLocation(
                                         Priority.PRIORITY_HIGH_ACCURACY,
@@ -209,6 +208,15 @@ fun WellConfigScreen(
                                     ).addOnSuccessListener { location ->
                                         if (location != null) {
                                             locationInput = "Location:\nlat: ${location.latitude}\nlon: ${location.longitude}"
+                                            // Optionally update the well location here
+                                            wellViewModel.handleEvent(
+                                                WellEvents.WellLocationEntered(
+                                                    Location(
+                                                        latitude = location.latitude,
+                                                        longitude = location.longitude
+                                                    )
+                                                )
+                                            )
                                         } else {
                                             scope.launch {
                                                 snackbarHostState.showSnackbar("Unable to get current location")
@@ -223,7 +231,6 @@ fun WellConfigScreen(
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Location permission needed")
                                     }
-                                    // Request permission
                                     (context as? Activity)?.requestPermissions(
                                         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                                         1002
@@ -236,10 +243,10 @@ fun WellConfigScreen(
                         Text("Use My Current Location")
                     }
                 }
-                
+
                 // Water Specifications Section
                 SectionHeader(title = "Water Specifications", icon = Icons.Default.Water)
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -252,38 +259,38 @@ fun WellConfigScreen(
                             label = "Water type",
                             value = wellData.wellWaterType,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.WaterTypeEntered(it)) }
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.WaterTypeEntered(it)) }
                         )
-                        
+
                         WellField(
                             label = "Well Capacity (L)",
                             value = wellData.wellCapacity,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.WellCapacityEntered(it)) },
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.WellCapacityEntered(it)) },
                             isNumeric = true
                         )
-                        
+
                         WellField(
                             label = "Water Level (L)",
                             value = wellData.wellWaterLevel,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.WaterLevelEntered(it)) },
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.WaterLevelEntered(it)) },
                             isNumeric = true
                         )
-                        
+
                         WellField(
                             label = "Daily Consumption (L)",
                             value = wellData.wellWaterConsumption,
                             keyId = wellData.id,
-                            onValueChange = { wellViewModel.handleConfigEvent(WellConfigEvents.ConsumptionEntered(it)) },
+                            onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
                             isNumeric = true
                         )
                     }
                 }
-                
+
                 // Technical Details Section
                 SectionHeader(title = "Technical Details", icon = Icons.Default.SettingsRemote)
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -295,39 +302,40 @@ fun WellConfigScreen(
                             label = "ESP ID",
                             value = wellData.espId,
                             keyId = wellData.id,
-                            onValueChange = { 
+                            onValueChange = { newEspId ->
                                 scope.launch {
-                                    if (wellViewModel.isUniqueEspId(it, wellId)) {
-                                        wellViewModel.handleConfigEvent(WellConfigEvents.EspIdEntered(it))
+                                    val isUnique = wellViewModel.repository.isEspIdUnique(newEspId, wellData.id)
+                                    if (isUnique) {
+                                        wellViewModel.handleEvent(WellEvents.EspIdEntered(newEspId))
                                     } else {
                                         snackbarHostState.showSnackbar("ESP ID already in use")
                                     }
                                 }
                             }
                         )
-                        
+
                         Text(
-                            text = "Unique identifier for the ESP32 microcontroller", 
+                            text = "Unique identifier for the ESP32 microcontroller",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(start = 8.dp, top = 4.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Save Button
                 Button(
                     onClick = {
                         scope.launch {
-                            // Check for unique ESP ID
-                            if (!wellViewModel.isUniqueEspId(wellData.espId, wellId)) {
+                            val isUnique = wellViewModel.repository.isEspIdUnique(wellData.espId, wellData.id)
+                            if (!isUnique) {
                                 snackbarHostState.showSnackbar("ESP ID already in use by another well")
                                 return@launch
                             }
-                            
-                            wellViewModel.handleConfigEvent(WellConfigEvents.SaveWell(wellId))
+                            wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
+                            lastSavedData = wellData
                             navigateBack = true
                         }
                     },
@@ -343,10 +351,10 @@ fun WellConfigScreen(
                     )
                     Text("Save Well")
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
+
             // Unsaved Changes Dialog
             if (showUnsavedChangesDialog) {
                 AlertDialog(
@@ -410,9 +418,10 @@ private fun WellData.isValid(): Boolean {
     if (espId.isBlank()) return false
     
     // At least one other field must be filled
+    val hasValidLocation = wellLocation.latitude != 0.0 || wellLocation.longitude != 0.0
     return wellName.isNotBlank() || 
            wellOwner.isNotBlank() ||
-//           wellLocation.isNotBlank() ||       TODO : remove properly this, and update the check
+           hasValidLocation ||
            wellCapacity.isNotBlank() ||
            wellWaterLevel.isNotBlank() ||
            wellWaterConsumption.isNotBlank() ||

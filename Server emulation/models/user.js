@@ -2,6 +2,15 @@
 
     module.exports = (sequelize) => {
         const User = sequelize.define('User', {
+            userId: {
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4, // Automatically generate a UUID
+                primaryKey: true
+            },
+            phoneNumber: {
+                type: DataTypes.STRING(20),
+                allowNull: true
+            },
             email: {
                 type: DataTypes.STRING(120),
                 allowNull: false,
@@ -15,6 +24,11 @@
                 type: DataTypes.STRING(64),
                 allowNull: false
             },
+            loginToken: {
+                type: DataTypes.STRING(128),
+                allowNull: true
+            },
+
             lastName: {
                 type: DataTypes.STRING(64),
                 allowNull: false
@@ -30,7 +44,7 @@
             },
             themePreference: {
                 type: DataTypes.INTEGER,
-                allowNull: true
+                allowNull: false
             },
             latitude: {
                 type: DataTypes.FLOAT,
