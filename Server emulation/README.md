@@ -89,7 +89,7 @@ The server will be available at:
 You can use these credentials to test the API:
 
 - **Email**: pierresluse@gmail.com
-- **Password**: Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=
+- **Password**: Test
 
 ## Example Requests
 
