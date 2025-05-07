@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui.screens.compass
+package com.wellconnect.wellmonitoring.ui.components.compass
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -52,7 +53,7 @@ fun CompassView(
                 val innerRadius = radius * 0.5f
                 // Draw outer arc
                 addArc(
-                    oval = androidx.compose.ui.geometry.Rect(
+                    oval = Rect(
                         left = center.x - radius,
                         top = center.y - radius,
                         right = center.x + radius,
@@ -63,7 +64,7 @@ fun CompassView(
                 )
                 // Draw inner arc
                 addArc(
-                    oval = androidx.compose.ui.geometry.Rect(
+                    oval = Rect(
                         left = center.x - innerRadius,
                         top = center.y - innerRadius,
                         right = center.x + innerRadius,
@@ -108,7 +109,7 @@ fun CompassView(
                 )
                 // Draw inner arc
                 arcTo(
-                    rect = androidx.compose.ui.geometry.Rect(
+                    rect = Rect(
                         left = center.x - innerRadius,
                         top = center.y - innerRadius,
                         right = center.x + innerRadius,
@@ -126,7 +127,7 @@ fun CompassView(
                 )
                 // Draw outer arc counter-clockwise
                 arcTo(
-                    rect = androidx.compose.ui.geometry.Rect(
+                    rect = Rect(
                         left = center.x - radius,
                         top = center.y - radius,
                         right = center.x + radius,

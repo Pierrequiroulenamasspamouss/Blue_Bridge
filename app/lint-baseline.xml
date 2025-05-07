@@ -1,0 +1,1732 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.9.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.9.0)" variant="all" version="8.9.0">
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="        else -> String.format(&quot;%.1f hours&quot;, timeSeconds / 3600)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/DistanceInfo.kt"
+            line="125"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="VectorRaster"
+        message="Limit vector icons sizes to 200×200 to keep icon drawing fast; see https://developer.android.com/studio/write/vector-asset-studio#when for more"
+        errorLine1="    android:width=&quot;1080dp&quot;"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="src/main/res/drawable/world_map_placeholder.xml"
+            line="3"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.9.0 is available: 8.9.2"
+        errorLine1="agp = &quot;8.9.0&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="3"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.9.0 is available: 8.9.2"
+        errorLine1="agp = &quot;8.9.0&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="3"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.9.0 is available: 8.9.2"
+        errorLine1="agp = &quot;8.9.0&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="3"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.constraintlayout:constraintlayout than 2.1.4 is available: 2.2.1"
+        errorLine1="constraintLayout = &quot;2.1.4&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="5"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.constraintlayout:constraintlayout than 2.1.4 is available: 2.2.1"
+        errorLine1="constraintLayout = &quot;2.1.4&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="5"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.constraintlayout:constraintlayout than 2.1.4 is available: 2.2.1"
+        errorLine1="constraintLayout = &quot;2.1.4&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="5"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-core than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-core than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-core than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.0.0 is available: 1.1.5"
+        errorLine1="datastoreCoreVersion = &quot;1.0.0&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="7"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.1.4 is available: 1.1.5"
+        errorLine1="datastorePreferences = &quot;1.1.4&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="8"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.1.4 is available: 1.1.5"
+        errorLine1="datastorePreferences = &quot;1.1.4&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="8"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.1.4 is available: 1.1.5"
+        errorLine1="datastorePreferences = &quot;1.1.4&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="8"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.firebase:firebase-bom than 32.7.0 is available: 33.13.0"
+        errorLine1="firebaseBom = &quot;32.7.0&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="9"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.firebase:firebase-bom than 32.7.0 is available: 33.13.0"
+        errorLine1="firebaseBom = &quot;32.7.0&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="9"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.firebase:firebase-bom than 32.7.0 is available: 33.13.0"
+        errorLine1="firebaseBom = &quot;32.7.0&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="9"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-location than 21.2.0 is available: 21.3.0"
+        errorLine1="googlePlayServicesLocation = &quot;21.2.0&quot;"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="10"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-location than 21.2.0 is available: 21.3.0"
+        errorLine1="googlePlayServicesLocation = &quot;21.2.0&quot;"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="10"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-location than 21.2.0 is available: 21.3.0"
+        errorLine1="googlePlayServicesLocation = &quot;21.2.0&quot;"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="10"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.10.1 is available: 1.16.0"
+        errorLine1="coreKtx = &quot;1.10.1&quot;"
+        errorLine2="          ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="13"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.10.1 is available: 1.16.0"
+        errorLine1="coreKtx = &quot;1.10.1&quot;"
+        errorLine2="          ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="13"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.10.1 is available: 1.16.0"
+        errorLine1="coreKtx = &quot;1.10.1&quot;"
+        errorLine2="          ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="13"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.6.0 is available: 1.6.3"
+        errorLine1="kotlinxSerializationJson = &quot;1.6.0&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="18"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.6.0 is available: 1.6.3"
+        errorLine1="kotlinxSerializationJson = &quot;1.6.0&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="18"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.6.0 is available: 1.6.3"
+        errorLine1="kotlinxSerializationJson = &quot;1.6.0&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="18"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.8.0 is available: 1.10.1"
+        errorLine1="activityCompose = &quot;1.8.0&quot;"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="21"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.8.0 is available: 1.10.1"
+        errorLine1="activityCompose = &quot;1.8.0&quot;"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="21"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.8.0 is available: 1.10.1"
+        errorLine1="activityCompose = &quot;1.8.0&quot;"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="21"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.09.00 is available: 2025.04.01"
+        errorLine1="composeBom = &quot;2024.09.00&quot;"
+        errorLine2="             ~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="22"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.09.00 is available: 2025.04.01"
+        errorLine1="composeBom = &quot;2024.09.00&quot;"
+        errorLine2="             ~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="22"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.09.00 is available: 2025.04.01"
+        errorLine1="composeBom = &quot;2024.09.00&quot;"
+        errorLine2="             ~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="22"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.1 is available: 2.8.7"
+        errorLine1="lifecycleViewmodelCompose = &quot;2.6.1&quot;"
+        errorLine2="                            ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="23"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.1 is available: 2.8.7"
+        errorLine1="lifecycleViewmodelCompose = &quot;2.6.1&quot;"
+        errorLine2="                            ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="23"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.1 is available: 2.8.7"
+        errorLine1="lifecycleViewmodelCompose = &quot;2.6.1&quot;"
+        errorLine2="                            ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="23"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.7 is available: 2.8.9"
+        errorLine1="navigationComposeVersion = &quot;2.7.7&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="26"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.7 is available: 2.8.9"
+        errorLine1="navigationComposeVersion = &quot;2.7.7&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="26"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.7 is available: 2.8.9"
+        errorLine1="navigationComposeVersion = &quot;2.7.7&quot;"
+        errorLine2="                           ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="26"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.9.3 is available: 4.12.0"
+        errorLine1="okhttpVersion = &quot;4.9.3&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="29"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.9.3 is available: 4.12.0"
+        errorLine1="okhttpVersion = &quot;4.9.3&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="29"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.9.3 is available: 4.12.0"
+        errorLine1="okhttpVersion = &quot;4.9.3&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="29"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-android than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidAndroid = &quot;6.1.16&quot;"
+        errorLine2="                  ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="30"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-android than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidAndroid = &quot;6.1.16&quot;"
+        errorLine2="                  ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="30"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-android than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidAndroid = &quot;6.1.16&quot;"
+        errorLine2="                  ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="30"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-mapsforge than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidMapsforge = &quot;6.1.16&quot;"
+        errorLine2="                    ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="31"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-mapsforge than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidMapsforge = &quot;6.1.16&quot;"
+        errorLine2="                    ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="31"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.osmdroid:osmdroid-mapsforge than 6.1.16 is available: 6.1.17"
+        errorLine1="osmdroidMapsforge = &quot;6.1.16&quot;"
+        errorLine2="                    ~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="31"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter than 0.8.0 is available: 1.0.0"
+        errorLine1="retrofit2KotlinxSerializationConverterVersion = &quot;0.8.0&quot;"
+        errorLine2="                                                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="33"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter than 0.8.0 is available: 1.0.0"
+        errorLine1="retrofit2KotlinxSerializationConverterVersion = &quot;0.8.0&quot;"
+        errorLine2="                                                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="33"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter than 0.8.0 is available: 1.0.0"
+        errorLine1="retrofit2KotlinxSerializationConverterVersion = &quot;0.8.0&quot;"
+        errorLine2="                                                ~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="33"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastoreCoreVersion&quot; }"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="41"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastoreCoreVersion&quot; }"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="41"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastoreCoreVersion&quot; }"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="41"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences-v114 = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastorePreferences&quot; }"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="42"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences-v114 = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastorePreferences&quot; }"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="42"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.datastore:datastore-preferences but with different version"
+        errorLine1="androidx-datastore-preferences-v114 = { module = &quot;androidx.datastore:datastore-preferences&quot;, version.ref = &quot;datastorePreferences&quot; }"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="42"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose-v277 = { module = &quot;androidx.navigation:navigation-compose&quot;, version.ref = &quot;navigationComposeVersion&quot; }"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="45"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose-v277 = { module = &quot;androidx.navigation:navigation-compose&quot;, version.ref = &quot;navigationComposeVersion&quot; }"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="45"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose-v277 = { module = &quot;androidx.navigation:navigation-compose&quot;, version.ref = &quot;navigationComposeVersion&quot; }"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="45"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="jakewharton-retrofit2-kotlinx-serialization-converter = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverterVersion&quot; }"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="53"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="jakewharton-retrofit2-kotlinx-serialization-converter = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverterVersion&quot; }"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="53"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="jakewharton-retrofit2-kotlinx-serialization-converter = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverterVersion&quot; }"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="53"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose = { group = &quot;androidx.navigation&quot;, name = &quot;navigation-compose&quot;, version.ref = &quot;navigationCompose&quot; }"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="67"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose = { group = &quot;androidx.navigation&quot;, name = &quot;navigation-compose&quot;, version.ref = &quot;navigationCompose&quot; }"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="67"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.navigation:navigation-compose but with different version"
+        errorLine1="androidx-navigation-compose = { group = &quot;androidx.navigation&quot;, name = &quot;navigation-compose&quot;, version.ref = &quot;navigationCompose&quot; }"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="67"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJson&quot; }"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="69"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJson&quot; }"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="69"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJson&quot; }"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="69"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json-v163 = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJsonVersion&quot; }"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="70"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json-v163 = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJsonVersion&quot; }"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="70"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies org.jetbrains.kotlinx:kotlinx-serialization-json but with different version"
+        errorLine1="kotlinx-serialization-json-v163 = { module = &quot;org.jetbrains.kotlinx:kotlinx-serialization-json&quot;, version.ref = &quot;kotlinxSerializationJsonVersion&quot; }"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="70"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttp&quot; }"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="71"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttp&quot; }"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="71"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttp&quot; }"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="71"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp-v493 = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttpVersion&quot; }"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="73"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp-v493 = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttpVersion&quot; }"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="73"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.squareup.okhttp3:okhttp but with different version"
+        errorLine1="okhttp-v493 = { module = &quot;com.squareup.okhttp3:okhttp&quot;, version.ref = &quot;okhttpVersion&quot; }"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="73"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="retrofit2-kotlinx-serialization-converter-v100 = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverter&quot; }"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="79"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="retrofit2-kotlinx-serialization-converter-v100 = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverter&quot; }"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="79"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter but with different version"
+        errorLine1="retrofit2-kotlinx-serialization-converter-v100 = { module = &quot;com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter&quot;, version.ref = &quot;retrofit2KotlinxSerializationConverter&quot; }"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/AndroidStudioProjects/my_second_app/gradle/libs.versions.toml"
+            line="79"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="    modifier: Modifier = Modifier,"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="53"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@drawable/logo` is marked as private in androidx.benchmark:benchmark-common:1.3.4"
+        errorLine1="        android:src=&quot;@drawable/logo&quot;"
+        errorLine2="                     ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="12"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
+        errorLine1="        val certificateInputStream = context.resources.openRawResource(context.resources.getIdentifier(&quot;dev_cert&quot;, &quot;raw&quot;, context.packageName))"
+        errorLine2="                                                                                         ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/network/RetrofitBuilder.kt"
+            line="120"
+            column="90"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                        marker.icon = context.getDrawable("
+        errorLine2="                                      ^">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="190"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                        marker.icon = context.getDrawable("
+        errorLine2="                                      ^">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="190"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                targetMarker.icon = context.getDrawable("
+        errorLine2="                                                    ^">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="212"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                targetMarker.icon = context.getDrawable("
+        errorLine2="                                                    ^">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="212"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="215"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="215"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="228"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="228"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="260"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="260"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="302"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="302"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="318"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UseCompatLoadingForDrawables"
+        message="Use `AppCompatResources.getDrawable()`"
+        errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            line="318"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="PackagedPrivateKey"
+        message="The `raw/dev_key.pem` file seems to be a private key file. Please make sure not to embed this in your APK file.">
+        <location
+            file="src/main/res/raw/dev_key.pem"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/HomeScreen.kt"
+            line="85"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
+        errorLine1="    val azimuthState = remember { mutableStateOf(0f) }"
+        errorLine2="                                  ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            line="19"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
+        errorLine1="    val filteredAzimuth = remember { mutableStateOf(0f) }"
+        errorLine2="                                     ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            line="20"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
+        errorLine1="    var bufferIndex = remember { mutableStateOf(0) }"
+        errorLine2="                                 ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            line="25"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
+        errorLine1="    var editingNeedIndex by remember { mutableStateOf(-1) }"
+        errorLine2="                                       ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            line="79"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
+        errorLine1="    var newPriority by remember { mutableStateOf(3) }"
+        errorLine2="                                  ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            line="89"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
+        errorLine1="    var deletingNeedIndex by remember { mutableStateOf(-1) }"
+        errorLine2="                                        ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            line="94"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableDoubleStateOf` instead of `mutableStateOf`"
+        errorLine1="    val currentZoom = remember { mutableStateOf(userPreferredZoomLevel) }"
+        errorLine2="                                 ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="71"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
+        errorLine1="    val rotation = remember { mutableStateOf(0f) }"
+        errorLine2="                              ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="74"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `@android:color/black` with a theme that also paints a background (inferred theme is `@style/Theme.My_second_app`)"
+        errorLine1="    android:background=&quot;@android:color/black&quot;>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="7"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.activity_main` appears to be unused"
+        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.ca_srl` appears to be unused">
+        <location
+            file="src/main/res/raw/ca_srl.srl"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_200&quot;>#FFBB86FC&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_500` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_500&quot;>#FF6200EE&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_700&quot;>#FF3700B3&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="5"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_200&quot;>#FF03DAC5&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="6"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_700&quot;>#FF018786&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="7"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.black` appears to be unused"
+        errorLine1="    &lt;color name=&quot;black&quot;>#FF000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="8"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.white` appears to be unused"
+        errorLine1="    &lt;color name=&quot;white&quot;>#FFFFFFFF&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.pink` appears to be unused"
+        errorLine1="    &lt;color name=&quot;pink&quot;>#FFFF69B4&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="10"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.tan` appears to be unused"
+        errorLine1="    &lt;color name=&quot;tan&quot;>#FDF3E1&lt;/color>"
+        errorLine2="           ~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="11"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.light_gray` appears to be unused"
+        errorLine1="    &lt;color name=&quot;light_gray&quot;>#FFE0E0E0&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="12"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.app_background` appears to be unused"
+        errorLine1="    &lt;color name=&quot;app_background&quot;>#FF000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="13"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_primary_variant` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_primary_variant&quot;>#2E7D32&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="17"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_secondary` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_secondary&quot;>#66BB6A&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="18"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_secondary_variant` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_secondary_variant&quot;>#81C784&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="19"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_background` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_background&quot;>#E8F5E9&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="20"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_surface` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_surface&quot;>#FFFFFF&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="21"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_error` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_error&quot;>#B71C1C&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="22"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_on_primary` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_on_primary&quot;>#FFFFFF&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="23"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_on_secondary` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_on_secondary&quot;>#000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="24"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_on_background` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_on_background&quot;>#000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="25"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_on_surface` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_on_surface&quot;>#000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="26"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.green_on_error` appears to be unused"
+        errorLine1="    &lt;color name=&quot;green_on_error&quot;>#FFFFFF&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="27"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.dev_cert` appears to be unused">
+        <location
+            file="src/main/res/raw/dev_cert.der"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.dev_cert_pem` appears to be unused">
+        <location
+            file="src/main/res/raw/dev_cert_pem.pem"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.dev_key` appears to be unused">
+        <location
+            file="src/main/res/raw/dev_key.pem"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.dimen.splash_logo_size` appears to be unused"
+        errorLine1="    &lt;dimen name=&quot;splash_logo_size&quot;>120dp&lt;/dimen>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/dimens.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.generate_certs` appears to be unused">
+        <location
+            file="src/main/res/raw/generate_certs.sh"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.mipmap.ic_launcher` appears to be unused">
+        <location
+            file="src/main/res/mipmap-hdpi/ic_launcher.webp"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_launcher_background` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_launcher_background.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.mipmap.ic_launcher_round` appears to be unused">
+        <location
+            file="src/main/res/mipmap-hdpi/ic_launcher_round.webp"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_location_pin` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_location_pin.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.logo` appears to be unused">
+        <location
+            file="src/main/res/drawable/logo.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.map_arrow` appears to be unused">
+        <location
+            file="src/main/res/drawable/map_arrow.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.openssl` appears to be unused">
+        <location
+            file="src/main/res/raw/openssl.cnf"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.server` appears to be unused">
+        <location
+            file="src/main/res/raw/server.crt"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.server_csr` appears to be unused">
+        <location
+            file="src/main/res/raw/server_csr.csr"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.GeneralIp` appears to be unused"
+        errorLine1="    &lt;string name=&quot;GeneralIp&quot;>http://wellconnect.homeonthewater.com:3000/&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="10"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.GeneralIp_secure` appears to be unused"
+        errorLine1="    &lt;string name=&quot;GeneralIp_secure&quot;>https://wellconnect.homeonthewater.com/&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="12"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.DevelopmentServerUrl_secure` appears to be unused"
+        errorLine1="    &lt;string name=&quot;DevelopmentServerUrl_secure&quot;>https://192.168.0.204:3000/&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="13"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.ProductionServerUrl_secure` appears to be unused"
+        errorLine1="    &lt;string name=&quot;ProductionServerUrl_secure&quot;>https://wellconnect.homeonthewater.com/&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="14"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Theme_Green` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Theme.Green&quot; parent=&quot;android:Theme.Material.Light.NoActionBar&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="17"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.world_map_placeholder` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/world_map_placeholder.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="IconLauncherShape"
+        message="Launcher icon used as round icon did not have a circular shape">
+        <location
+            file="src/main/res/drawable/app_logo.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/app_logo.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/app_logo.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/logo.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/logo.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/map_arrow.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/map_arrow.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/splash_icon.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/splash_icon.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/well_on_map_icon.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/well_on_map_icon.png"/>
+    </issue>
+
+    <issue
+        id="IconDuplicates"
+        message="The following unrelated icon files have identical contents: app_logo.png, logo.png, splash_icon.png">
+        <location
+            file="src/main/res/drawable/splash_icon.png"/>
+        <location
+            file="src/main/res/drawable/logo.png"/>
+        <location
+            file="src/main/res/drawable/app_logo.png"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="`onTouch` lambda should call `View#performClick` when a click is detected"
+        errorLine1="                        setOnTouchListener { _, event ->"
+        errorLine2="                                           ^">
+        <location
+            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            line="237"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        message="Hardcoded string &quot;App Logo&quot;, should use `@string` resource"
+        errorLine1="        android:contentDescription=&quot;App Logo&quot; />"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="17"
+            column="9"/>
+    </issue>
+
+</issues>

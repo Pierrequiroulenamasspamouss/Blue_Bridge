@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.data.local
 
+import ShortenedWellData
 import WellData
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -17,7 +18,11 @@ import kotlinx.serialization.json.Json
 val Context.wellDataStore: DataStore<Preferences> by preferencesDataStore(name = "well_preferences")
 
 class WellPreferences(val context: Context) {
-
+    companion object {
+        val FAVORITE_WELLS_KEY = stringPreferencesKey("favorite_wells")
+        val WELLS_KEY = stringPreferencesKey("wells_list")
+    }
+    
     val wellListFlow: Flow<List<WellData>> = context.wellDataStore.data.map { prefs ->
         val raw = prefs[WELLS_KEY] ?: return@map emptyList()
         runCatching { Json.decodeFromString<List<WellData>>(raw) }.getOrElse { emptyList() }
@@ -41,10 +46,6 @@ class WellPreferences(val context: Context) {
         saveWellList(updated)
     }
 
-    suspend fun clearAllWells() {
-        context.wellDataStore.edit { prefs -> prefs.remove(WELLS_KEY) }
-    }
-
     suspend fun deleteWellAt(index: Int) {
         val current = getCurrentWellList()
         if (index in current.indices) {
@@ -52,6 +53,7 @@ class WellPreferences(val context: Context) {
             saveWellList(updated)
         }
     }
+    
     suspend fun swapWells(from: Int, to: Int) {
         val current = getCurrentWellList().toMutableList()
         if (from in current.indices && to in current.indices) {
@@ -59,11 +61,21 @@ class WellPreferences(val context: Context) {
             current[from] = current[to]
             current[to] = temp
             saveWellList(current)
-
         }
     }
-    suspend fun isEspIdUnique(id: String, currentId: Int): Boolean {
-        return getCurrentWellList().none { it.espId == id && it.id != currentId }
+
+    suspend fun getFavoriteWells(): List<ShortenedWellData> {
+        val prefs = context.wellDataStore.data.first()
+        val raw = prefs[FAVORITE_WELLS_KEY] ?: return emptyList()
+        return runCatching {
+            Json.decodeFromString(ListSerializer(ShortenedWellData.serializer()), raw)
+        }.getOrElse { emptyList() }
+    }
+
+    suspend fun saveFavoriteWells(wells: List<ShortenedWellData>) {
+        context.wellDataStore.edit { prefs ->
+            prefs[FAVORITE_WELLS_KEY] = Json.encodeToString(ListSerializer(ShortenedWellData.serializer()), wells)
+        }
     }
 
     private suspend fun getCurrentWellList(): List<WellData> {
@@ -75,7 +87,11 @@ class WellPreferences(val context: Context) {
         }.getOrElse { emptyList<WellData>() }
     }
 
-    companion object {
-        val WELLS_KEY = stringPreferencesKey("wells_list")
+    suspend fun isEspIdUnique(id: String, currentId: Int): Boolean {
+        return getCurrentWellList().none { it.espId == id && it.id != currentId }
+    }
+
+    suspend fun clearAllWells() {
+        context.wellDataStore.edit { prefs -> prefs.remove(WELLS_KEY) }
     }
 }

@@ -35,30 +35,37 @@ class NearbyUsersRepositoryImpl(
         
         return try {
             val userEmail = userRepo.getUserEmail()
+            val token = userRepo.getAuthToken() ?: userRepo.getLoginToken()
             
             if (userEmail == null) {
                 Log.e("NearbyUsersRepositoryImpl", "User not logged in")
                 return Result.failure(Exception("User not logged in"))
             }
+            
+            if (token == null) {
+                Log.e("NearbyUsersRepositoryImpl", "Authentication token is required")
+                return Result.failure(Exception("Authentication token is required"))
+            }
 
             Log.d("NearbyUsersRepositoryImpl", "Fetching nearby users at ($latitude, $longitude) with radius $radius km for user $userEmail")
             
-            val response = api.getNearbyUsers(latitude, longitude, radius, userEmail)
+            val response = api.getNearbyUsers(latitude, longitude, radius, userEmail, token)
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 Log.d("NearbyUsersRepositoryImpl", "Response received: ${responseBody != null}")
                 
-                responseBody?.users?.let { users ->
+                responseBody?.data?.let { users ->
                     Log.d("NearbyUsersRepositoryImpl", "Received ${users.size} nearby users")
                     
                     // Update the flow with new data
                     _nearbyUsers.value = users
                     return Result.success(users)
                 } ?: run {
-                    Log.e("NearbyUsersRepositoryImpl", "Empty response body")
-                    // Don't clear users on empty response body
-                    return Result.failure(Exception("Empty response body"))
+                    Log.e("NearbyUsersRepositoryImpl", "Empty response body or null data field")
+                    // Return empty list for empty response (not an error)
+                    _nearbyUsers.value = emptyList()
+                    return Result.success(emptyList())
                 }
             } else {
                 val errorMessage = response.errorBody()?.string() ?: "Unknown error"

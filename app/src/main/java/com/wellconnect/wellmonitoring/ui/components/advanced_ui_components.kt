@@ -153,6 +153,7 @@ fun MiniMap(
     currentLocation: Location? = null,
     selectedLocation: Location? = null,
     onLocationSelected: (Location) -> Unit,
+    optionalMarker: Location? = null,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -166,7 +167,7 @@ fun MiniMap(
     var selectedMarkerRef by remember { mutableStateOf<Marker?>(null) }
     
     // State for zoom level
-    var zoomLevel by remember { mutableFloatStateOf(15f) }
+    var zoomLevel by remember { mutableFloatStateOf(12f) }
     
     // Card with the mini map
     Card(
@@ -212,7 +213,7 @@ fun MiniMap(
                                 marker.position = userPoint
                                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                                 marker.title = "Your Location"
-                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                marker.icon = context.getDrawable(R.drawable.small_map_arrow) // TODO : orient it to the current phone orientation
                                 overlays.add(marker)
                                 controller.setCenter(userPoint)
                                 userMarkerRef = marker
@@ -225,7 +226,7 @@ fun MiniMap(
                                 marker.position = selectedPoint
                                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                                 marker.title = "Selected Location"
-                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                marker.icon = context.getDrawable(R.drawable.ic_location_pin)
                                 overlays.add(marker)
                                 selectedMarkerRef = marker
                                 
@@ -234,7 +235,19 @@ fun MiniMap(
                                     controller.setCenter(selectedPoint)
                                 }
                             }
-                            
+
+                            // Add optional marker if available
+                            optionalMarker?.let { loc ->
+                                val optionalPoint = GeoPoint(loc.latitude, loc.longitude)
+                                val marker = Marker(this)
+                                marker.position = optionalPoint
+                                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                marker.title = "Optional Location"
+                                marker.icon = context.getDrawable(R.drawable.blue_location_pin)
+                                overlays.add(marker)
+                            }
+
+
                             // Set onTap listener to select location
                             setOnTouchListener { _, event ->
                                 val action = event.action
@@ -257,7 +270,7 @@ fun MiniMap(
                                         marker.position = geoPoint
                                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                                         marker.title = "Selected Location"
-                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                        marker.icon = context.getDrawable(R.drawable.ic_location_pin)
                                         overlays.add(marker)
                                         selectedMarkerRef = marker
                                     }
@@ -299,7 +312,7 @@ fun MiniMap(
                                 marker.position = userPoint
                                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                                 marker.title = "Your Location"
-                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                marker.icon = context.getDrawable(R.drawable.small_map_arrow)
                                 mapView.overlays.add(marker)
                                 userMarkerRef = marker
                             }
@@ -315,7 +328,7 @@ fun MiniMap(
                                 marker.position = selectedPoint
                                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                                 marker.title = "Selected Location"
-                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)
+                                marker.icon = context.getDrawable(R.drawable.ic_location_pin)
                                 mapView.overlays.add(marker)
                                 selectedMarkerRef = marker
                             }
@@ -360,7 +373,7 @@ fun MiniMap(
                         
                         // Center map on current location
                         mapViewInstance?.let { mapView ->
-                            val userPoint = GeoPoint(it.latitude, it.longitude)
+                            val userPoint = GeoPoint(currentLocation.latitude, currentLocation.longitude)
                             mapView.controller.animateTo(userPoint)
                         }
                     }

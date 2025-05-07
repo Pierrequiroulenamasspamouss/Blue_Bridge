@@ -1,19 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">WellConnect</string>
+    <string name="app_name">Blue Bridge</string>
     <string name="app_dev">Pierre Sluse</string>
     <string name="app_designer">Joel Wandege</string>
     <string name="helper">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
     <string name="projects">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
-    <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string>
-    <string name="ProductionServerUrl">http://wellconnect.homeonthewater.com:3000/</string>
-    <string name="GeneralIp">http://192.168.0.204:3000/</string>
+    <!-- <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string> -->
+    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000</string>
+    <string name="ProductionServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
 
-    <string name="GeneralIp_secure">https://wellconnect.homeonthewater.com/</string>
-    <string name="DevelopmentServerUrl_secure">https://192.168.0.204:3443/</string>
-    <string name="ProductionServerUrl_secure">https://wellconnect.homeonthewater.com/</string>
+    <string name="GeneralIp_secure">https://bluebridge.homeonthewater.com/</string>
+    <string name="DevelopmentServerUrl_secure">https://192.168.0.204:3000/</string>
+    <string name="ProductionServerUrl_secure">https://bluebridge.homeonthewater.com/</string>
 
-
+    <!-- Firebase notifications -->
+    <string name="default_notification_channel_id">wellconnect_notifications</string>
+    <string name="notification_permission_title">Enable Notifications</string>
+    <string name="notification_permission_message">Get updates about water levels, nearby users, and important alerts.</string>
+    <string name="notification_permission_allow">Allow</string>
+    <string name="notification_permission_deny">Later</string>
+    <string name="login_as_guest">Continue as Guest</string>
 
 <!--    <string name=""></string>-->
 </resources>

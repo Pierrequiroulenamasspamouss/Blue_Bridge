@@ -1,21 +1,19 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
 import UserData
+import android.annotation.SuppressLint
+import android.os.Build
 import android.util.Log
-import androidx.compose.foundation.clickable
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -25,15 +23,15 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,18 +42,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wellconnect.wellmonitoring.ui.components.SettingsItem
+import com.wellconnect.wellmonitoring.ui.components.SettingsSection
+import com.wellconnect.wellmonitoring.ui.components.ThemeOption
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.utils.encryptPassword
 import com.wellconnect.wellmonitoring.viewmodels.UiState
 import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+@SuppressLint("NewApi")
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -70,7 +74,9 @@ fun SettingsScreen(
     var passwordForDeletion by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val userData = (userState as? UiState.Success<UserData>)?.data
-
+    var easterCount by remember { mutableStateOf(0) }
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    
     // Log userData state for debugging
     val isGuest = userData == null
     Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData.email}"}")
@@ -82,7 +88,7 @@ fun SettingsScreen(
     val themePreference = userData?.themePreference ?: 0
     val latitude = userData?.location?.latitude ?: 0.0
     val longitude = userData?.location?.longitude ?: 0.0
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -92,7 +98,8 @@ fun SettingsScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -124,7 +131,32 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Badge,
                     title = "Role",
-                    subtitle = role
+                    subtitle = role,
+                    onClick = {
+                        easterCount++
+                        if (easterCount >= 6) {
+                            if (easterCount >= 11) {
+                                navController.navigate(Routes.EASTER_EGG_SCREEN)
+                                if (userData?.role == "user" || userData?.role == "guest") {
+                                    userData.role = "admin"
+                                }
+                            }
+                            coroutineScope.launch {
+                                val message = when (easterCount) {
+                                    6 -> "Easter egg mode activated! Click 5 more times..."
+                                    7 -> "Keep going... 4 more clicks!"
+                                    8 -> "Almost there... 3 more clicks!"
+                                    9 -> "So close... 2 more clicks!"
+                                    10 -> "One more click!"
+                                    11 -> "Congratulations! You've unlocked the secret game!"
+                                    else -> "Easter egg activated: ${easterCount - 5}"
+                                }
+
+                                snackbarHostState.showSnackbar(message,duration = androidx.compose.material3.SnackbarDuration.Short )
+
+                            }
+                        }
+                    }
                 )
             }
             
@@ -137,6 +169,14 @@ fun SettingsScreen(
                         0 -> "System Default"
                         1 -> "Light"
                         2 -> "Dark"
+                        3 -> "Green"
+                        4 -> "Pink"
+                        5 -> "Red"
+                        6 -> "Purple"
+                        7 -> "Yellow"
+                        8 -> "Tan"
+                        9 -> "Orange"
+                        10 -> "Cyan"
                         else -> "System Default"
                     },
                     onClick = { showThemeDialog = true }
@@ -144,25 +184,36 @@ fun SettingsScreen(
             }
             
             // Location Section
-            SettingsSection(title = "Location") {
-                SettingsItem(
-                    icon = Icons.Default.LocationOn,
-                    title = "Current Location",
-                    subtitle = "Lat: $latitude, Lon: $longitude"
-                )
-            }
-            
-            // Water Needs Section
-            if (!isGuest && userData?.waterNeeds?.isNotEmpty() == true) {
+            if (!isGuest) {
+                SettingsSection(title = "Location") {
+                    SettingsItem(
+                        icon = Icons.Default.LocationOn,
+                        title = "Current Location",
+                        subtitle = "Lat: $latitude, Lon: $longitude",
+                        onClick = { navController.navigate(Routes.PROFILE_SCREEN) }
+                    )
+                }
+                
+                // Water Needs Section
                 SettingsSection(title = "Water Needs") {
-                    userData.waterNeeds.forEach { need ->
+                    if (userData.waterNeeds?.isNotEmpty() == true) {
+                        userData.waterNeeds.forEach { need ->
+                            SettingsItem(
+                                icon = Icons.Default.Opacity,
+                                title = need.usageType.capitalize(Locale.getDefault()),
+                                subtitle = "${need.amount}L - Priority: ${need.priority}"
+                            )
+                        }
+                    } else {
+                        // Show a message when there are no water needs
                         SettingsItem(
                             icon = Icons.Default.Opacity,
-                            title = need.usageType.capitalize(Locale.getDefault()),
-                            subtitle = "${need.amount}L - Priority: ${need.priority}"
+                            title = "No water needs configured",
+                            subtitle = "Tap below to add your water needs"
                         )
                     }
-                    // Edit Water Needs Button
+                    
+                    // Always show the Edit Water Needs button
                     TextButton(
                         onClick = { navController.navigate(Routes.EDIT_WATER_NEEDS_SCREEN) },
                         modifier = Modifier.padding(start = 16.dp)
@@ -225,54 +276,151 @@ fun SettingsScreen(
                 onDismissRequest = { showThemeDialog = false },
                 title = { Text("Select Theme") },
                 text = {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            RadioButton(
-                                selected = themePreference == 0,
-                                onClick = { 
-                                    coroutineScope.launch {
-                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(0))
-                                    }
-                                    showThemeDialog = false
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    ) {
+                        // System Default theme
+                        ThemeOption(
+                            title = "System Default",
+                            isSelected = themePreference == 0,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(0))
                                 }
-                            )
-                            Text("System Default")
-                        }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
                         
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            RadioButton(
-                                selected = themePreference == 1,
-                                onClick = { 
-                                    coroutineScope.launch {
-                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(1))
-                                    }
-                                    showThemeDialog = false
+                        // Light theme
+                        ThemeOption(
+                            title = "Light",
+                            isSelected = themePreference == 1,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(1))
                                 }
-                            )
-                            Text("Light")
-                        }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
                         
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            RadioButton(
-                                selected = themePreference == 2,
-                                onClick = { 
-                                    coroutineScope.launch {
-                                        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(2))
-                                    }
-                                    showThemeDialog = false
+                        // Dark theme
+                        ThemeOption(
+                            title = "Dark",
+                            isSelected = themePreference == 2,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(2))
                                 }
-                            )
-                            Text("Dark")
-                        }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Green theme
+                        ThemeOption(
+                            title = "Green",
+                            isSelected = themePreference == 3,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(3))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Pink theme
+                        ThemeOption(
+                            title = "Pink",
+                            isSelected = themePreference == 4,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(4))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Red theme
+                        ThemeOption(
+                            title = "Red",
+                            isSelected = themePreference == 5,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(5))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Purple theme
+                        ThemeOption(
+                            title = "Purple",
+                            isSelected = themePreference == 6,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(6))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Yellow theme
+                        ThemeOption(
+                            title = "Yellow",
+                            isSelected = themePreference == 7,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(7))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Tan theme
+                        ThemeOption(
+                            title = "Tan",
+                            isSelected = themePreference == 8,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(8))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Orange theme
+                        ThemeOption(
+                            title = "Orange",
+                            isSelected = themePreference == 9,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(9))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
+                        
+                        // Cyan theme
+                        ThemeOption(
+                            title = "Cyan",
+                            isSelected = themePreference == 10,
+                            onClick = {
+                                coroutineScope.launch {
+                                    userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.UpdateTheme(10))
+                                }
+                                // Simply close the dialog without navigation
+                                showThemeDialog = false
+                            }
+                        )
                     }
                 },
                 confirmButton = {
@@ -294,7 +442,7 @@ fun SettingsScreen(
                         onClick = {
                             coroutineScope.launch {
                                 userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.Logout)
-                                navController.navigate(com.wellconnect.wellmonitoring.ui.navigation.Routes.LOGIN_SCREEN) {
+                                navController.navigate(Routes.LOGIN_SCREEN) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
@@ -326,11 +474,23 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
+                        // Use a proper password field instead of regular OutlinedTextField
+                        var passwordVisible by remember { mutableStateOf(false) }
                         OutlinedTextField(
                             value = passwordForDeletion,
                             onValueChange = { passwordForDeletion = it },
                             label = { Text("Password") },
                             singleLine = true,
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                    )
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -379,12 +539,13 @@ fun SettingsScreen(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
-                                // TODO: Call delete account API
-                                userViewModel.deleteAccount(userData?.email ?: "", passwordForDeletion)
+                                userViewModel.deleteAccount(userData?.email ?: "",
+                                    encryptPassword(passwordForDeletion)
+                                )
                                 showDeleteAccountConfirmationDialog = false
                                 passwordForDeletion = ""
-                                // Navigate to login screen after account deletion
-                                navController.navigate(Routes.LOGIN_SCREEN) {
+                                // Navigate to home screen after account deletion
+                                navController.navigate(Routes.HOME_SCREEN) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
@@ -404,78 +565,6 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
-    }
-}
-
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        content()
-        Divider(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
-    }
-}
-
-@Composable
-private fun SettingsItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    onClick: (() -> Unit)? = null,
-    tint: Color = MaterialTheme.colorScheme.onSurface
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        color = MaterialTheme.colorScheme.surface
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = tint
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (onClick != null) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }

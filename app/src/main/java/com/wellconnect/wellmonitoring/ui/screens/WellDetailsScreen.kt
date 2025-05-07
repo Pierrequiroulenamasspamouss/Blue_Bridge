@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import UserData
 import WellData
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -35,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -43,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.viewmodels.UiState
+import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 import getLatitude
 import getLongitude
@@ -57,15 +61,19 @@ import java.nio.charset.StandardCharsets
 fun WellDetailsScreen(
     navController: NavController,
     wellViewModel: WellViewModel,
-    wellId: Int
+    wellId: Int,
+    userViewModel: UserViewModel
 ) {
+    val userState by userViewModel.state
+    val userData = if (userState is UiState.Success) {
+        (userState as UiState.Success<UserData>).data
+    } else null
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val wellState = wellViewModel.currentWellState.value
     val well = (wellState as? com.wellconnect.wellmonitoring.viewmodels.UiState.Success<WellData>)?.data
     val isLoading = wellState is com.wellconnect.wellmonitoring.viewmodels.UiState.Loading
-
     // Load well data
     LaunchedEffect(wellId) {
         wellViewModel.loadWell(wellId)
@@ -81,10 +89,13 @@ fun WellDetailsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$wellId")
-                    }) {
-                        Icon(Icons.Default.Edit, "Edit")
+                    if (userData?.role == "admin") {
+                        IconButton(onClick = {
+                            navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$wellId")
+                        }) {
+                            Icon(Icons.Default.Edit, "Edit")
+                        }
+
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

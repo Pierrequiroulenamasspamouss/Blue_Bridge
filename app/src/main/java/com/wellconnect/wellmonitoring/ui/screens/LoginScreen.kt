@@ -1,20 +1,26 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
 import android.os.Build
-import android.util.Patterns
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -29,10 +35,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wellconnect.wellmonitoring.R
+import com.wellconnect.wellmonitoring.data.UserEvent
 import com.wellconnect.wellmonitoring.data.model.LoginRequest
 import com.wellconnect.wellmonitoring.ui.components.PasswordField
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
@@ -111,45 +120,86 @@ fun LoginScreen(
                 passwordStrength = null // No strength display for login
             )
 
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        try {
-                            if (email.isBlank() || password.isBlank()) {
-                                errorMessage = "Please enter email and password"
-                                snackbarHostState.showSnackbar(errorMessage!!)
-                                return@launch
-                            }
-                            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                errorMessage = "Please enter a valid email address"
-                                snackbarHostState.showSnackbar(errorMessage!!)
-                                return@launch
-                            }
-                            val encryptedPassword = encryptPassword(password)
-                            val request = LoginRequest(
-                                email = email.trim(),
-                                password = encryptedPassword,
-
+                    if (email.isBlank() || password.isBlank()) {
+                        errorMessage = "Please fill all fields"
+                    } else {
+                        errorMessage = null
+                        var encryptedPassword = encryptPassword(password)
+                        userViewModel.handleEvent(
+                            UserEvent.Login(
+                                LoginRequest(
+                                    email = email,
+                                    password = encryptedPassword
+                                )
                             )
-                            userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.Login(request))
-                        } catch (e: Exception) {
-                            errorMessage = "Login failed: ${e.localizedMessage ?: e.message ?: "Unknown error"}"
-                            snackbarHostState.showSnackbar(errorMessage!!)
-                        }
+                        )
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp)
+                    .padding(top = 16.dp),
+                enabled = !isLoading
             ) {
-                Text("Login")
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Login")
+                }
             }
 
-            TextButton(
-                onClick = {
-                    navController.navigate(Routes.REGISTER_SCREEN)
-                }) {
-                Text("Don't have an account? Sign up")
+            Row(
+                modifier = Modifier.padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Don't have an account?")
+                TextButton(
+                    onClick = { navController.navigate(Routes.REGISTER_SCREEN) }
+                ) {
+                    Text("Sign Up")
+                }
+            }
+            
+            Divider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+            
+            OutlinedButton(
+                onClick = { 
+                    coroutineScope.launch {
+                        userViewModel.loginAsGuest()
+                        navController.navigate(Routes.HOME_SCREEN) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text(stringResource(R.string.login_as_guest))
             }
         }
 

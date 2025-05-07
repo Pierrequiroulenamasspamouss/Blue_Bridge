@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../models');
 const { User } = db;
 const { v4: uuidv4 } = require('uuid');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 // Middleware to validate token
 const validateToken = async (req, res, next) => {
@@ -86,6 +87,14 @@ router.post('/register', async (req, res) => {
             lastActive: new Date(),
             loginToken
         });
+        
+        // Send welcome email
+        try {
+            await sendWelcomeEmail(email, `${firstName} ${lastName}`);
+        } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+            // Don't fail the registration if email fails
+        }
         
         // Prepare userData object for response
         const userData = {

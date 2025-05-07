@@ -8,6 +8,15 @@ import androidx.lifecycle.viewModelScope
 import com.wellconnect.wellmonitoring.data.WellEvents
 import com.wellconnect.wellmonitoring.data.`interface`.WellRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+// Action state for tracking mutations like delete/update
+sealed class ActionState {
+    object Idle : ActionState()
+    object Loading : ActionState()
+    data class Success(val message: String) : ActionState()
+    data class Error(val error: String) : ActionState()
+}
 
 class WellViewModel(val repository: WellRepository) : ViewModel() {
     // Current well state
@@ -18,10 +27,14 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
     private val _wellsListState = mutableStateOf<UiState<List<WellData>>>(UiState.Loading)
     val wellsListState: State<UiState<List<WellData>>> = _wellsListState
 
+    // Action state
+    private val _actionState = mutableStateOf<ActionState>(ActionState.Idle)
+    val actionState: State<ActionState> = _actionState
+
     init {
         loadWells()
     }
-    private fun loadWells() {
+    fun loadWells() {
         viewModelScope.launch {
             _wellsListState.value = UiState.Loading
             try {
@@ -42,8 +55,17 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
             val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return@launch
             _currentWellState.value = UiState.Loading
             try {
-                repository.saveWell(currentWell)
-                _currentWellState.value = UiState.Success(currentWell)
+                // Ensure the well has a valid owner even if user is not a well owner
+                if (currentWell.wellOwner.isBlank()) {
+                    // Set a default owner if none specified - this prevents server-side validation errors
+                    val defaultOwner = "WellConnect User"
+                    val updatedWell = currentWell.copy(wellOwner = defaultOwner)
+                    repository.saveWell(updatedWell)
+                    _currentWellState.value = UiState.Success(updatedWell)
+                } else {
+                    repository.saveWell(currentWell)
+                    _currentWellState.value = UiState.Success(currentWell)
+                }
                 loadWells() // Refresh the list
             } catch (e: Exception) {
                 _currentWellState.value = UiState.Error(e.message ?: "Failed to save well")
@@ -81,18 +103,20 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
         }
     }
 
-    fun deleteWell(wellId: Int) {
+    fun deleteWell(espId: String) {
         viewModelScope.launch {
+            _actionState.value = ActionState.Loading
             try {
-                // First find the index of the well to delete
-                val wells = (_wellsListState.value as? UiState.Success)?.data ?: return@launch
-                val index = wells.indexOfFirst { it.id == wellId }
-                if (index != -1) {
-                    repository.deleteWellAt(index)
-                    loadWells() // Refresh the list
+                val success = repository.deleteWell(espId)
+                if (success) {
+                    _actionState.value = ActionState.Success("Well deleted successfully")
+                    // Refresh the wells list
+                    loadWells()
+                } else {
+                    _actionState.value = ActionState.Error("Failed to delete well")
                 }
             } catch (e: Exception) {
-                _wellsListState.value = UiState.Error(e.message ?: "Failed to delete well")
+                _actionState.value = ActionState.Error("Error: ${e.message}")
             }
         }
     }
@@ -108,5 +132,13 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
         }
     }
 
-
+    suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean {
+        return try {
+            repository.saveWellToServer(wellData, email, token)
+        } catch (e: Exception) {
+            // Log error and return false to indicate failure
+            android.util.Log.e("WellViewModel", "Error saving well to server: ${e.message}", e)
+            false
+        }
+    }
 }

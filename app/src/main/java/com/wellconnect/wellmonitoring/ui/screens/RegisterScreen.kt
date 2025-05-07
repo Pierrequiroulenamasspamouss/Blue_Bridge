@@ -2,7 +2,6 @@ package com.wellconnect.wellmonitoring.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
@@ -21,11 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
@@ -49,13 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.wellconnect.wellmonitoring.data.UserEvent.Register
+import com.wellconnect.wellmonitoring.data.UserEvent
 import com.wellconnect.wellmonitoring.data.model.Location
+import com.wellconnect.wellmonitoring.data.model.LoginRequest
 import com.wellconnect.wellmonitoring.data.model.RegisterRequest
 import com.wellconnect.wellmonitoring.data.model.WaterNeed
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
 import com.wellconnect.wellmonitoring.ui.components.MiniMap
 import com.wellconnect.wellmonitoring.ui.components.PasswordField
+import com.wellconnect.wellmonitoring.ui.components.WaterUsageTypeSelector
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
 import com.wellconnect.wellmonitoring.utils.encryptPassword
 import com.wellconnect.wellmonitoring.utils.getPasswordStrength
@@ -71,7 +68,6 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun RegisterScreen(
     navController: NavController,
-    initialLoginMode: Boolean = false,
     userViewModel: UserViewModel
 ) {
     val currentTime = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
@@ -274,7 +270,7 @@ fun RegisterScreen(
                             Text("Amount: ${need.amount} liters", style = MaterialTheme.typography.bodyMedium)
                             Text("Type: ${need.usageType}", style = MaterialTheme.typography.bodySmall)
                             Text("Priority: P${need.priority}", style = MaterialTheme.typography.bodySmall)
-                            Text("Description: ${need.description ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                            Text("Description: ${need.description}", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -406,7 +402,7 @@ fun RegisterScreen(
                             )
 
                             val encrypted = encryptPassword(password)
-                            val request = RegisterRequest(
+                            var request = RegisterRequest(
                                 email = email.trim(),
                                 password = encrypted,
                                 firstName = firstName.trim(),
@@ -423,24 +419,36 @@ fun RegisterScreen(
                             // Send registration request
                             Log.d("RegisterScreen", "Sending registration request: $request")
 
-                            userViewModel.handleEvent(Register(request))
+                            // Call API and wait for response
+                            val registrationSuccess = api.register(request)
                             
-                            // After registration attempt, observe the state changes
-                            scope.launch {
-                                val currentState = userViewModel.state.value
-                                if (currentState is com.wellconnect.wellmonitoring.viewmodels.UiState.Error) {
-                                    snackbarHostState.showSnackbar("Registration failed: ${currentState.message}")
-                                } else if (currentState is com.wellconnect.wellmonitoring.viewmodels.UiState.Success) {
-                                    snackbarHostState.showSnackbar("Registration successful!")
-                                    // Navigate to home screen
-                                    navController.navigate(Routes.HOME_SCREEN) {
-                                        popUpTo(navController.graph.startDestinationId) {
-                                            inclusive = true
-                                        }
+                            if (registrationSuccess.isSuccessful && registrationSuccess.body()?.status == "success") {
+                                // If server reports success, show success message
+
+                                userViewModel.handleEvent(
+                                    UserEvent.Login(
+                                        LoginRequest(
+                                            email = email,
+                                            password = encrypted
+                                        )
+                                    )
+                                )
+                                snackbarHostState.showSnackbar("User was successfully registered")
+                                
+                                // Then trigger the register event in the view model to save user data locally
+                                //userViewModel.handleEvent(Register(request))
+                                
+                                // Navigate to home screen after registration
+                                navController.navigate(Routes.HOME_SCREEN) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        inclusive = true
                                     }
                                 }
+                            } else {
+                                // Handle error
+                                val errorMsg = registrationSuccess.errorBody()?.string() ?: "Registration failed"
+                                snackbarHostState.showSnackbar(errorMsg)
                             }
-
                         } catch (e: Exception) {
                             errorMessage = "Authentication failed: ${e.message}"
                             snackbarHostState.showSnackbar(errorMessage!!)
@@ -472,104 +480,3 @@ fun RegisterScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WaterUsageTypeSelector(
-    currentWaterNeedType: String,
-    currentPriority: Int,
-    onWaterNeedTypeChange: (String) -> Unit,
-    onPriorityChange: (Int) -> Unit,
-    customType: String,
-    onCustomTypeChange: (String) -> Unit
-) {
-    val usageTypes = listOf("Absolute emergency", "Medical", "Drinking", "Farming", "Industry", "Other")
-    var expanded by remember { mutableStateOf(false) }
-    var showPrioritySelector by remember { mutableStateOf(false) }
-
-    Column {
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-            OutlinedTextField(
-                value = currentWaterNeedType,
-                onValueChange = {},
-                label = { Text("Usage Type") },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                }
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                usageTypes.forEach { usageType ->
-                    DropdownMenuItem(
-                        text = { Text(text = usageType) },
-                        onClick = {
-                            onWaterNeedTypeChange(usageType)
-                            // Automatically set priority based on type
-                            val priority = when (usageType) {
-                                "Absolute emergency" -> 0
-                                "Medical" -> 1
-                                "Drinking" -> 2
-                                "Farming" -> 3
-                                "Industry" -> 4
-                                else -> 6 // Default for "Other"
-                            }
-                            onPriorityChange(priority)
-                            showPrioritySelector = usageType == "Other"
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        // If "Other" is selected, show custom type field and priority selector
-        if (currentWaterNeedType == "Other") {
-            OutlinedTextField(
-                value = customType,
-                onValueChange = { onCustomTypeChange(it) },
-                label = { Text("Custom Usage Type") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            if (showPrioritySelector) {
-                PrioritySelector(
-                    currentPriority = currentPriority,
-                    onPriorityChange = onPriorityChange
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun PrioritySelector(
-    currentPriority: Int,
-    onPriorityChange: (Int) -> Unit
-) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = "Priority for Other Type",
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            listOf(0, 1, 2, 3, 4, 5, 6).forEach { priority ->
-                FilterChip(
-                    selected = currentPriority == priority,
-                    onClick = { onPriorityChange(priority) },
-                    label = { Text("P$priority") },
-                    modifier = Modifier.padding(end = 4.dp)
-                )
-            }
-        }
-    }
-} 

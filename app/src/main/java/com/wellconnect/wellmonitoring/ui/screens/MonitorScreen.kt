@@ -1,11 +1,8 @@
 package com.wellconnect.wellmonitoring.ui.screens
 
+import UserData
 import WellData
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import android.icu.text.SimpleDateFormat
-import android.location.Location
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
@@ -16,506 +13,231 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.wellconnect.wellmonitoring.ui.components.TopBar
+import com.wellconnect.wellmonitoring.ui.components.WellCard
 import com.wellconnect.wellmonitoring.ui.navigation.Routes
+import com.wellconnect.wellmonitoring.viewmodels.ActionState
+import com.wellconnect.wellmonitoring.viewmodels.UiState
+import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
-import getLatitude
-import getLongitude
-import hasValidCoordinates
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.util.Date
-import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MonitorScreen(wellViewModel: WellViewModel, navController: NavController) {
+fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, navController: NavController) {
     val wellsState = wellViewModel.wellsListState.value
     val wells: List<WellData> = when (wellsState) {
-        is com.wellconnect.wellmonitoring.viewmodels.UiState.Success -> wellsState.data
+        is UiState.Success -> wellsState.data
         else -> emptyList()
     }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val isRefreshingAll = remember { mutableStateOf(false) }
     
-    // Get current location
-    var currentLocation by remember { mutableStateOf<Location?>(null) }
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    // Update current location
-    @SuppressLint("MissingPermission")
-    LaunchedEffect(Unit) {
-        if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                null
-            ).addOnSuccessListener { location ->
-                currentLocation = location
+    val actionState = wellViewModel.actionState.value
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Dialog state for well deletion confirmation
+    val (wellToDelete, setWellToDelete) = remember { mutableStateOf<WellData?>(null) }
+    
+    // Get current user data to check if well owner or admin
+    val userState = userViewModel.state.value
+    val isWellOwner = remember { mutableStateOf(false) }
+    val isAdmin = remember { mutableStateOf(false) }
+    val tempAdminMode = remember { mutableStateOf(false) }
+    
+    // Get user data from UserViewModel
+    LaunchedEffect(userState) {
+        if (userState is UiState.Success<*>) {
+            val userData = userState.data as? UserData
+            if (userData != null) {
+                isWellOwner.value = userData.isWellOwner
+                isAdmin.value = userData.role.equals("admin", ignoreCase = true)
+            }
+            
+            // Check shared preferences for temporary admin mode
+            context.getSharedPreferences("wellconnect", Context.MODE_PRIVATE).let { prefs ->
+                tempAdminMode.value = prefs.getBoolean("temp_admin_mode", false)
             }
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    // Navigate to map screen with all wells
-                    val queryParams = if (currentLocation != null) {
-                        "?userLat=${currentLocation!!.latitude}&userLon=${currentLocation!!.longitude}"
-                    } else {
-                        ""
-                    }
-                    navController.navigate("${Routes.MAP_SCREEN}$queryParams")
-                },
-                content = {
-                    Icon(
-                        imageVector = Icons.Default.Map,
-                        contentDescription = "Open Map View"
-                    )
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            TopBar(topBarMessage = "Monitor Wells")
-            
-            // Refresh All Button with Map Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            isRefreshingAll.value = true
-                            try {
-                                wellViewModel.repository.wellListFlow.collect { wells ->
-                                    wells.forEach { well ->
-                                        wellViewModel.loadWell(well.id)
-                                    }
-                                }
-                                snackbarHostState.showSnackbar("All wells refreshed!")
-                            } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Failed to refresh all wells: ${e.localizedMessage}")
-                            } finally {
-                                isRefreshingAll.value = false
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(3f),
-                    enabled = !isRefreshingAll.value
-                ) {
-                    if (isRefreshingAll.value) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Refreshing...")
-                    } else {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh All")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Refresh All Wells")
-                    }
-                }
-                
-                // Browse Button
-                Button(
-                    onClick = { navController.navigate(Routes.WELL_PICKER_SCREEN) },
-                    modifier = Modifier.weight(2f)
-                ) {
-                    Text("Browse Wells")
+    // Force refresh the wells list when screen is displayed
+    LaunchedEffect(Unit) {
+        wellViewModel.loadWells()
+    }
+    
+    // Show snackbar for action state updates
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(actionState.message)
                 }
             }
+            is ActionState.Error -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(actionState.error)
+                }
+            }
+            else -> { /* Do nothing */ }
+        }
+    }
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Monitor Wells",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            
+            Button(
+                onClick = { navController.navigate(Routes.WELL_PICKER_SCREEN) }
+            ) {
+                Text("Browse Wells")
+            }
+        }
+        
+        if (wells.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "No wells found",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Add a well to start monitoring",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    if (isWellOwner.value || isAdmin.value || tempAdminMode.value) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = {
+                                val newWellId = 1
+                                navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$newWellId")
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Well",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add New Well")
+                        }
+                    }
+                }
+            }
+        } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp)
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                itemsIndexed(wells) { index, well ->
+                items(wells) { well ->
                     WellCard(
                         well = well,
-                        index = index,
-                        totalWells = wells.size,
-                        onEditClick = { wellId ->
-                            navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$wellId")
+                        onItemClick = { wellId ->
+                            navController.navigate("${Routes.WELL_DETAILS_SCREEN}/$wellId")
                         },
-                        onNavigateClick = { lat, lon, name ->
-                            navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$name")
-                        },
-                        onMapClick = { lat, lon ->
-                            // Navigate to map screen focusing on this well
-                            val queryParams = buildString {
-                                append("?targetLat=$lat&targetLon=$lon")
-                                if (currentLocation != null) {
-                                    append("&userLat=${currentLocation!!.latitude}&userLon=${currentLocation!!.longitude}")
-                                }
-                            }
-                            navController.navigate("${Routes.MAP_SCREEN}$queryParams")
-                        },
-                        onMoveUp = { wellViewModel.swapWells(index, index - 1) },
-                        onMoveDown = { wellViewModel.swapWells(index, index + 1) },
-                        onDelete = { wellViewModel.deleteWell(well.id) },
-                        onRefresh = {
-                            scope.launch {
-                                try {
-                                    wellViewModel.loadWell(well.id)
-                                    snackbarHostState.showSnackbar("Well refreshed!")
-                                } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Failed to refresh well: ${e.localizedMessage}")
-                                }
-                            }
-                        },
-                        currentLocation = currentLocation,
-                        snackbarHostState = snackbarHostState,
-                        scope = scope
+                        showAdminActions = isWellOwner.value || isAdmin.value || tempAdminMode.value,
+                        onDeleteClick = { setWellToDelete(well) }
                     )
                 }
-
+                
+                // Add new well button for admins and well owners
                 item {
-                    Button(
-                        onClick = {
-                            val newWellId = (wells.lastOrNull()?.id ?: 0) + 1
-                            navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$newWellId")
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp)
-                    ) {
-                        Text("Add New Well")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun WellCard(
-    well: WellData,
-    index: Int,
-    totalWells: Int,
-    onEditClick: (String) -> Unit,
-    onNavigateClick: (Double, Double, String) -> Unit,
-    onMapClick: (Double, Double) -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
-    onDelete: () -> Unit,
-    onRefresh: () -> Unit,
-    currentLocation: Location?,
-    snackbarHostState: SnackbarHostState,
-    scope: CoroutineScope
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var isRefreshing by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = well.wellName.ifBlank { "Unnamed Well ${well.id}" },
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Navigation button
-                    FilledTonalButton(
-                        onClick = {
-                            if (well.hasValidCoordinates()) {
-                                val lat = well.getLatitude()
-                                val lon = well.getLongitude()
-                                if (lat != null && lon != null) {
-                                    onNavigateClick(
-                                        lat,
-                                        lon,
-                                        java.net.URLEncoder.encode(well.wellName, "UTF-8")
-                                    )
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Invalid coordinates for this well")
-                                    }
-                                }
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("No valid coordinates for this well")
-                                }
-                            }
-                        },
-                        enabled = well.hasValidCoordinates(),
-                        modifier = Modifier.size(40.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = if (well.hasValidCoordinates()) 
-                                MaterialTheme.colorScheme.primaryContainer 
-                            else 
-                                MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Text("Go", style = MaterialTheme.typography.labelMedium)
-                    }
-                    
-                    // Map button
-                    FilledTonalButton(
-                        onClick = {
-                            if (well.hasValidCoordinates()) {
-                                val lat = well.getLatitude()
-                                val lon = well.getLongitude()
-                                if (lat != null && lon != null) {
-                                    onMapClick(lat, lon)
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Invalid coordinates for this well")
-                                    }
-                                }
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("No valid coordinates for this well")
-                                }
-                            }
-                        },
-                        enabled = well.hasValidCoordinates(),
-                        modifier = Modifier.size(40.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = if (well.hasValidCoordinates()) 
-                                MaterialTheme.colorScheme.tertiaryContainer 
-                            else 
-                                MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Icon(Icons.Default.Map, contentDescription = "Map", modifier = Modifier.size(18.dp))
-                    }
-
-                    Box {
-                        IconButton(onClick = { expanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                    if (isAdmin.value || tempAdminMode.value) { // TODO: use a role instead of the WellOwner data of the user
+                        Button(
+                            onClick = {
+                                val newWellId = (wells.lastOrNull()?.id?.toInt() ?: 0) + 1
+                                navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$newWellId")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
                         ) {
-                            if (index > 0) {
-                                DropdownMenuItem(
-                                    text = { Text("Move Up") },
-                                    onClick = {
-                                        onMoveUp()
-                                        expanded = false
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.KeyboardArrowUp, "Move Up") }
-                                )
-                            }
-                            if (index < totalWells - 1) {
-                                DropdownMenuItem(
-                                    text = { Text("Move Down") },
-                                    onClick = {
-                                        onMoveDown()
-                                        expanded = false
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.KeyboardArrowDown, "Move Down") }
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text("Edit") },
-                                onClick = {
-                                    onEditClick(well.id.toString())
-                                    expanded = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.Edit, "Edit") }
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Well",
+                                modifier = Modifier.size(18.dp)
                             )
-                            DropdownMenuItem(
-                                text = { Text("Delete") },
-                                onClick = {
-                                    onDelete()
-                                    expanded = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.Delete, "Delete") }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(if (isRefreshing) "Refreshing..." else "Refresh") },
-                                onClick = {
-                                    isRefreshing = true
-                                    onRefresh()
-                                    expanded = false
-                                    isRefreshing = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.Refresh, "Refresh") },
-                                enabled = !isRefreshing
-                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add New Well")
                         }
                     }
                 }
             }
-            
-            Text(
-                text = "Status: ${well.wellStatus}",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            
-            // Replace explicit location display with simplified format
-            if (well.hasValidCoordinates()) {
-                Text(
-                    text = "Location available", // Simplified message without coordinates
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            
-            Text(
-                text = "Water Level: ${well.wellWaterLevel} L",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            
-            // Add last refresh time back
-            if (well.lastRefreshTime > 0) {
-                Text(
-                    text = "Last updated: ${getRelativeTimeSpanString(well.lastRefreshTime)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            // Add current distance if available
-            if (well.hasValidCoordinates() && currentLocation != null) {
-                val lat = well.getLatitude()
-                val lon = well.getLongitude()
-                if (lat != null && lon != null) {
-                    val distance = calculateDistance(
-                        currentLocation.latitude, currentLocation.longitude,
-                        lat, lon
-                    )
-                    
-                    Text(
-                        text = "Current distance: ${
-                            when {
-                                distance >= 1000 -> "%.1f km".format(distance / 1000)
-                                else -> "${distance.toInt()} m"
-                            }
-                        }",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-
-                    // Add estimated travel times
-                    val (walkTime, driveTime) = calculateTravelTime(distance)
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
-                        Text(
-                            text = "🚶 Walking: $walkTime",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "🚗 Driving: $driveTime",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+        }
+    }
+    
+    // Delete confirmation dialog
+    wellToDelete?.let { well ->
+        AlertDialog(
+            onDismissRequest = { setWellToDelete(null) },
+            title = { Text("Delete Well") },
+            text = { Text("Are you sure you want to delete the well '${well.wellName}'?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        wellViewModel.deleteWell(well.espId)
+                        setWellToDelete(null)
                     }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { setWellToDelete(null) }
+                ) {
+                    Text("Cancel")
                 }
             }
-        }
+        )
     }
 }
 
-@SuppressLint("DefaultLocale")
-private fun calculateTravelTime(distanceMeters: Double): Pair<String, String> {
-    // Walking speed: 5 km/h = 1.389 m/s
-    val walkingSpeedMS = 1.389
-    // Average driving speed: 40 km/h = 11.111 m/s (considering urban areas)
-    val drivingSpeedMS = 11.111
-
-    val walkingTimeSeconds = distanceMeters / walkingSpeedMS
-    val drivingTimeSeconds = distanceMeters / drivingSpeedMS
-
-    fun formatTime(timeSeconds: Double): String {
-        return when {
-            timeSeconds < 60 -> "${timeSeconds.toInt()} seconds"
-            timeSeconds < 3600 -> "${(timeSeconds / 60).toInt()} minutes"
-            else -> String.format("%.1f hours", timeSeconds / 3600)
-        }
-    }
-
-    return Pair(formatTime(walkingTimeSeconds), formatTime(drivingTimeSeconds))
-}
-
-private fun getRelativeTimeSpanString(timeInMillis: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timeInMillis
-    
-    return when {
-        diff < 1000L -> "just now"
-        diff < 60000L -> "${diff / 1000} seconds ago"
-        diff < 3600000L -> "${diff / 60000} minutes ago"
-        diff < 86400000L -> "${diff / 3600000} hours ago"
-        diff < 604800000L -> "${diff / 86400000} days ago"
-        diff < 2592000000L -> "${diff / 604800000} weeks ago"
-        else -> SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timeInMillis))
-    }
-}

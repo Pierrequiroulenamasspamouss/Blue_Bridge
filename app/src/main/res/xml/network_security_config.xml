@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <debug-overrides>
-        <trust-anchors>
-            <!-- Trust the development certificate only in debug builds -->
-            <certificates src="@raw/ca"/>
-        </trust-anchors>
-    </debug-overrides>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">192.168.0.204</domain>
-    </domain-config>
+    <!-- Base config: disallow cleartext unless explicitly allowed -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
-            <!-- Trust the system's default certificates -->
-            <certificates src="system"/>
+            <certificates src="system" />
         </trust-anchors>
     </base-config>
+
+    <!-- Allow cleartext for specific debug-only override -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="@raw/ca" />
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- Allow HTTP (cleartext) for these domains -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.0.204</domain>
+        <domain includeSubdomains="false">35.232.177.214</domain>
+        <domain includeSubdomains="true">bluebridge.homeonthewater.com</domain>
+    </domain-config>
 </network-security-config>

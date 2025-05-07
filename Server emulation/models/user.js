@@ -28,7 +28,6 @@
                 type: DataTypes.STRING(128),
                 allowNull: true
             },
-
             lastName: {
                 type: DataTypes.STRING(64),
                 allowNull: false
@@ -36,15 +35,16 @@
             username: {
                 type: DataTypes.STRING(64),
                 allowNull: false,
-
             },
             role: {
                 type: DataTypes.STRING(64),
-                allowNull: false
+                allowNull: false,
+                defaultValue: 'user'
             },
             themePreference: {
                 type: DataTypes.INTEGER,
-                allowNull: false
+                allowNull: false,
+                defaultValue: 0
             },
             latitude: {
                 type: DataTypes.FLOAT,
@@ -61,7 +61,8 @@
             },
             waterNeeds: {
                 type: DataTypes.JSON, // Store as JSON array or object
-                allowNull: true
+                allowNull: true,
+                defaultValue: null
             },
             isWellOwner: {
                 type: DataTypes.BOOLEAN,
@@ -71,6 +72,33 @@
             lastActive: {
                 type: DataTypes.DATE,
                 defaultValue: DataTypes.NOW
+            },
+            deviceTokens: {
+                type: DataTypes.TEXT, // Store as JSON string array of device tokens
+                allowNull: true,
+                defaultValue: null
+            },
+            profileImageUrl: {
+                type: DataTypes.STRING(255),
+                allowNull: true
+            },
+            bio: {
+                type: DataTypes.TEXT,
+                allowNull: true
+            },
+            registrationDate: {
+                type: DataTypes.DATE,
+                defaultValue: DataTypes.NOW
+            },
+            accountStatus: {
+                type: DataTypes.STRING(20),
+                allowNull: false,
+                defaultValue: 'active'  // 'active', 'suspended', 'deactivated'
+            },
+            notificationPreferences: {
+                type: DataTypes.JSON, // Store notification preference settings
+                allowNull: true,
+                defaultValue: null
             }
         });
         return User;

@@ -1,0 +1,107 @@
+import sqlite3
+import json
+import re
+
+DB_PATH = "database.sqlite"
+
+def connect_db():
+    return sqlite3.connect(DB_PATH)
+
+def get_all_wells(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM wells")
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
+    return [dict(zip(columns, row)) for row in rows], columns
+
+def update_well_field(conn, well_id, field_name, new_value):
+    cursor = conn.cursor()
+    cursor.execute(f"UPDATE wells SET {field_name} = ? WHERE id = ?", (new_value, well_id))
+    conn.commit()
+    print(f"{field_name} updated for well ID {well_id}.")
+
+def parse_indices(input_str, list_len):
+    input_str = input_str.strip().lower()
+    indices = set()
+
+    if input_str == "all":
+        return list(range(list_len))
+    elif input_str.startswith("last"):
+        if input_str == "last":
+            return [list_len - 1] if list_len > 0 else []
+        match = re.match(r"last-(\d+)", input_str)
+        if match:
+            count = int(match.group(1))
+            return list(range(list_len - count, list_len)) if count <= list_len else list(range(list_len))
+        else:
+            raise ValueError("Invalid 'last-x' format.")
+    else:
+        parts = input_str.split(',')
+        for part in parts:
+            if '-' in part:
+                start, end = part.split('-')
+                indices.update(range(int(start), int(end) + 1))
+            else:
+                indices.add(int(part))
+    return sorted(i for i in indices if 0 <= i < list_len)
+
+def main():
+    conn = connect_db()
+    wells, columns = get_all_wells(conn)
+
+    if not wells:
+        print("No wells found.")
+        return
+
+    print("\nWells:")
+    for idx, well in enumerate(wells):
+        print(f"{idx}: ID={well['id']} Name={well.get('name', '(no name)')}")
+
+    try:
+        selection = int(input("\nEnter the number of the well to edit: ").strip())
+        well = wells[selection]
+    except (ValueError, IndexError):
+        print("Invalid selection.")
+        return
+
+    print("\nWell data:")
+    for idx, col in enumerate(columns):
+        print(f"{idx}: {col} = {well[col]}")
+
+    try:
+        field_index = int(input("\nEnter field number to edit: ").strip())
+        field_name = columns[field_index]
+    except (ValueError, IndexError):
+        print("Invalid field number.")
+        return
+
+    value = well[field_name]
+    try:
+        parsed = json.loads(value)
+        if not isinstance(parsed, list):
+            print("The field is not a JSON list.")
+            return
+    except Exception:
+        print("The field does not contain valid JSON.")
+        return
+
+    print(f"\nCurrent list ({len(parsed)} items):")
+    for i, item in enumerate(parsed):
+        print(f"  {i}: {item}")
+
+    delete_input = input("\nEnter indices to delete (e.g., 1,2,4-6, last-2, all): ").strip()
+    try:
+        to_delete = parse_indices(delete_input, len(parsed))
+    except Exception as e:
+        print(f"Invalid format: {e}")
+        return
+
+    for i in reversed(to_delete):
+        removed = parsed.pop(i)
+        print(f"Deleted index {i}: {removed}")
+
+    update_well_field(conn, well["id"], field_name, json.dumps(parsed))
+    conn.close()
+
+if __name__ == "__main__":
+    main()

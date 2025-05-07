@@ -1,37 +1,37 @@
-const { Sequelize } = require('sequelize');
-const path = require('path');
 const fs = require('fs');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const path = require('path');
+const { Sequelize } = require('sequelize');
 
-// Create database directory if it doesn't exist
-const dbDir = path.join(__dirname, '../data');
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+// Configure database path (can be overridden by .env)
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'database.sqlite');
+
+// Ensure data directory exists
+const dataDir = path.dirname(dbPath);
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Initialize Sequelize with SQLite - use local path
+// Create Sequelize instance
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: path.join(dbDir, 'database.sqlite'),
-    logging: console.log
+    storage: dbPath,
+    logging: process.env.NODE_ENV === 'development' ? console.log : false
 });
 
-const db = {};
+// Initialize models
+const db = {
+    sequelize,
+    Sequelize
+};
 
 // Import models
 db.User = require('./user')(sequelize);
 db.Well = require('./well')(sequelize);
 
-// Set up associations
-Object.keys(db).forEach(modelName => {
-    if (db[modelName].associate) {
-        db[modelName].associate(db);
-    }
-});
+// Define associations between models if needed
+// Example: db.User.hasMany(db.Well);
 
-// Add sequelize instance and Sequelize class
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+// Sync database (don't force in production)
+// This is now done in server.js to be more controlled
 
-// Export models and sequelize instance
 module.exports = db; 

@@ -3,123 +3,243 @@ package com.wellconnect.wellmonitoring.data.local
 import UserData
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.wellconnect.wellmonitoring.data.model.Location
+import com.wellconnect.wellmonitoring.data.model.MovementSpeeds
 import com.wellconnect.wellmonitoring.data.model.WaterNeed
-import com.wellconnect.wellmonitoring.viewmodels.PreferencesKeys
-import com.wellconnect.wellmonitoring.viewmodels.userDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.IOException
 
+// Define DataStore at top level
+val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
+// Define preference keys
+object PreferencesKeys {
+    val EMAIL = stringPreferencesKey("email")
+    val FIRST_NAME = stringPreferencesKey("first_name")
+    val LAST_NAME = stringPreferencesKey("last_name")
+    val USERNAME = stringPreferencesKey("username")
+    val ROLE = stringPreferencesKey("role")
+    val THEME = intPreferencesKey("theme")
+    val LOCATION = stringPreferencesKey("location")
+    val WATER_NEEDS = stringPreferencesKey("water_needs")
+    val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+    val LOGIN_TOKEN = stringPreferencesKey("login_token")
+    val IS_WELL_OWNER = booleanPreferencesKey("is_well_owner")
+    val IS_GUEST = booleanPreferencesKey("is_guest")
+    val NOTIFICATION_TOKEN = stringPreferencesKey("notification_token")
+    val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+}
 
-@OptIn(ExperimentalSerializationApi::class)
 class UserPreferences(context: Context) {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-    }
-    private val dataStore = context.userDataStore
 
-    suspend fun updateThemePreference(theme: Int) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.THEME] = theme
-        }
-    }
+    private val dataStore: DataStore<Preferences> = context.userDataStore
 
-    suspend fun getTheme(): Int {
-        return dataStore.data.first()[PreferencesKeys.THEME] ?: 0
-    }
-
-    suspend fun saveUserData(userData: UserData) {
-        try {
-            Log.d("UserPreferences", "Starting to save user data to DataStore")
-            dataStore.edit { prefs ->
-                prefs[PreferencesKeys.EMAIL] = userData.email
-                prefs[PreferencesKeys.FIRST_NAME] = userData.firstName
-                prefs[PreferencesKeys.LAST_NAME] = userData.lastName
-                prefs[PreferencesKeys.USERNAME] = userData.username
-                prefs[PreferencesKeys.ROLE] = userData.role
-                prefs[PreferencesKeys.THEME] = userData.themePreference
-                prefs[PreferencesKeys.IS_LOGGED_IN] = true
-                prefs[PreferencesKeys.LOCATION] = json.encodeToString(Location.serializer(), userData.location)
-                prefs[PreferencesKeys.WATER_NEEDS] = json.encodeToString(ListSerializer(WaterNeed.serializer()), userData.waterNeeds)
-                prefs[PreferencesKeys.LOGIN_TOKEN] = userData.loginToken ?: ""
-                prefs[PreferencesKeys.IS_WELL_OWNER] = userData.isWellOwner
-            }
-            Log.d("UserPreferences", "User data successfully saved to DataStore: $userData")
-            
-            // Verify data was saved correctly
-            val isLoggedIn = isLoggedIn()
-            val savedEmail = getUserEmail()
-            Log.d("UserPreferences", "Verification after save: isLoggedIn=$isLoggedIn, email=$savedEmail")
-        } catch (e: Exception) {
-            Log.e("UserPreferences", "Error saving user data to DataStore", e)
-            throw e
-        }
-    }
-
-    fun getUserData(): Flow<UserData?> = dataStore.data
-        .map { prefs ->
-            val isLoggedIn = prefs[PreferencesKeys.IS_LOGGED_IN] == true
-            val email = prefs[PreferencesKeys.EMAIL]
-            
-            if (isLoggedIn && email != null) {
-                try {
-                    val userData = UserData(
-                        email = email,
-                        firstName = prefs[PreferencesKeys.FIRST_NAME] ?: "",
-                        lastName = prefs[PreferencesKeys.LAST_NAME] ?: "",
-                        username = prefs[PreferencesKeys.USERNAME] ?: "",
-                        role = prefs[PreferencesKeys.ROLE] ?: "user",
-                        themePreference = prefs[PreferencesKeys.THEME] ?: 0,
-                        location = prefs[PreferencesKeys.LOCATION]?.let {
-                            json.decodeFromString(Location.serializer(), it)
-                        } ?: Location(0.0, 0.0),
-                        waterNeeds = prefs[PreferencesKeys.WATER_NEEDS]?.let {
-                            json.decodeFromString(ListSerializer(WaterNeed.serializer()), it)
-                        } ?: emptyList(),
-                        loginToken = prefs[PreferencesKeys.LOGIN_TOKEN],
-                        isWellOwner = prefs[PreferencesKeys.IS_WELL_OWNER] == true,
-                    )
-                    Log.d("UserPreferences", "Retrieved user data: $userData")
-                    return@map userData
-                } catch (e: Exception) {
-                    Log.e("UserPreferences", "Error deserializing user data", e)
-                    null
-                }
+    val userDataFlow: Flow<UserData?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                Log.e("UserPreferences", "Error reading preferences", exception)
+                emit(emptyPreferences())
             } else {
-                Log.d("UserPreferences", "No user logged in or email is null. isLoggedIn=$isLoggedIn, email=$email")
+                throw exception
+            }
+        }
+        .map { preferences ->
+            if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
+                val email = preferences[PreferencesKeys.EMAIL] ?: return@map null
+                val firstName = preferences[PreferencesKeys.FIRST_NAME] ?: ""
+                val lastName = preferences[PreferencesKeys.LAST_NAME] ?: ""
+                val username = preferences[PreferencesKeys.USERNAME] ?: ""
+                val role = preferences[PreferencesKeys.ROLE] ?: "user"
+                val theme = preferences[PreferencesKeys.THEME] ?: 0
+                val isWellOwner = preferences[PreferencesKeys.IS_WELL_OWNER] ?: false
+                val token = preferences[PreferencesKeys.LOGIN_TOKEN]
+
+                // Parse location from JSON string
+                val locationJson = preferences[PreferencesKeys.LOCATION]
+                val location = if (locationJson != null) {
+                    try {
+                        Json.decodeFromString<Location>(locationJson)
+                    } catch (e: Exception) {
+                        Log.e("UserPreferences", "Error parsing location", e)
+                        Location(0.0, 0.0)
+                    }
+                } else {
+                    Location(0.0, 0.0)
+                }
+
+                // Parse water needs from JSON string
+                val waterNeedsJson = preferences[PreferencesKeys.WATER_NEEDS]
+                val waterNeeds = if (waterNeedsJson != null) {
+                    try {
+                        Json.decodeFromString<List<WaterNeed>>(waterNeedsJson)
+                    } catch (e: Exception) {
+                        Log.e("UserPreferences", "Error parsing water needs", e)
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
+
+                UserData(
+                    email = email,
+                    firstName = firstName,
+                    lastName = lastName,
+                    username = username,
+                    role = role,
+                    location = location,
+                    themePreference = theme,
+                    waterNeeds = waterNeeds,
+                    isWellOwner = isWellOwner,
+                    movementSpeeds = MovementSpeeds(),
+                    loginToken = token
+                )
+            } else {
                 null
             }
         }
 
+    suspend fun getUserData(): Flow<UserData?> = userDataFlow
+
     suspend fun clearUserData() {
-        dataStore.edit { it.clear() }
+        dataStore.edit { preferences ->
+            preferences.clear()
+        }
+    }
+
+    suspend fun saveUserData(userData: UserData) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.EMAIL] = userData.email
+            preferences[PreferencesKeys.FIRST_NAME] = userData.firstName
+            preferences[PreferencesKeys.LAST_NAME] = userData.lastName
+            preferences[PreferencesKeys.USERNAME] = userData.username
+            preferences[PreferencesKeys.ROLE] = userData.role
+            preferences[PreferencesKeys.THEME] = userData.themePreference
+            preferences[PreferencesKeys.IS_WELL_OWNER] = userData.isWellOwner
+            preferences[PreferencesKeys.IS_LOGGED_IN] = true
+
+            // Store location as JSON string
+            preferences[PreferencesKeys.LOCATION] = Json.encodeToString(userData.location)
+
+            // Store water needs as JSON string
+            preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(userData.waterNeeds)
+
+            // Store login token
+            userData.loginToken?.let { token ->
+                preferences[PreferencesKeys.LOGIN_TOKEN] = token
+            }
+            
+            // If this is a guest login, set the guest flag
+            if (userData.role == "guest") {
+                preferences[PreferencesKeys.IS_GUEST] = true
+            }
+        }
     }
 
     suspend fun isLoggedIn(): Boolean {
-        return dataStore.data.first()[PreferencesKeys.IS_LOGGED_IN] == true
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.IS_LOGGED_IN] ?: false
+    }
+
+    suspend fun updateThemePreference(theme: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME] = theme
+        }
+    }
+
+    suspend fun getTheme(): Int {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.THEME] ?: 0
+    }
+
+    suspend fun getUserEmail(): String? {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.EMAIL]
     }
 
     suspend fun getLoginToken(): String? {
-        return dataStore.data.first()[PreferencesKeys.LOGIN_TOKEN]
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.LOGIN_TOKEN]
     }
-    suspend fun getUserEmail(): String? {
-        return dataStore.data.first()[PreferencesKeys.EMAIL]
-    }
-
+    
     suspend fun getUserWaterNeeds(): String? {
-        return dataStore.data.first()[PreferencesKeys.WATER_NEEDS]
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.WATER_NEEDS]
     }
-
+    
     suspend fun setUserWaterNeeds(waterNeeds: String) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.WATER_NEEDS] = waterNeeds
+        dataStore.edit { preferences ->
+            // We're storing as a stringified JSON array now, but keeping this method for backward compatibility
+            // In future, consider parsing and saving as WaterNeed list directly
+            if (waterNeeds.isNotBlank()) {
+                val waterNeed = WaterNeed(
+                    amount = waterNeeds.toIntOrNull() ?: 0,
+                    usageType = "General",
+                    priority = 3,
+                    description = "General water need"
+                )
+                preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(listOf(waterNeed))
+            } else {
+                preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(emptyList<WaterNeed>())
+            }
+        }
+    }
+    
+    // Guest mode methods
+    suspend fun setGuestMode(isGuest: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_GUEST] = isGuest
+            
+            if (!isGuest) {
+                // Clear the guest flag when logging out of guest mode
+                preferences.remove(PreferencesKeys.IS_GUEST)
+            }
+        }
+    }
+    
+    suspend fun isGuestMode(): Boolean {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.IS_GUEST] ?: false
+    }
+    
+    // Push notification methods
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+    
+    suspend fun areNotificationsEnabled(): Boolean {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: false
+    }
+    
+    suspend fun saveNotificationToken(token: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATION_TOKEN] = token
+        }
+    }
+    
+    suspend fun getNotificationToken(): String? {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.NOTIFICATION_TOKEN]
+    }
+    
+    suspend fun clearNotificationToken() {
+        dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.NOTIFICATION_TOKEN)
         }
     }
 }
