@@ -1,126 +1,141 @@
 # WellConnect Server Emulation
 
-This server emulation package provides a development environment for testing and developing the WellConnect mobile application.
+This directory contains a Node.js server that emulates the WellConnect API for development and testing purposes.
 
 ## Features
 
-- Complete REST API emulation for WellConnect mobile app
-- User authentication and account management
-- Well data monitoring and management 
-- Push notification token registration for Firebase Cloud Messaging
-- Dynamic API tree visualization at `/tree` endpoint
-- SSL support for secure connections
+- RESTful API for user management, well monitoring, and nearby user discovery
+- Authentication with token validation
+- SQLite database for data persistence
+- User registration, login, profile management
+- Well creation, monitoring, and statistics
+- Mock data generation for testing
 
-## Quick Start
+## Getting Started
+
+### Prerequisites
+
+- Node.js 14.x or higher
+- npm or yarn
 
 ### Installation
 
-The easiest way to install is using the provided installation script:
+1. Navigate to the Server emulation directory:
+   ```bash
+   cd "Server emulation"
+   ```
 
+2. Install dependencies and seed the database (one-step process):
+   ```bash
+   npm run setup
+   ```
+   
+   This will install all dependencies and populate the database with sample data.
+
+   Or you can install and seed separately:
+   ```bash
+   npm install
+   npm run seed
+   ```
+
+### Running the Server
+
+Start the development server:
 ```bash
-chmod +x install.sh
-sudo ./install.sh
+npm start
 ```
 
-For manual installation, follow these steps:
-
-1. Install Node.js (v14 or higher) and npm
-2. Install dependencies: `npm install`
-3. Create a `.env` file based on the example below
-4. Start the server: `npm start`
-
-### Environment Configuration
-
-Create a `.env` file in the root directory with the following content:
-
-```
-PORT=3000
-NODE_ENV=development
-JWT_SECRET=your_jwt_secret
-DB_PATH=./database.sqlite
-
-# Firebase configuration
-FIREBASE_PROJECT_ID=wellconnect-458200
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@wellconnect-458200.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n"
-FIREBASE_WEB_PUSH_CERT=BJ9Mf0mMKZO8pnRYwL-
-FIREBASE_SERVER_KEY=jdWcCM2iqQUmzsgXJnIT5yjrrfrgF_2rmjkM9gUv1QbWSlLcG2cyTA93qIHmSyvx2c6o
+If you encounter certificate-related errors, you can run the HTTP-only version:
+```bash
+npm run start:http
 ```
 
-### Available Scripts
+The server will be available at:
+- HTTP: http://localhost:3000
 
-- `npm start`: Start the server in production mode
-- `npm run dev`: Start the server with hot-reloading for development
-- `npm run seed`: Seed the database with test data
-- `npm run clean`: Reset the database and reseed with test data
-- `npm run setup`: Install dependencies and seed the database
-
-## API Documentation
-
-Once the server is running, visit `/tree` in your browser for a complete and dynamically generated API tree with clickable endpoints.
-
-The main API routes include:
+## API Endpoints
 
 ### Authentication
-- `POST /api/register`: Register a new user
-- `POST /api/login`: Login and get auth token
-- `POST /api/logout`: Logout and invalidate token
-- `POST /api/delete-account`: Delete user account
+
+- **POST /api/register** - Register a new user
+- **POST /api/login** - Login and get authentication token
+- **POST /api/logout** - Logout (invalidate token)
+- **POST /api/validate-token** - Check if a token is valid
 
 ### User Management
-- `GET /api/user/profile`: Get user profile
-- `PUT /api/user/profile`: Update user profile
-- `PUT /api/user/location`: Update user location
-- `PUT /api/user/water-needs`: Update user water needs
 
-### Well Monitoring
-- `GET /api/wells`: Get list of all wells
-- `GET /api/wells/:espId`: Get well details
-- `POST /api/wells`: Create new well
-- `PUT /api/wells/:espId`: Update well data
-- `DELETE /api/wells/:espId`: Delete well
+- **GET /api/user-profile** - Get user profile data
+- **POST /api/update-profile** - Update user profile
+- **POST /api/update-water-needs** - Update user water needs
+- **POST /api/update-location** - Update user location
+- **POST /api/update-theme** - Update user theme preference
+- **GET /api/nearby-users** - Find nearby users
 
-### Push Notifications
-- `POST /api/notifications/register`: Register device for push notifications
-- `POST /api/notifications/unregister`: Unregister device for push notifications
-- `GET /api/notifications/status`: Check notification registration status
+### Well Management
 
-## Firebase Cloud Messaging Integration
+- **GET /api/wells** - Get all wells
+- **GET /api/wells/:espId** - Get well by ESP ID
+- **POST /api/wells** - Create new well
+- **PUT /api/wells/:espId** - Update well
+- **DELETE /api/wells/:espId** - Delete well
+- **GET /api/wells/status/:status** - Get wells by status
+- **PATCH /api/wells/:espId/water-level** - Update well water level
+- **PATCH /api/wells/:espId/water-quality** - Update water quality
+- **GET /api/wells/nearby/:latitude/:longitude/:radius** - Get wells in specified radius
+- **GET /api/wells/stats/summary** - Get well statistics
 
-This server emulation can be used to register and manage notification tokens for Firebase Cloud Messaging (FCM). 
+## Default User Credentials
 
-To properly test FCM, you need to:
+You can use these credentials to test the API:
 
-1. Set up the proper Firebase credentials in the `.env` file
-2. Register device tokens using the `/api/notifications/register` endpoint
-3. Send test notifications using Firebase Console or the `/api/notifications/send` endpoint (if implemented)
+- **Email**: pierresluse@gmail.com
+- **Password**: Test
 
-## Development Notes
+## Example Requests
 
-### Adding New Endpoints
+### Login
 
-When you add new endpoints to the server, they will automatically appear in the `/tree` endpoint visualization without any further configuration.
+```bash
+curl -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"pierresluse@gmail.com","password":"Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU="}'
+```
 
-### Database
+### Get Nearby Users
 
-The server uses SQLite for data storage. The database file is created at the path specified in `DB_PATH`.
+```bash
+curl "http://localhost:3000/api/nearby-users?latitude=48.8566&longitude=2.3522&radius=10&email=pierresluse@gmail.com"
+```
 
-### Testing with the WellConnect App
+### Get Well Statistics
 
-To test with the WellConnect app:
+```bash
+curl http://localhost:3000/api/wells/stats/summary
+```
 
-1. Make sure the server is running on a network accessible to your device or emulator
-2. Update the app's server URL to point to your server instance
-3. For mobile devices on the same network, use your machine's local IP address
+## Database
+
+The server uses SQLite for data persistence. The database file is located at:
+```
+Server emulation/data/database.sqlite
+```
+
+To reset the database, delete this file and run the seed script again:
+```bash
+rm Server\ emulation/data/database.sqlite
+node scripts/seed-db.js
+```
 
 ## Troubleshooting
 
-### Common Issues
-
-- **EADDRINUSE error**: The port is already in use. Change the PORT in the .env file or stop the other process.
-- **Missing environment variables**: Ensure all required environment variables are set in the .env file.
-- **Database permissions**: Make sure the user running the server has write permissions for the database file path.
+- If Node.js or npm is not installed or not in your path:
+  1. Download and install Node.js from https://nodejs.org/
+  2. Ensure it's added to your system PATH
+  3. Open a new terminal window after installation
+- If the server fails to start, check if port 3000 is already in use
+- If authentication fails, make sure you're using the correct credentials and token
+- Check the console logs for detailed error messages
 
 ## License
 
-This software is proprietary and confidential. Unauthorized copying or distribution is prohibited. 
+This project is for educational purposes only. 
