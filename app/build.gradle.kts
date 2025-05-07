@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -46,6 +46,11 @@ android {
     }
     //buildToolsVersion = "33.0.1"
     ndkVersion = "27.0.12077973"
+
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = false
+    }
 }
 
 dependencies {
@@ -78,10 +83,22 @@ dependencies {
     implementation(libs.androidx.benchmark.common)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.google.play.services.location)
-    
+    // Google AdMob
+    //noinspection UseTomlInstead,GradleDependency
+    implementation("com.google.android.gms:play-services-ads:24.2.0")
+    implementation(libs.accompanist.permissions)
+
     // OSMDroid dependencies
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.mapsforge)
+    implementation(libs.coil.compose)
+
+    // Firebase dependencies
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.analytics.ktx)
+    implementation(libs.firebase.inappmessaging.display)
+
 
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
@@ -92,10 +109,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Coil for image loading
-    implementation("io.coil-kt:coil-compose:2.4.0")
 
-    // Google AdMob
-    implementation("com.google.android.gms:play-services-ads:22.6.0")
-    implementation("com.google.accompanist:accompanist-permissions:0.33.2-alpha")
 }

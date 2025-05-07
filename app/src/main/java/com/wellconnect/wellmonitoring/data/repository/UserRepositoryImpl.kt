@@ -6,6 +6,7 @@ import com.wellconnect.wellmonitoring.data.`interface`.UserRepository
 import com.wellconnect.wellmonitoring.data.local.UserPreferences
 import com.wellconnect.wellmonitoring.data.model.DeleteAccountRequest
 import com.wellconnect.wellmonitoring.data.model.LoginRequest
+import com.wellconnect.wellmonitoring.data.model.NotificationTokenRequest
 import com.wellconnect.wellmonitoring.data.model.RegisterRequest
 import com.wellconnect.wellmonitoring.data.model.UpdateProfileRequest
 import com.wellconnect.wellmonitoring.data.model.UpdateWaterNeedsRequest
@@ -263,6 +264,96 @@ class UserRepositoryImpl(
                 Log.e("UserRepository", "Failed to save water needs locally after server exception", saveException)
                 false
             }
+        }
+    }
+
+    // Guest mode methods
+    override suspend fun setGuestMode(isGuest: Boolean) = withContext(Dispatchers.IO) {
+        preferences.setGuestMode(isGuest)
+    }
+
+    override suspend fun isGuestMode(): Boolean = withContext(Dispatchers.IO) {
+        preferences.isGuestMode()
+    }
+
+    // Push notification methods
+    override suspend fun setNotificationsEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+        preferences.setNotificationsEnabled(enabled)
+    }
+
+    override suspend fun areNotificationsEnabled(): Boolean = withContext(Dispatchers.IO) {
+        preferences.areNotificationsEnabled()
+    }
+
+    override suspend fun saveNotificationToken(token: String) = withContext(Dispatchers.IO) {
+        preferences.saveNotificationToken(token)
+    }
+
+    override suspend fun getNotificationToken(): String? = withContext(Dispatchers.IO) {
+        preferences.getNotificationToken()
+    }
+
+    override suspend fun clearNotificationToken() = withContext(Dispatchers.IO) {
+        preferences.clearNotificationToken()
+    }
+
+    override suspend fun registerNotificationToken(
+        email: String, 
+        authToken: String, 
+        fcmToken: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d("UserRepository", "Registering notification token for $email")
+            
+            val request = NotificationTokenRequest(
+                email = email,
+                token = authToken,
+                deviceToken = fcmToken
+            )
+            
+            val response = api.registerNotificationToken(request)
+            
+            if (response.isSuccessful && response.body()?.status == "success") {
+                Log.d("UserRepository", "Successfully registered notification token")
+                true
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("UserRepository", "Failed to register notification token: $errorBody")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error registering notification token", e)
+            false
+        }
+    }
+
+    override suspend fun unregisterNotificationToken(
+        email: String, 
+        authToken: String, 
+        fcmToken: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d("UserRepository", "Unregistering notification token for $email")
+            
+            val request = NotificationTokenRequest(
+                email = email,
+                token = authToken,
+                deviceToken = fcmToken
+            )
+            
+            val response = api.unregisterNotificationToken(request)
+            
+            if (response.isSuccessful && response.body()?.status == "success") {
+                Log.d("UserRepository", "Successfully unregistered notification token")
+                true
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("UserRepository", "Failed to unregister notification token: $errorBody")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error unregistering notification token", e)
+            false
         }
     }
 }

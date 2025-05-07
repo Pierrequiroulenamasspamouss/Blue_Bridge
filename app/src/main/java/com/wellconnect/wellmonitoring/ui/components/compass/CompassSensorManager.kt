@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui.screens.compass
+package com.wellconnect.wellmonitoring.ui.components.compass
 
 import android.content.Context
 import android.hardware.Sensor

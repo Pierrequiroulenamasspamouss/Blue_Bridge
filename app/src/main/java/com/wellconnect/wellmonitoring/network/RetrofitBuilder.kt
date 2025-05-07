@@ -1,5 +1,6 @@
 package com.wellconnect.wellmonitoring.network
 
+import PaginatedWellsResponse
 import ShortenedWellData
 import WellData
 import android.content.Context
@@ -12,11 +13,13 @@ import com.wellconnect.wellmonitoring.data.model.DeleteAccountResponse
 import com.wellconnect.wellmonitoring.data.model.LoginRequest
 import com.wellconnect.wellmonitoring.data.model.LoginResponse
 import com.wellconnect.wellmonitoring.data.model.NearbyUsersResponse
+import com.wellconnect.wellmonitoring.data.model.NotificationTokenRequest
 import com.wellconnect.wellmonitoring.data.model.RegisterRequest
 import com.wellconnect.wellmonitoring.data.model.RegisterResponse
 import com.wellconnect.wellmonitoring.data.model.UpdateLocationRequest
 import com.wellconnect.wellmonitoring.data.model.UpdateProfileRequest
 import com.wellconnect.wellmonitoring.data.model.UpdateWaterNeedsRequest
+import com.wellconnect.wellmonitoring.data.model.WellStatsResponse
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.ConnectionSpec
@@ -210,6 +213,55 @@ class FallbackEspApiService(
     private val devService: ServerApi
 ) : ServerApi {
 
+    override suspend fun getWellsWithFilters(
+        page: Int,
+        limit: Int,
+        wellName: String?,
+        wellStatus: String?,
+        wellWaterType: String?,
+        wellOwner: String?,
+        espId: String?,
+        minWaterLevel: Int?,
+        maxWaterLevel: Int?
+    ): Response<PaginatedWellsResponse> {
+         return try {
+            prodService.getWellsWithFilters(page, limit, wellName, wellStatus, wellWaterType, wellOwner, espId, minWaterLevel, maxWaterLevel)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed for getWellsWithFilters, falling back to development", e)
+                    devService.getWellsWithFilters(page, limit, wellName, wellStatus, wellWaterType, wellOwner, espId, minWaterLevel, maxWaterLevel)
+                }
+                else -> throw e
+            }
+        }
+    }
+
+    override suspend fun registerNotificationToken(request: NotificationTokenRequest): Response<BasicResponse> =
+        try {
+            prodService.registerNotificationToken(request)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed for registerNotificationToken, falling back to development", e)
+                    devService.registerNotificationToken(request)
+                }
+                else -> throw e
+            }
+        }
+
+    override suspend fun unregisterNotificationToken(request: NotificationTokenRequest): Response<BasicResponse> =
+        try {
+            prodService.unregisterNotificationToken(request)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed for unregisterNotificationToken, falling back to development", e)
+                    devService.unregisterNotificationToken(request)
+                }
+                else -> throw e
+            }
+        }
 
     override suspend fun updateProfile(request: UpdateProfileRequest): Response<BasicResponse> =
         try {
@@ -231,6 +283,23 @@ class FallbackEspApiService(
                 is IOException, is HttpException -> {
                     Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
                     devService.getWellDataById(espId)
+                }
+                else -> throw e
+            }
+        }
+
+    override suspend fun createWell(
+        wellData: WellData,
+        email: String,
+        token: String
+    ): Response<BasicResponse> =
+        try {
+            prodService.createWell(wellData, email, token)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
+                    devService.createWell(wellData, email, token)
                 }
                 else -> throw e
             }
@@ -261,8 +330,8 @@ class FallbackEspApiService(
                 else -> throw e
             }
         }
-
-    override suspend fun getAllWells(): List<ShortenedWellData> =
+    // TODO HERE: replace this to accept Paginated well data but return only shortened well data
+    override suspend fun getAllWells(): Response<PaginatedWellsResponse> =
         try {
             prodService.getAllWells()
         } catch (e: Exception) {
@@ -275,14 +344,21 @@ class FallbackEspApiService(
             }
         }
 
-    override suspend fun getNearbyUsers(latitude: Double, longitude: Double, radius: Double, email: String): Response<NearbyUsersResponse> =
+
+    override suspend fun getNearbyUsers(
+        latitude: Double,
+        longitude: Double,
+        radius: Double,
+        email: String,
+        token: String
+    ): Response<NearbyUsersResponse> =
         try {
-            prodService.getNearbyUsers(latitude, longitude, radius, email)
+            prodService.getNearbyUsers(latitude, longitude, radius, email, token)
         } catch (e: Exception) {
             when (e) {
                 is IOException, is HttpException -> {
                     Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
-                    devService.getNearbyUsers(latitude, longitude, radius, email)
+                    devService.getNearbyUsers(latitude, longitude, radius, email, token)
                 }
                 else -> throw e
             }
@@ -314,18 +390,19 @@ class FallbackEspApiService(
             }
         }
 
-    override suspend fun getWellStats() =
+    override suspend fun getWellsStats(): Response<WellStatsResponse> =
         try {
-            prodService.getWellStats()
+            prodService.getWellsStats()
         } catch (e: Exception) {
             when (e) {
                 is IOException, is HttpException -> {
                     Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
-                    devService.getWellStats()
+                    devService.getWellsStats()
                 }
                 else -> throw e
             }
         }
+
     override suspend fun deleteAccount(request: DeleteAccountRequest): Response<DeleteAccountResponse> =
         try {
             prodService.deleteAccount(request)
@@ -334,6 +411,41 @@ class FallbackEspApiService(
                 is IOException, is HttpException -> {
                     Log.w("FallbackEspApiService", "Production API failed, falling back to development", e)
                     devService.deleteAccount(request)
+                }
+                else -> throw e
+            }
+        }
+
+    override suspend fun deleteWell(
+        espId: String,
+        email: String,
+        token: String
+    ): Response<BasicResponse> =
+        try {
+            prodService.deleteWell(espId, email, token)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed for deleteWell, falling back to development", e)
+                    devService.deleteWell(espId, email, token)
+                }
+                else -> throw e
+            }
+        }
+
+    override suspend fun getWeather(
+        latitude: Double,
+        longitude: Double,
+        email: String,
+        token: String
+    ): Response<Map<String, Any>> =
+        try {
+            prodService.getWeather(latitude, longitude, email, token)
+        } catch (e: Exception) {
+            when (e) {
+                is IOException, is HttpException -> {
+                    Log.w("FallbackEspApiService", "Production API failed for getWeather, falling back to development", e)
+                    devService.getWeather(latitude, longitude, email, token)
                 }
                 else -> throw e
             }

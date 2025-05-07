@@ -1,51 +1,183 @@
 <!-- welcomePage.html -->
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AquaLink – Présentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WellConnect API Server</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: "Segoe UI", sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
+            background-color: #f8f9fa;
         }
-        h1, h2 {
-            color: #0077b6;
+        
+        header {
+            background-color: #006699;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
         }
+        
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
         h1 {
-            font-size: 2em;
-            border-bottom: 2px solid #0077b6;
-            padding-bottom: 10px;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
         }
+        
+        h2 {
+            color: #006699;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 0.5rem;
+        }
+        
         p {
-            margin-bottom: 1em;
+            margin-bottom: 1rem;
+        }
+        
+        .server-status {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #006699;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .button:hover {
+            background-color: #004d73;
+        }
+        
+        .secondary {
+            background-color: #6c757d;
+        }
+        
+        .secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        code {
+            background-color: #f1f1f1;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+        
+        ul {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <h1>AquaLink – Pour un accès équitable à l’eau</h1>
-    <p>Je m'appelle <strong>Joël Wandege</strong>, je viens du Burundi, un petit pays d’Afrique de l’Est souvent oublié, mais où vivent des millions de personnes confrontées chaque jour à des défis vitaux. Parmi eux, l’un des plus urgents est l’accès à l’eau potable.</p>
-
-    <p>Avec mon ami <strong>Pierre Sluse</strong>, nous avons créé <strong>AquaLink</strong>, une application mobile pour aider les communautés à mieux gérer les ressources en eau, même dans les endroits reculés ou à faible connectivité.</p>
-
-    <h2>Pourquoi AquaLink ?</h2>
-    <p>Notre application permet :</p>
-    <ul>
-        <li>D’être alerté en cas de pluie ou de disponibilité d’une source d’eau proche,</li>
-        <li>De partager l’eau en communauté via un système de signalement,</li>
-        <li>De rationner intelligemment l’eau selon les besoins,</li>
-        <li>De sensibiliser à l’économie et à l’hygiène de l’eau,</li>
-        <li>Et de fournir des données utiles aux ONG.</li>
-    </ul>
-
-    <h2>Notre rôle</h2>
-    <p><strong>Pierre</strong> développe entièrement le code, gère les serveurs, la base de données, et assure que l’application fonctionne sur le terrain.</p>
-    <p><strong>Joël</strong> s’occupe du design, de l’expérience utilisateur, et de la communication avec les communautés locales.</p>
-
-    <p>Nous espérons pouvoir collaborer avec des acteurs comme l’UNICEF ou WaterAid pour tester AquaLink sur le terrain et l’adapter aux besoins locaux.</p>
+    <header>
+        <h1>WellConnect API Server</h1>
+        <div class="server-status">Server Online</div>
+    </header>
+    
+    <main>
+        <section>
+            <h2>Welcome to the WellConnect API Server</h2>
+            <p>
+                This server provides the backend API services for the WellConnect mobile application.
+                It handles user authentication, well monitoring data, and push notifications.
+            </p>
+            
+            <div class="buttons">
+                <a href="/tree" class="button">API Documentation</a>
+                <a href="/send-notifications" class="button">Send Push Notifications</a>
+                <a href="/" class="button secondary">API Health Check</a>
+            </div>
+        </section>
+        
+        <section>
+            <h2>API Features</h2>
+            <ul>
+                <li><strong>User Management:</strong> Registration, login, profile updates</li>
+                <li><strong>Well Monitoring:</strong> Well data retrieval and management</li>
+                <li><strong>Push Notifications:</strong> Device token registration for Firebase Cloud Messaging</li>
+                <li><strong>Location Services:</strong> User location updates and nearby users</li>
+            </ul>
+        </section>
+        
+        <section>
+            <h2>Getting Started</h2>
+            <p>To interact with the API, you can use the following endpoints:</p>
+            <ul>
+                <li><code>POST /api/register</code> - Register a new user</li>
+                <li><code>POST /api/login</code> - Login and get authentication token</li>
+                <li><code>GET /api/wells</code> - Get all wells</li>
+            </ul>
+            <p>For a complete list of available endpoints, visit the <a href="/tree">API Documentation</a>.</p>
+        </section>
+        
+        <section>
+            <h2>Testing Tools</h2>
+            <p>
+                You can test the API using tools like:
+            </p>
+            <ul>
+                <li>The WellConnect mobile app</li>
+                <li>Postman</li>
+                <li>curl</li>
+                <li>Any HTTP client library</li>
+            </ul>
+        </section>
+    </main>
+    
+    <footer>
+        <p>WellConnect API Server &copy; 2023</p>
+        <p>Server Version: 1.1.0</p>
+    </footer>
 </body>
 </html>

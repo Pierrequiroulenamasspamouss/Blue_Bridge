@@ -31,7 +31,10 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(NearbyUsersViewModel::class.java) -> {
                 NearbyUsersViewModel(nearbyUsersRepository) as T
             }
-            else -> throw IllegalArgumentException("Unknown ViewModel class")
+            modelClass.isAssignableFrom(WeatherViewModel::class.java) -> {
+                WeatherViewModel(userRepository) as T
+            }
+            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }

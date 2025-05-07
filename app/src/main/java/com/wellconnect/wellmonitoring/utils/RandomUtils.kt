@@ -10,18 +10,6 @@ import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.Base64
 
-fun exchangeWells(fromIndex: Int, toIndex: Int, wellRepo: WellRepositoryImpl, scope: CoroutineScope) {
-    scope.launch {
-        val currentList = wellRepo.wellListFlow.first().toMutableList()
-        if (fromIndex in currentList.indices && toIndex in currentList.indices) {
-            val temp = currentList[fromIndex]
-            currentList[fromIndex] = currentList[toIndex]
-            currentList[toIndex] = temp
-
-            wellRepo.saveWellList(currentList)
-        }
-    }
-}
 
 
 

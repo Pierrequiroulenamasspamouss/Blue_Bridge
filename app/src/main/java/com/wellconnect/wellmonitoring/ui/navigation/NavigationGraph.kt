@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -17,6 +16,7 @@ import androidx.navigation.navArgument
 import com.wellconnect.wellmonitoring.ui.screens.AdMobScreen
 import com.wellconnect.wellmonitoring.ui.screens.CompassScreen
 import com.wellconnect.wellmonitoring.ui.screens.CreditsScreen
+import com.wellconnect.wellmonitoring.ui.screens.EasterEgg
 import com.wellconnect.wellmonitoring.ui.screens.EditWaterNeedsScreen
 import com.wellconnect.wellmonitoring.ui.screens.HomeScreen
 import com.wellconnect.wellmonitoring.ui.screens.LoadingScreen
@@ -27,12 +27,14 @@ import com.wellconnect.wellmonitoring.ui.screens.NearbyUsersScreen
 import com.wellconnect.wellmonitoring.ui.screens.ProfileScreen
 import com.wellconnect.wellmonitoring.ui.screens.RegisterScreen
 import com.wellconnect.wellmonitoring.ui.screens.SettingsScreen
+import com.wellconnect.wellmonitoring.ui.screens.WeatherScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellConfigScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellDetailsScreen
 import com.wellconnect.wellmonitoring.ui.screens.WellPickerScreen
 import com.wellconnect.wellmonitoring.viewmodels.NearbyUsersViewModel
 import com.wellconnect.wellmonitoring.viewmodels.UiState
 import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
+import com.wellconnect.wellmonitoring.viewmodels.WeatherViewModel
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 
 
@@ -40,13 +42,14 @@ import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigationGraph(
-    viewModelFactory: ViewModelProvider.Factory,  // Renamed from ViewModel to avoid confusion
     navController: NavHostController,
     modifier: Modifier = Modifier,
     nearbyUsersViewModel: NearbyUsersViewModel,
     wellViewModel: WellViewModel,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    weatherViewModel: WeatherViewModel
 ) {
+    
     NavHost(
         navController = navController,
         startDestination = Routes.HOME_SCREEN,
@@ -54,10 +57,20 @@ fun NavigationGraph(
     ) {
 
         composable(Routes.EDIT_WATER_NEEDS_SCREEN) {
-            EditWaterNeedsScreen(
-                navController = navController,
-                userViewModel = userViewModel
-            )
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            
+            // Check if user is guest
+            if (userData == null || userData.role == "guest") {
+                HomeScreen(navController = navController, userViewModel = userViewModel)
+                // Show loading screen while redirecting
+                LoadingScreen()
+            } else {
+                EditWaterNeedsScreen(
+                    navController = navController,
+                    userViewModel = userViewModel
+                )
+            }
         }
 
         // Home Screen
@@ -73,10 +86,25 @@ fun NavigationGraph(
             val userState = userViewModel.state.value
 
             when (userState) {
-                is UiState.Success<*> -> ProfileScreen(
-                    navController = navController,
-                    userViewModel = userViewModel
-                )
+                is UiState.Success<*> -> {
+                    val userData = userState.data as? UserData
+                    
+                    // Check if user is guest
+                    if (userData == null || userData.role == "guest") {
+                        LaunchedEffect(Unit) {
+                            navController.navigate(Routes.LOGIN_SCREEN) {
+                                popUpTo(Routes.PROFILE_SCREEN) { inclusive = true }
+                            }
+                        }
+                        // Show loading screen while redirecting
+                        LoadingScreen()
+                    } else {
+                        ProfileScreen(
+                            navController = navController,
+                            userViewModel = userViewModel
+                        )
+                    }
+                }
 
                 is UiState.Error, UiState.Empty -> {
                     LaunchedEffect(Unit) {
@@ -84,10 +112,11 @@ fun NavigationGraph(
                             popUpTo(Routes.PROFILE_SCREEN) { inclusive = true }
                         }
                     }
+                    // Show loading screen while redirecting
+                    LoadingScreen()
                 }
 
-                 UiState.Loading -> LoadingScreen()
-
+                UiState.Loading -> LoadingScreen()
             }
         }
 
@@ -116,7 +145,8 @@ fun NavigationGraph(
         composable(Routes.MONITORING_SCREEN) {
             MonitorScreen(
                 navController = navController,
-                wellViewModel = wellViewModel
+                wellViewModel = wellViewModel,
+                userViewModel = userViewModel
             )
         }
 
@@ -153,7 +183,8 @@ fun NavigationGraph(
             WellDetailsScreen(
                 navController = navController,
                 wellViewModel = wellViewModel,
-                wellId = wellId
+                wellId = wellId,
+                userViewModel = userViewModel
             )
         }
 
@@ -169,6 +200,7 @@ fun NavigationGraph(
                 wellViewModel = wellViewModel,
                 navController = navController,
                 wellId = wellId,
+                userViewModel = userViewModel,
             )
         }
 
@@ -186,11 +218,24 @@ fun NavigationGraph(
         // Nearby Users Screen
         composable(Routes.NEARBY_USERS_SCREEN) {
             val nearbyState = nearbyUsersViewModel.uiState.value
-
-            NearbyUsersScreen(
-                nearbyState = nearbyState,
-                nearbyUsersViewModel = nearbyUsersViewModel
-            )
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            
+            // Check if user is guest
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.NEARBY_USERS_SCREEN) { inclusive = true }
+                    }
+                }
+                // Show loading screen while redirecting
+                LoadingScreen()
+            } else {
+                NearbyUsersScreen(
+                    nearbyState = nearbyState,
+                    nearbyUsersViewModel = nearbyUsersViewModel
+                )
+            }
         }
 
         // Compass Screen
@@ -288,7 +333,21 @@ fun NavigationGraph(
                 navController = navController
             )
         }
+
+        // Weather Screen
+        composable(Routes.WEATHER_SCREEN) {
+            WeatherScreen(
+                userViewModel = userViewModel,
+                weatherViewModel = weatherViewModel
+            )
+        }
+
+        // Easter Egg Screen
+        composable(Routes.EASTER_EGG_SCREEN) {
+            EasterEgg()
+        }
     }
+
 }
 
 

@@ -11,4 +11,18 @@
     <color name="tan">#FDF3E1</color>
     <color name="light_gray">#FFE0E0E0</color>
     <color name="app_background">#FF000000</color>
+    
+    <!-- Green theme colors -->
+    <color name="green_primary">#1B5E20</color>
+    <color name="green_primary_variant">#2E7D32</color>
+    <color name="green_secondary">#66BB6A</color>
+    <color name="green_secondary_variant">#81C784</color>
+    <color name="green_background">#E8F5E9</color>
+    <color name="green_surface">#FFFFFF</color>
+    <color name="green_error">#B71C1C</color>
+    <color name="green_on_primary">#FFFFFF</color>
+    <color name="green_on_secondary">#000000</color>
+    <color name="green_on_background">#000000</color>
+    <color name="green_on_surface">#000000</color>
+    <color name="green_on_error">#FFFFFF</color>
 </resources>

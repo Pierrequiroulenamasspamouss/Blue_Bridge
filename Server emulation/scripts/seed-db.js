@@ -29,7 +29,13 @@ async function seed() {
                 ],
                 isWellOwner: true,
                 lastActive: new Date(),
-                loginToken: 'sample-token-123'
+                loginToken: 'sample-token-123',
+                deviceTokens: JSON.stringify(['sample-device-token-123']),
+                profileImageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
+                bio: 'Administrator and water management specialist',
+                registrationDate: new Date(),
+                accountStatus: 'active',
+                notificationPreferences: { waterAlerts: true, communityUpdates: true }
             },
             {
                 userId: uuidv4(),
@@ -48,7 +54,13 @@ async function seed() {
                 ],
                 isWellOwner: false,
                 lastActive: new Date(),
-                loginToken: null
+                loginToken: null,
+                deviceTokens: JSON.stringify(['sample-device-token-456']),
+                profileImageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
+                bio: 'Regular community member',
+                registrationDate: new Date(),
+                accountStatus: 'active',
+                notificationPreferences: { waterAlerts: true, communityUpdates: false }
             },
             {
                 userId: uuidv4(),
@@ -65,7 +77,13 @@ async function seed() {
                 waterNeeds: [],
                 isWellOwner: true,
                 lastActive: new Date(),
-                loginToken: null
+                loginToken: null,
+                deviceTokens: JSON.stringify(['sample-device-token-789']),
+                profileImageUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
+                bio: 'Well owner and maintainer',
+                registrationDate: new Date(),
+                accountStatus: 'active',
+                notificationPreferences: { waterAlerts: true, communityUpdates: true }
             }
         ];
         

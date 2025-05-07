@@ -1,11 +1,12 @@
 @file:Suppress("DEPRECATION")
 
-package com.wellconnect.wellmonitoring.ui.screens.compass
+package com.wellconnect.wellmonitoring.ui.components.compass
 
 import android.location.Location
 import android.os.Build
 import android.preference.PreferenceManager
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -28,7 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.wellconnect.wellmonitoring.R
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -188,7 +193,7 @@ fun MiniMapView(
                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         marker.title = "Your Location"
                         marker.icon = context.getDrawable(
-                            com.wellconnect.wellmonitoring.R.drawable.small_map_arrow
+                            R.drawable.small_map_arrow
                         )
                         
                         // Store reference to user marker
@@ -210,7 +215,7 @@ fun MiniMapView(
                                 targetMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                                 targetMarker.title = "Target Location"
                                 targetMarker.icon = context.getDrawable(
-                                    com.wellconnect.wellmonitoring.R.drawable.small_water_drop_icon
+                                    R.drawable.small_water_drop_icon
                                 )
                                 getOverlayManager().add(targetMarker)
                                 Log.d(TAG, "Target marker added at: lat=$targetLatitude, lon=$targetLongitude")
@@ -236,11 +241,11 @@ fun MiniMapView(
                         // Add listener to detect map interactions
                         setOnTouchListener { _, event ->
                             when (event.action) {
-                                android.view.MotionEvent.ACTION_DOWN -> {
+                                MotionEvent.ACTION_DOWN -> {
                                     // Log touch start
                                     Log.d(TAG, "Map touch detected (ACTION_DOWN)")
                                 }
-                                android.view.MotionEvent.ACTION_MOVE -> {
+                                MotionEvent.ACTION_MOVE -> {
                                     // User is dragging the map, disable following
                                     if (isFollowingUser) {
                                         isFollowingUser = false
@@ -255,12 +260,12 @@ fun MiniMapView(
                         }
                         
                         // Add a zoom listener to track zoom changes
-                        addMapListener(object : org.osmdroid.events.MapListener {
-                            override fun onScroll(event: org.osmdroid.events.ScrollEvent?): Boolean {
+                        addMapListener(object : MapListener {
+                            override fun onScroll(event: ScrollEvent?): Boolean {
                                 return false
                             }
                             
-                            override fun onZoom(event: org.osmdroid.events.ZoomEvent): Boolean {
+                            override fun onZoom(event: ZoomEvent): Boolean {
                                 // Ensure we don't go below minimum zoom
                                 if (event.zoomLevel < MIN_ZOOM_LEVEL) {
                                     controller.setZoom(MIN_ZOOM_LEVEL)

@@ -24,7 +24,7 @@ private const val TAG = "NetworkUtils"
  * Get the base API URL from strings.xml
  */
 fun getBaseApiUrl(context: Context): String {
-    return context.getString(R.string.GeneralIp)
+    return context.getString(R.string.ProductionServerUrl)
 }
 
 /**
@@ -57,9 +57,14 @@ suspend fun fetchAllWellsFromServer(
                 val apiService = RetrofitBuilder.createFresh(baseUrl)
                 val response = apiService.getAllWells()
                 
-                // Handle response based on how the API actually returns data
-                Log.d(TAG, "Successfully fetched ${response.size} wells from server_crt")
-                response
+                if (response.isSuccessful && response.body() != null) {
+                    val paginatedResponse = response.body()!!
+                    Log.d(TAG, "Successfully fetched ${paginatedResponse.processedWells.size} wells from server_crt")
+                    paginatedResponse.processedWells
+                } else {
+                    Log.e(TAG, "Error response from server: ${response.errorBody()?.string()}")
+                    emptyList()
+                }
             }
         } catch (e: TimeoutCancellationException) {
             retryCount++
@@ -82,7 +87,7 @@ suspend fun fetchAllWellsFromServer(
                 Log.w(TAG, "Error fetching wells, attempt ${retryCount}/$maxRetries. Error: ${e.message}. Retrying in ${backoffDelay}ms... (${remainingRetries} attempts remaining)")
                 delay(backoffDelay)
             } else {
-                Log.e(TAG, "Failed to fetch wells after $maxRetries attempts", e)
+                Log.e(TAG, "Failed to fetch wells after $maxRetries attempts (Ask Gemini)", e)
                 return@withContext listOf<ShortenedWellData>()
             }
         }

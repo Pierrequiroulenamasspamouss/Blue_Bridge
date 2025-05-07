@@ -6,7 +6,6 @@ FOR ME WHEN I WILL RESTART THE PROJECT:
 NearbyUsersScreen       com.wellconnect.wellmonitoring       E  Error fetching nearby users: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
 --> this is to fix but for now, I have to STUDY and SLEEP
 -->
-to change the address it goes to fetch the data, change the GeneralIp in app/src/main/res/values/strings.xml 
 
 # WellConnect - Community Water Well Monitoring
 
@@ -101,7 +100,7 @@ git clone https://github.com/yourusername/wellconnect.git
 <domain includeSubdomains="true">YOUR-DOMAIN</domain>
 ```
 ```strings.xml
-<string name="GeneralIp">http://wellconnect.homeonthewater.com/</string>
+<string name="ProductionServerUrl">http://wellconnect.homeonthewater.com:3000/</string>
 ```
 
 
@@ -154,3 +153,7 @@ or do a request on the gitHub project
 - Website: http://wellconnect.homeonthewater.com
 
 
+
+
+
+quantité d'eau par famille 

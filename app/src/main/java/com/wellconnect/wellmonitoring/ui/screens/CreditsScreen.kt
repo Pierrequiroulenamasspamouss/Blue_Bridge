@@ -105,8 +105,8 @@ fun CreditsScreen() {
                 icon = Icons.Filled.SupervisorAccount,
                 description = "Provided guidance and assistance throughout the development process."
             )
-            
-            Spacer(modifier = Modifier.height(32.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             CreditCard(
                 title = "Powered by",
@@ -114,6 +114,7 @@ fun CreditsScreen() {
                 icon = Icons.Filled.SupervisorAccount,
                 description = projects
             )
+            Spacer(modifier = Modifier.height(32.dp))
             // App Information
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,7 +143,7 @@ fun CreditsScreen() {
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "© 2024 WellConnect Team. All rights reserved.",
+                        text = "© 2025 WellConnect Team. All rights reserved.",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center
                     )

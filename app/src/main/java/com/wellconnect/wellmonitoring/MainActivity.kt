@@ -11,6 +11,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
+import com.wellconnect.wellmonitoring.data.UserEvent
 import com.wellconnect.wellmonitoring.data.local.UserPreferences
 import com.wellconnect.wellmonitoring.data.local.WellPreferences
 import com.wellconnect.wellmonitoring.data.repository.NearbyUsersRepositoryImpl
@@ -30,10 +32,19 @@ import com.wellconnect.wellmonitoring.data.repository.WellRepositoryImpl
 import com.wellconnect.wellmonitoring.network.RetrofitBuilder
 import com.wellconnect.wellmonitoring.ui.navigation.NavigationGraph
 import com.wellconnect.wellmonitoring.ui.theme.My_second_appTheme
+import com.wellconnect.wellmonitoring.ui.theme.getCyanColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getGreenColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getOrangeColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getPinkColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getPurpleColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getRedColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getTanColorScheme
+import com.wellconnect.wellmonitoring.ui.theme.getYellowColorScheme
 import com.wellconnect.wellmonitoring.viewmodels.NearbyUsersViewModel
 import com.wellconnect.wellmonitoring.viewmodels.UiState
 import com.wellconnect.wellmonitoring.viewmodels.UserViewModel
 import com.wellconnect.wellmonitoring.viewmodels.ViewModelFactory
+import com.wellconnect.wellmonitoring.viewmodels.WeatherViewModel
 import com.wellconnect.wellmonitoring.viewmodels.WellViewModel
 import kotlinx.serialization.InternalSerializationApi
 
@@ -63,7 +74,10 @@ class MainActivity : ComponentActivity() {
             preferences = userPreferences
         )
 
-        val wellRepository = WellRepositoryImpl(wellPreferences)
+        val wellRepository = WellRepositoryImpl(
+            api = api,
+            preferences = wellPreferences
+        )
         val nearbyUsersRepository = NearbyUsersRepositoryImpl(api, userRepository)
 
         // Create ViewModel factory
@@ -102,12 +116,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MyApp(viewModelFactory: ViewModelProvider.Factory) {
     val userViewModel: UserViewModel = viewModel(factory = viewModelFactory)
-    val wellViewModel: WellViewModel = viewModel(factory = viewModelFactory)
-    val nearbyUsersViewModel: NearbyUsersViewModel = viewModel(factory = viewModelFactory)
 
     // Load user data when app starts
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        userViewModel.handleEvent(com.wellconnect.wellmonitoring.data.UserEvent.LoadUser)
+    LaunchedEffect(Unit) {
+        userViewModel.handleEvent(UserEvent.LoadUser)
     }
 
     // Collect user state safely
@@ -128,17 +140,151 @@ private fun MyApp(viewModelFactory: ViewModelProvider.Factory) {
         else -> isSystemInDarkTheme()
     }
 
-    My_second_appTheme(darkTheme = isDarkTheme) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            App(
-                userViewModel = userViewModel,
-                wellViewModel = wellViewModel,
-                nearbyUsersViewModel = nearbyUsersViewModel,
-                viewModelFactory = viewModelFactory
-            )
+    // Apply the selected theme based on themePreference
+    when (themePreference) {
+        0, 1, 2 -> { // System, Light, Dark - use default theme
+            My_second_appTheme(darkTheme = isDarkTheme) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        3 -> { // Green theme
+            MaterialTheme(
+                colorScheme = getGreenColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        4 -> { // Pink theme
+            MaterialTheme(
+                colorScheme = getPinkColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        5 -> { // Red theme
+            MaterialTheme(
+                colorScheme = getRedColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        6 -> { // Purple theme
+            MaterialTheme(
+                colorScheme = getPurpleColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        7 -> { // Yellow theme
+            MaterialTheme(
+                colorScheme = getYellowColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        8 -> { // Tan theme
+            MaterialTheme(
+                colorScheme = getTanColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        9 -> { // Orange theme
+            MaterialTheme(
+                colorScheme = getOrangeColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        10 -> { // Cyan theme
+            MaterialTheme(
+                colorScheme = getCyanColorScheme(isDarkTheme),
+                typography = Typography()
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
+        }
+        else -> { // Fallback to default theme
+            My_second_appTheme(darkTheme = isDarkTheme) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    App(
+                        viewModelFactory = viewModelFactory
+                    )
+                }
+            }
         }
     }
 }
@@ -146,19 +292,22 @@ private fun MyApp(viewModelFactory: ViewModelProvider.Factory) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun App(
-    userViewModel: UserViewModel,
-    wellViewModel: WellViewModel,
-    nearbyUsersViewModel: NearbyUsersViewModel,
-    viewModelFactory: ViewModelProvider.Factory
+    viewModelFactory: ViewModelProvider.Factory,
+
 ) {
+    val userViewModel: UserViewModel = viewModel(factory = viewModelFactory)
+    val wellViewModel: WellViewModel = viewModel(factory = viewModelFactory)
+    val nearbyUsersViewModel: NearbyUsersViewModel = viewModel(factory = viewModelFactory)
+    val weatherViewModel: WeatherViewModel = viewModel(factory = viewModelFactory)
     val navController = rememberNavController()
 
     NavigationGraph(
+
         navController = navController,
         userViewModel = userViewModel,
         wellViewModel = wellViewModel,
         nearbyUsersViewModel = nearbyUsersViewModel,
-        modifier = Modifier.fillMaxSize(),
-        viewModelFactory = viewModelFactory
+        weatherViewModel = weatherViewModel,
+        modifier = Modifier.fillMaxSize()
     )
 }

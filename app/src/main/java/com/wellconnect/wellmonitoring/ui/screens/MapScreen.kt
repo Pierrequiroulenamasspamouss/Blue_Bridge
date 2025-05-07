@@ -11,16 +11,23 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -39,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -84,6 +92,7 @@ fun MapScreen(
     var isLoading by remember { mutableStateOf(true) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
+    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
     // Check location permission
     LaunchedEffect(Unit) {
@@ -333,7 +342,9 @@ fun MapScreen(
                                     }
                                 }
                                 
-                                // Force this to be a MapView not just a View
+                                // Store reference to the map view
+                                mapViewRef = this
+                                
                                 this
                             }
                         } catch (e: Exception) {
@@ -365,6 +376,105 @@ fun MapScreen(
                         }
                     }
                 )
+                
+                // Control buttons
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Focus on user location button
+                        if (userLat != null && userLon != null) {
+                            androidx.compose.material3.FloatingActionButton(
+                                onClick = {
+                                    scope.launch {
+                                        try {
+                                            mapViewRef?.let { mapView ->
+                                                val userPoint = GeoPoint(userLat, userLon)
+                                                mapView.controller.animateTo(userPoint)
+                                                mapView.controller.setZoom(15.0)
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Error focusing on user location: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.MyLocation,
+                                    contentDescription = "My Location"
+                                )
+                            }
+                        }
+                        
+                        // Focus on target location button
+                        if (targetLat != null && targetLon != null) {
+                            androidx.compose.material3.FloatingActionButton(
+                                onClick = {
+                                    scope.launch {
+                                        try {
+                                            mapViewRef?.let { mapView ->
+                                                val targetPoint = GeoPoint(targetLat, targetLon)
+                                                mapView.controller.animateTo(targetPoint)
+                                                mapView.controller.setZoom(15.0)
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Error focusing on target location: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Place,
+                                    contentDescription = "Target Location"
+                                )
+                            }
+                        }
+                        
+                        // Reset view button to see all wells
+                        androidx.compose.material3.FloatingActionButton(
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        mapViewRef?.let { mapView ->
+                                            val initialPoint = when {
+                                                targetLat != null && targetLon != null -> GeoPoint(targetLat, targetLon)
+                                                userLat != null && userLon != null -> GeoPoint(userLat, userLon)
+                                                else -> {
+                                                    val firstWellWithCoords = wells.firstOrNull { it.hasValidCoordinates() }
+                                                    if (firstWellWithCoords != null) {
+                                                        val lat = firstWellWithCoords.getLatitude() ?: 0.0
+                                                        val lon = firstWellWithCoords.getLongitude() ?: 0.0
+                                                        GeoPoint(lat, lon)
+                                                    } else {
+                                                        GeoPoint(0.0, 0.0)
+                                                    }
+                                                }
+                                            }
+                                            mapView.controller.animateTo(initialPoint)
+                                            mapView.controller.setZoom(12.0.coerceAtLeast(MIN_ZOOM_LEVEL))
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error resetting view: ${e.message}")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.padding(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Reset View"
+                            )
+                        }
+                    }
+                }
             }
         }
     }

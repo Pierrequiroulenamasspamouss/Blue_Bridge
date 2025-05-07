@@ -1,4 +1,4 @@
-package com.wellconnect.wellmonitoring.ui.screens.compass
+package com.wellconnect.wellmonitoring.ui.components.compass
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

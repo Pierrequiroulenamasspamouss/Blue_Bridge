@@ -16,7 +16,7 @@ data class BasicRequest(
 data class BasicResponse(
     val status: String, //success or not
     val message: String,
-    val timestamp: String
+    val timestamp: String = "0000-00-00 00:00:00"
 )
 
 @Serializable
@@ -109,4 +109,34 @@ data class DeleteAccountRequest(
 data class DeleteAccountResponse(
     val status: String,
     val message: String? = null
+)
+
+/**
+ * Request model for registering or unregistering a notification token
+ */
+@Serializable
+data class NotificationTokenRequest(
+    val email: String,
+    val token: String,
+    val deviceToken: String
+)
+
+@Serializable
+data class WellStatsResponse(
+    val status: String,
+    val stats: WellStats
+)
+
+@Serializable
+data class WellStats(
+    val totalWells: Int,
+    val avgCapacity: Double,
+    val avgWaterLevel: Double,
+    val avgConsumption: Double,
+    val totalCapacity: Int,
+    val totalWaterLevel: Int,
+    val percentageAvailable: Double,
+    val statusCounts: Map<String, Int>,
+    val waterTypeCounts: Map<String, Int>,
+    val recentlyUpdated: Int
 )

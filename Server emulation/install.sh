@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-echo "Installing WellConnect Reforge Server..."
+echo "Installing WellConnect Server..."
 
 # Update system packages
 echo "Updating system packages..."
@@ -67,6 +67,14 @@ PORT=3000
 NODE_ENV=production
 JWT_SECRET=$(openssl rand -base64 32)
 DB_PATH=/opt/wellconnect/database.sqlite
+
+# Firebase configuration
+FIREBASE_PROJECT_ID=wellconnect-458200
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@wellconnect-458200.iam.gserviceaccount.com
+# This is a dummy placeholder - replace with your actual private key
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQ...\n-----END PRIVATE KEY-----\n"
+FIREBASE_WEB_PUSH_CERT=BJ9Mf0mMKZO8pnRYwL-
+FIREBASE_SERVER_KEY=jdWcCM2iqQUmzsgXJnIT5yjrrfrgF_2rmjkM9gUv1QbWSlLcG2cyTA93qIHmSyvx2c6o
 EOL
     sudo chown wellconnect:wellconnect .env
     sudo chmod 600 .env
@@ -76,7 +84,7 @@ fi
 echo "Creating systemd service..."
 cat > /etc/systemd/system/wellconnect.service << EOL
 [Unit]
-Description=WellConnect Reforge Server
+Description=WellConnect Server
 After=network.target
 
 [Service]
@@ -163,6 +171,18 @@ server {
         proxy_read_timeout 60s;
     }
 
+    # API Documentation - special case for the tree view
+    location /tree {
+        proxy_pass http://localhost:3000/tree;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        # Allow longer timeouts for generating the tree
+        proxy_connect_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+    }
+
     # Gzip compression
     gzip on;
     gzip_vary on;
@@ -203,6 +223,9 @@ echo "Installation complete!"
 echo "The server should now be accessible at:"
 echo "HTTP:  http://$(hostname -I | awk '{print $1}')"
 echo "HTTPS: https://$(hostname -I | awk '{print $1}')"
+echo ""
+echo "API documentation available at:"
+echo "https://$(hostname -I | awk '{print $1}')/tree"
 echo ""
 echo "Note: When accessing via HTTPS, you will see a security warning because"
 echo "we're using a self-signed certificate. This is normal for local development."
