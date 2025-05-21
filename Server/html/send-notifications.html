@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Push Notifications - BlueBridge</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        
+        header {
+            background-color: #006699;
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .notification-form {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #006699;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: #004d73;
+        }
+        
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notification-result {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .error-result {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .notification-history {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .loading {
+            display: none;
+            margin-left: 1rem;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #006699;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            background-color: #6c757d;
+            border-radius: 0.25rem;
+        }
+        
+        .badge-success {
+            background-color: #28a745;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #006699;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>BlueBridge Push Notifications</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="notification-result" id="result"></div>
+        
+        <div class="notification-form">
+            <h2>Send New Notification</h2>
+            <p>Use this form to send push notifications to all registered devices or specific users.</p>
+            
+            <form id="notification-form">
+                <div class="form-group">
+                    <label for="title">Notification Title *</label>
+                    <input type="text" id="title" name="title" required placeholder="E.g., Water Level Alert" maxlength="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Notification Message *</label>
+                    <textarea id="message" name="message" required placeholder="Enter notification message here..." maxlength="500"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target-type">Target Audience</label>
+                    <select id="target-type" name="target-type">
+                        <option value="all">All Registered Devices</option>
+                        <option value="specific">Specific Users</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="emails-group" style="display: none;">
+                    <label for="emails">Target Emails (one per line)</label>
+                    <textarea id="emails" name="emails" placeholder="Enter email addresses, one per line..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn" id="send-btn">Send Notification</button>
+                    <div class="loading" id="loading">
+                        <span class="spinner"></span> Sending...
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="notification-history">
+            <h2>Recent Notifications</h2>
+            <p>History of recently sent notifications.</p>
+            
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Title</th>
+                        <th>Recipients</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr>
+                        <td colspan="4">No notifications sent yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <a href="/home" class="back-link">← Back to Home</a>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>WellConnect API Server &copy; 2023</p>
+        </div>
+    </footer>
+    
+    <script>
+        // DOM Elements
+        const form = document.getElementById('notification-form');
+        const titleInput = document.getElementById('title');
+        const messageInput = document.getElementById('message');
+        const targetTypeSelect = document.getElementById('target-type');
+        const emailsGroup = document.getElementById('emails-group');
+        const emailsInput = document.getElementById('emails');
+        const sendButton = document.getElementById('send-btn');
+        const loading = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+        const historyBody = document.getElementById('history-body');
+        
+        // Show/hide emails field based on target selection
+        targetTypeSelect.addEventListener('change', () => {
+            if (targetTypeSelect.value === 'specific') {
+                emailsGroup.style.display = 'block';
+            } else {
+                emailsGroup.style.display = 'none';
+            }
+        });
+        
+        // Initialize notification history from localStorage
+        let notificationHistory = JSON.parse(localStorage.getItem('notificationHistory') || '[]');
+        updateHistoryTable();
+        
+        // Send notification form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate form
+            if (!titleInput.value.trim() || !messageInput.value.trim()) {
+                showResult('Please enter both title and message.', true);
+                return;
+            }
+            
+            // Prepare request data
+            const requestData = {
+                title: titleInput.value.trim(),
+                message: messageInput.value.trim()
+            };
+            
+            // Add target emails if specific users selected
+            if (targetTypeSelect.value === 'specific' && emailsInput.value.trim()) {
+                const emails = emailsInput.value.trim().split('\n')
+                    .map(email => email.trim())
+                    .filter(email => email.length > 0);
+                
+                if (emails.length > 0) {
+                    requestData.targetEmails = emails;
+                }
+            }
+            
+            // Show loading state
+            sendButton.disabled = true;
+            loading.style.display = 'inline-block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                // Send the API request
+                const response = await fetch('/api/notifications/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Check if schema was updated and retry is needed
+                    if (data.details && data.details.action === 'schema_updated') {
+                        showResult('Database schema has been updated. Retrying notification...', false);
+                        
+                        // Wait a moment then retry
+                        setTimeout(() => {
+                            // Resend the same request
+                            fetch('/api/notifications/send', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(requestData)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (response.ok) {
+                                    showResult(`Success! Notification sent to ${data.details?.usersTargeted || 0} users (${data.details?.devicesTargeted || 0} devices).`);
+                                    
+                                    // Add to history
+                                    addToHistory({
+                                        time: new Date(),
+                                        title: requestData.title,
+                                        recipients: `${data.details?.usersTargeted || 0} users (${data.details?.devicesTargeted || 0} devices)`,
+                                        status: 'Sent'
+                                    });
+                                    
+                                    // Clear form
+                                    form.reset();
+                                } else {
+                                    showResult(`Error: ${data.message}`, true);
+                                    
+                                    // Add to history with failed status
+                                    addToHistory({
+                                        time: new Date(),
+                                        title: requestData.title,
+                                        recipients: targetTypeSelect.value === 'all' ? 'All Users' : 'Specific Users',
+                                        status: 'Failed'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                showResult(`Network error on retry: ${error.message}`, true);
+                                
+                                // Add to history with failed status
+                                addToHistory({
+                                    time: new Date(),
+                                    title: requestData.title,
+                                    recipients: targetTypeSelect.value === 'all' ? 'All Users' : 'Specific Users',
+                                    status: 'Failed'
+                                });
+                            })
+                            .finally(() => {
+                                // Reset loading state
+                                sendButton.disabled = false;
+                                loading.style.display = 'none';
+                            });
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // Regular success case
+                    showResult(`Success! Notification sent to ${data.details?.usersTargeted || 0} users (${data.details?.devicesTargeted || 0} devices).`);
+                    
+                    // Add to history
+                    addToHistory({
+                        time: new Date(),
+                        title: requestData.title,
+                        recipients: `${data.details?.usersTargeted || 0} users (${data.details?.devicesTargeted || 0} devices)`,
+                        status: 'Sent'
+                    });
+                    
+                    // Clear form
+                    form.reset();
+                } else {
+                    // Error case
+                    showResult(`Error: ${data.message}`, true);
+                    
+                    // Add to history
+                    addToHistory({
+                        time: new Date(),
+                        title: requestData.title,
+                        recipients: targetTypeSelect.value === 'all' ? 'All Users' : 'Specific Users',
+                        status: 'Failed'
+                    });
+                }
+            } catch (error) {
+                showResult(`Network error: ${error.message}`, true);
+                
+                // Add to history
+                addToHistory({
+                    time: new Date(),
+                    title: requestData.title,
+                    recipients: targetTypeSelect.value === 'all' ? 'All Users' : 'Specific Users',
+                    status: 'Failed'
+                });
+            } finally {
+                // Reset loading state
+                sendButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+        
+        // Show result message
+        function showResult(message, isError = false) {
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+            
+            if (isError) {
+                resultDiv.classList.add('error-result');
+            } else {
+                resultDiv.classList.remove('error-result');
+            }
+            
+            // Automatically hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Add notification to history
+        function addToHistory(notification) {
+            // Add to the beginning of the array
+            notificationHistory.unshift(notification);
+            
+            // Limit history to 10 items
+            if (notificationHistory.length > 10) {
+                notificationHistory = notificationHistory.slice(0, 10);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('notificationHistory', JSON.stringify(notificationHistory));
+            
+            // Update the table
+            updateHistoryTable();
+        }
+        
+        // Update history table with current data
+        function updateHistoryTable() {
+            if (notificationHistory.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="4">No notifications sent yet</td></tr>';
+                return;
+            }
+            
+            historyBody.innerHTML = '';
+            
+            notificationHistory.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Format timestamp
+                const timeCell = document.createElement('td');
+                const time = new Date(item.time);
+                timeCell.textContent = time.toLocaleString();
+                
+                // Format title
+                const titleCell = document.createElement('td');
+                titleCell.textContent = item.title;
+                
+                // Format recipients
+                const recipientsCell = document.createElement('td');
+                recipientsCell.textContent = item.recipients;
+                
+                // Format status with badge
+                const statusCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.classList.add('badge');
+                badge.textContent = item.status;
+                
+                if (item.status === 'Sent') {
+                    badge.classList.add('badge-success');
+                }
+                
+                statusCell.appendChild(badge);
+                
+                // Add cells to row
+                row.appendChild(timeCell);
+                row.appendChild(titleCell);
+                row.appendChild(recipientsCell);
+                row.appendChild(statusCell);
+                
+                // Add row to table
+                historyBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html> 

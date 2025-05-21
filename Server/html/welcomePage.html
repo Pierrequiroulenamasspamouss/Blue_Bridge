@@ -1,0 +1,188 @@
+<!-- welcomePage.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to BlueBridge</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --text-color: #2c3e50;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: var(--text-color);
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        .donation-section {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .donation-button {
+            display: inline-block;
+            background: #0070ba;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .donation-button:hover {
+            background: #005ea6;
+        }
+
+        .partners-section {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .partners-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .partner-card {
+            padding: 1rem;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            transition: transform 0.3s ease;
+        }
+
+        .partner-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to BlueBridge</h1>
+            <p>Connecting communities with clean water resources</p>
+        </div>
+
+        <div class="content">
+            <a href="/about" class="card">
+                <h2>Our Mission</h2>
+                <p>BlueBridge is dedicated to connecting communities with clean water resources through innovative technology and sustainable solutions.</p>
+            </a>
+
+            <a href="/services" class="card">
+                <h2>What We Do</h2>
+                <p>We provide real-time monitoring of water resources, connect communities with water sources, and help manage water distribution efficiently.</p>
+            </a>
+
+            <a href="/download" class="card">
+                <h2>Get Started</h2>
+                <p>Download our mobile app to start monitoring water resources in your area and connect with your community.</p>
+            </a>
+        </div>
+
+        <div class="donation-section">
+            <h2>Support Our Mission</h2>
+            <p>Your contribution helps us maintain and expand our well monitoring network and support communities in need.</p>
+            <form action="https://www.paypal.com/donate" method="post" target="_top">
+                <input type="hidden" name="hosted_button_id" value="YOUR_PAYPAL_BUTTON_ID" />
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+            </form>
+        </div>
+
+        <div class="partners-section">
+            <h2>Our Partners</h2>
+            <p>We work with organizations that share our vision for sustainable water management.</p>
+            <div class="partners-list">
+                <!-- Partner cards will be added dynamically -->
+                <div class="partner-card">
+                    <h3>Coming Soon</h3>
+                    <p>Be the first to partner with us!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 BlueBridge. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

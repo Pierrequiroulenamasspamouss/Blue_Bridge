@@ -9,7 +9,7 @@ distinguished_name = dn
 C = FR
 ST = IDF
 L = Paris
-O = WellConnect Development
+O = BlueBridge Development
 OU = Development
 CN = 192.168.0.207
 

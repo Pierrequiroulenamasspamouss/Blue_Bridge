@@ -7,7 +7,7 @@
         errorLine1="        else -> String.format(&quot;%.1f hours&quot;, timeSeconds / 3600)"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/DistanceInfo.kt"
+            file="src/main/java/com/bluebridge/bluebridgeapp/ui/screens/compass/DistanceInfo.kt"
             line="125"
             column="17"/>
     </issue>
@@ -920,7 +920,7 @@
         errorLine1="    modifier: Modifier = Modifier,"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/bluebridge/bluebridgeapp/screens/compass/MiniMapView.kt"
             line="53"
             column="5"/>
     </issue>
@@ -942,7 +942,7 @@
         errorLine1="        val certificateInputStream = context.resources.openRawResource(context.resources.getIdentifier(&quot;dev_cert&quot;, &quot;raw&quot;, context.packageName))"
         errorLine2="                                                                                         ~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/network/RetrofitBuilder.kt"
+            file="src/main/java/com/blnetwork/RetrofitBuilder.kt"
             line="120"
             column="90"/>
     </issue>
@@ -953,7 +953,7 @@
         errorLine1="                        marker.icon = context.getDrawable("
         errorLine2="                                      ^">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="190"
             column="39"/>
     </issue>
@@ -964,7 +964,7 @@
         errorLine1="                        marker.icon = context.getDrawable("
         errorLine2="                                      ^">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="190"
             column="39"/>
     </issue>
@@ -975,7 +975,7 @@
         errorLine1="                                targetMarker.icon = context.getDrawable("
         errorLine2="                                                    ^">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="212"
             column="53"/>
     </issue>
@@ -986,7 +986,7 @@
         errorLine1="                                targetMarker.icon = context.getDrawable("
         errorLine2="                                                    ^">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="212"
             column="53"/>
     </issue>
@@ -997,7 +997,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="215"
             column="47"/>
     </issue>
@@ -1008,7 +1008,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="215"
             column="47"/>
     </issue>
@@ -1019,7 +1019,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="228"
             column="47"/>
     </issue>
@@ -1030,7 +1030,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/bluebridge/bluebridgeapp/ui/components/advanced_ui_components.kt"
             line="228"
             column="47"/>
     </issue>
@@ -1041,7 +1041,7 @@
         errorLine1="                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/bluebridge/bluebridgeapp/ui/components/advanced_ui_components.kt"
             line="260"
             column="55"/>
     </issue>
@@ -1052,7 +1052,7 @@
         errorLine1="                                        marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/bluebridge/bluebridgeapp/ui/components/advanced_ui_components.kt"
             line="260"
             column="55"/>
     </issue>
@@ -1063,7 +1063,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="302"
             column="47"/>
     </issue>
@@ -1074,7 +1074,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="302"
             column="47"/>
     </issue>
@@ -1085,7 +1085,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="318"
             column="47"/>
     </issue>
@@ -1096,7 +1096,7 @@
         errorLine1="                                marker.icon = context.getDrawable(R.drawable.ic_launcher_foreground)"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/components/advanced_ui_components.kt"
+            file="src/main/java/com/blui/components/advanced_ui_components.kt"
             line="318"
             column="47"/>
     </issue>
@@ -1114,7 +1114,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/HomeScreen.kt"
+            file="src/main/java/com/blui/screens/HomeScreen.kt"
             line="85"
             column="13"/>
     </issue>
@@ -1125,7 +1125,7 @@
         errorLine1="    val azimuthState = remember { mutableStateOf(0f) }"
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            file="src/main/java/com/blui/screens/compass/CompassSensorManager.kt"
             line="19"
             column="35"/>
     </issue>
@@ -1136,7 +1136,7 @@
         errorLine1="    val filteredAzimuth = remember { mutableStateOf(0f) }"
         errorLine2="                                     ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            file="src/main/java/com/blui/screens/compass/CompassSensorManager.kt"
             line="20"
             column="38"/>
     </issue>
@@ -1147,7 +1147,7 @@
         errorLine1="    var bufferIndex = remember { mutableStateOf(0) }"
         errorLine2="                                 ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/CompassSensorManager.kt"
+            file="src/main/java/com/blui/screens/compass/CompassSensorManager.kt"
             line="25"
             column="34"/>
     </issue>
@@ -1158,7 +1158,7 @@
         errorLine1="    var editingNeedIndex by remember { mutableStateOf(-1) }"
         errorLine2="                                       ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            file="src/main/java/com/blui/screens/EditWaterNeedsScreen.kt"
             line="79"
             column="40"/>
     </issue>
@@ -1169,7 +1169,7 @@
         errorLine1="    var newPriority by remember { mutableStateOf(3) }"
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            file="src/main/java/com/blui/screens/EditWaterNeedsScreen.kt"
             line="89"
             column="35"/>
     </issue>
@@ -1180,7 +1180,7 @@
         errorLine1="    var deletingNeedIndex by remember { mutableStateOf(-1) }"
         errorLine2="                                        ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/EditWaterNeedsScreen.kt"
+            file="src/main/java/com/blui/screens/EditWaterNeedsScreen.kt"
             line="94"
             column="41"/>
     </issue>
@@ -1191,7 +1191,7 @@
         errorLine1="    val currentZoom = remember { mutableStateOf(userPreferredZoomLevel) }"
         errorLine2="                                 ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="71"
             column="34"/>
     </issue>
@@ -1202,7 +1202,7 @@
         errorLine1="    val rotation = remember { mutableStateOf(0f) }"
         errorLine2="                              ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="74"
             column="31"/>
     </issue>
@@ -1713,7 +1713,7 @@
         errorLine1="                        setOnTouchListener { _, event ->"
         errorLine2="                                           ^">
         <location
-            file="src/main/java/com/wellconnect/wellmonitoring/ui/screens/compass/MiniMapView.kt"
+            file="src/main/java/com/blui/screens/compass/MiniMapView.kt"
             line="237"
             column="44"/>
     </issue>

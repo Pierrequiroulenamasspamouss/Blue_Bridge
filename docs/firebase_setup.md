@@ -1,6 +1,6 @@
-# WellConnect Firebase Push Notifications Setup Guide
+# BlueBridge Firebase Push Notifications Setup Guide
 
-This guide will help you set up push notifications for the WellConnect app using Firebase Cloud Messaging.
+This guide will help you set up push notifications for the BlueBridge app using Firebase Cloud Messaging.
 
 ## 1. Generate Firebase Private Key
 
