@@ -35,7 +35,7 @@
             
         <!-- Firebase Cloud Messaging -->
         <service
-            android:name=".firebase.WellConnectMessagingService"
+            android:name="com.bluebridge.bluebridgeapp.firebase.BluebridgeMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -54,7 +54,7 @@
             android:value="@string/default_notification_channel_id" />
             
         <activity
-            android:name=".MainActivity"
+            android:name="com.bluebridge.bluebridgeapp.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.My_second_app.Splash">
             <intent-filter>

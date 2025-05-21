@@ -1,15 +1,18 @@
 FOR ME WHEN I WILL RESTART THE PROJECT:
 --> i started implementing https but the issue is that the certificates seem to not work.
 --> UPDATE: tha app accepts both http and https. But http is in fallback
--->the app crashes because of a feature not imlemented yet on the pixel 7
 --> LOGCAT :
-NearbyUsersScreen       com.wellconnect.wellmonitoring       E  Error fetching nearby users: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
+NearbyUsersScreen       bluebridge.wellmonitoring       E  Error fetching nearby users: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
 --> this is to fix but for now, I have to STUDY and SLEEP
--->
+--> Send a sms via adb --> to implement :
+adb shell am start -a android.intent.action.SENDTO -d sms:+32491142936 --es sms_body "Automatic_message2" --ez exit_on_sent true &&adb shell input tap 960 2170
+(to use with a phone connected to the server) 
 
-# WellConnect - Community Water Well Monitoring
+--> TODO:send MMSes now (find a command)
 
-WellConnect is an Android application designed to help communities in Africa monitor and manage their water wells efficiently. The app facilitates communication between community members, tracks water consumption, and provides real-time information about nearby wells and users.
+# BlueBridge - Community Water Well Monitoring
+
+BlueBridge is an Android application designed to help communities in Africa monitor and manage their water wells efficiently. The app facilitates communication between community members, tracks water consumption, and provides real-time information about nearby wells and users.
 
 ## Features
 
@@ -90,7 +93,7 @@ WellConnect is an Android application designed to help communities in Africa mon
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/wellconnect.git
+git clone https://github.com/Pierrequiroulenamasspamouss/Blue_Bridge/.git
 ```
 
 2. Open the project in Android Studio
@@ -100,7 +103,7 @@ git clone https://github.com/yourusername/wellconnect.git
 <domain includeSubdomains="true">YOUR-DOMAIN</domain>
 ```
 ```strings.xml
-<string name="ProductionServerUrl">http://wellconnect.homeonthewater.com:3000/</string>
+<string name="ProductionServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
 ```
 
 
@@ -115,7 +118,7 @@ git clone https://github.com/yourusername/wellconnect.git
 app/
 ├── src/
 │   ├── main/
-│   │   ├── java/com/wellconnect/wellmonitoring/
+│   │   ├── java/com/bluebridge/wellmonitoring/
 │   │   │   ├── data/           # Data models and states
 │   │   │   ├── network/        # API and network utilities
 │   │   │   ├── ui/            # Compose UI components
@@ -150,10 +153,6 @@ For support or queries, please contact:
 
 or do a request on the gitHub project
 
-- Website: http://wellconnect.homeonthewater.com
+- Website: http://bluebridge.homeonthewater.com
 
 
-
-
-
-quantité d'eau par famille 

@@ -14,4 +14,14 @@
 .cxx
 local.properties
 .env
-google-services.json
+
+#CRITICAL TO REMOVE LATER FROM THE APP
+app/google-services.json
+
+#SERVER
+/Server/.env
+/Server/APK/
+/Server/scripts/firebase-service-account.json
+ssh_connection_commands.txt
+server.bat
+/Server/node_modules/

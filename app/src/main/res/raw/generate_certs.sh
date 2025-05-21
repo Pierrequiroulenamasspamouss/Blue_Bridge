@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the SSL directory path
-SSL_DIR="/opt/wellconnect/ssl"
+SSL_DIR="/opt/bluebridge/ssl"
 
 # Create directory for certificates if it doesn't exist
 mkdir -p "$SSL_DIR"
@@ -19,7 +19,7 @@ distinguished_name = dn
 C = FR
 ST = IDF
 L = Paris
-O = WellConnect Development
+O = BlueBridge Development
 OU = Development
 CN = 192.168.0.207
 
@@ -35,7 +35,7 @@ EOL
 
 # Generate CA private key and certificate
 openssl genrsa -out "$SSL_DIR/ca.key" 4096
-openssl req -x509 -new -nodes -key "$SSL_DIR/ca.key" -sha256 -days 3650 -out "$SSL_DIR/ca.crt" -subj "/C=FR/ST=IDF/L=Paris/O=WellConnect CA/OU=Development/CN=WellConnect Root CA"
+openssl req -x509 -new -nodes -key "$SSL_DIR/ca.key" -sha256 -days 3650 -out "$SSL_DIR/ca.crt" -subj "/C=FR/ST=IDF/L=Paris/O=BlueBridge CA/OU=Development/CN=BlueBridge Root CA"
 
 # Generate server_crt private key
 openssl genrsa -out "$SSL_DIR/server.key" 2048
@@ -51,14 +51,14 @@ chmod 644 "$SSL_DIR/server.crt" "$SSL_DIR/ca.crt"
 chmod 600 "$SSL_DIR/server.key" "$SSL_DIR/ca.key"
 
 # Create PFX file for Windows import
-openssl pkcs12 -export -out "$SSL_DIR/wellconnect.pfx" -inkey "$SSL_DIR/server.key" -in "$SSL_DIR/server.crt" -certfile "$SSL_DIR/ca.crt" -password pass:wellconnect
+openssl pkcs12 -export -out "$SSL_DIR/bluebridge.pfx" -inkey "$SSL_DIR/server.key" -in "$SSL_DIR/server.crt" -certfile "$SSL_DIR/ca.crt" -password pass:bluebridge
 
 echo "Certificates generated successfully!"
 echo "To trust these certificates:"
 echo "1. Windows: Double-click ca.crt and install it in 'Trusted Root Certification Authorities'"
-echo "2. Copy wellconnect.pfx to your Windows machine"
-echo "3. Double-click wellconnect.pfx and follow the import wizard"
-echo "4. Use password: wellconnect"
+echo "2. Copy bluebridge.pfx to your Windows machine"
+echo "3. Double-click bluebridge.pfx and follow the import wizard"
+echo "4. Use password: bluebridge"
 
 # Display the generated files
 echo -e "\nGenerated files in $SSL_DIR:"

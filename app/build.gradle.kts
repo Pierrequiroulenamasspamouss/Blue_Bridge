@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "com.wellconnect.wellmonitoring"
+    namespace = "com.bluebridge.bluebridgeapp"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.wellconnect.wellmonitoring"
+        applicationId = "com.bluebridge.bluebridgeapp"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.1.0"
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

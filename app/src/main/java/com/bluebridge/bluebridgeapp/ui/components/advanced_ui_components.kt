@@ -1,0 +1,321 @@
+@file:Suppress("DEPRECATION")
+
+package com.bluebridge.bluebridgeapp.ui.components
+
+
+import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.createBitmap
+import com.bluebridge.bluebridgeapp.R
+import com.bluebridge.bluebridgeapp.data.model.Location
+import com.bluebridge.bluebridgeapp.utils.PasswordStrength
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+@Composable
+fun WellField(
+    label: String,
+    value: String,
+    keyId: Int,
+    onValueChange: (String) -> Unit,
+    isNumeric: Boolean = false
+) {
+    Spacer(modifier = Modifier.size(10.dp))
+    TextComponent(text = label, fontSize = 18.sp)
+
+    key(keyId) {
+        if (isNumeric) {
+            AdvancedNumbersFieldComponent(
+                initialValue = value,
+                defaultInputMessage = label,
+                onTextChanged = onValueChange
+            )
+        } else {
+            AdvancedTextFieldComponent(
+                initialValue = value,
+                defaultInputMessage = label,
+                onTextChanged = onValueChange
+            )
+        }
+    }
+}
+
+@Composable
+fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isVisible: Boolean,
+    onVisibilityChange: () -> Unit,
+    passwordStrength: PasswordStrength? = null // Optional parameter
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        trailingIcon = {
+            IconButton(onClick = onVisibilityChange) {
+                Icon(
+                    imageVector = if (isVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = if (isVisible) "Hide password" else "Show password"
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    // Display password strength if provided
+    passwordStrength?.let {
+        if (value.isNotEmpty()) {
+            LinearProgressIndicator(
+                progress = when (it.strength) {
+                    "Very Weak" -> 0.2f
+                    "Weak" -> 0.4f
+                    "Medium" -> 0.6f
+                    "Strong" -> 0.8f
+                    "Very Strong" -> 1f
+                    else -> 0f
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                color = it.color,
+            )
+            Text(
+                text = "${it.strength}: ${it.message}",
+                color = it.color,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+@SuppressLint("ClickableViewAccessibility")
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+//TODO: change the little human icon to the blue location pin.
+fun MiniMap(
+    currentLocation: Location? = null,
+    selectedLocation: Location? = null,
+    onLocationSelected: (Location) -> Unit,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var mapView by remember { mutableStateOf<MapView?>(null) }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(Modifier.fillMaxWidth().height(250.dp)) {
+            AndroidView(
+                factory = { ctx ->
+                    Configuration.getInstance().load(context, context.getSharedPreferences("osm", 0))
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        minZoomLevel = 2.0
+                        maxZoomLevel = 19.0
+                        controller.setZoom(12.0)
+
+                        currentLocation?.let { loc ->
+                            Marker(this).apply {
+                                position = GeoPoint(loc.latitude, loc.longitude)
+                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                                title = "Your Location"
+                                icon = context.getDrawable(R.drawable.small_map_arrow)?.let { drawable ->
+                                    val bitmap = createBitmap(
+                                        drawable.intrinsicWidth,
+                                        drawable.intrinsicHeight
+                                    )
+                                    android.graphics.Canvas(bitmap).apply {
+                                        drawable.setBounds(0, 0, width, height)
+                                        drawable.draw(this)
+                                    }
+                                    bitmap.toDrawable(context.resources)
+                                }
+                                overlays.add(this)
+                                controller.setCenter(position)
+                            }
+                        }
+
+                        setOnTouchListener { _, event ->
+                            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                                val geoPoint = projection.fromPixels(
+                                    event.x.toInt(),
+                                    event.y.toInt()
+                                ) as GeoPoint
+                                onLocationSelected(
+                                    Location(
+                                        geoPoint.latitude,
+                                        geoPoint.longitude,
+                                        LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                                    )
+                                )
+                            }
+                            false
+                        }
+                        mapView = this
+                    }
+                },
+                update = { mapView ->
+                    selectedLocation?.let { loc ->
+                        mapView.overlays.removeIf { it is Marker && it.title == "Selected" }
+                        Marker(mapView).apply {
+                            position = GeoPoint(loc.latitude, loc.longitude)
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            title = "Selected"
+                            icon = context.getDrawable(R.drawable.ic_location_pin)
+                            //overlays.add(this)
+                        }
+                        mapView.invalidate()
+                    }
+                }
+            )
+
+            FloatingActionButton(
+                onClick = {
+                    currentLocation?.let { loc ->
+                        mapView?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
+                        onLocationSelected(loc.copy(
+                            lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                            )
+                        )
+                    }
+                },
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Icon(Icons.Default.MyLocation, "Current Location")
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { mapView?.onDetach() }
+    }
+}
+
+// Extension function for Bitmap to Drawable conversion
+fun Bitmap.toDrawable(resources: android.content.res.Resources): android.graphics.drawable.Drawable {
+    return android.graphics.drawable.BitmapDrawable(resources, this)
+}
+// Helper composable functions needed for WellField
+@Composable
+fun TextComponent(text: String, fontSize: androidx.compose.ui.unit.TextUnit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize),
+        modifier = Modifier.padding(bottom = 4.dp)
+    )
+}
+
+@Composable
+fun AdvancedTextFieldComponent(
+    initialValue: String,
+    defaultInputMessage: String,
+    onTextChanged: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = initialValue,
+        onValueChange = onTextChanged,
+        label = { Text(defaultInputMessage) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+}
+
+
+@Composable
+fun AdvancedNumbersFieldComponent(
+    initialValue: String,
+    defaultInputMessage: String,
+    onTextChanged: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = initialValue,
+        onValueChange = onTextChanged,
+        label = { Text(defaultInputMessage) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+}
+
+@Composable
+fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawable.app_logo) {
+    Row(modifier = Modifier.fillMaxWidth().padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = topBarMessage,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.weight(1f)) // puts the following element on the extreme right
+
+        if (isIcon) {
+            Image(
+                modifier = Modifier.size(80.dp),
+                painter = painterResource(id = iconId),
+                contentDescription = stringResource(id = R.string.logo_description)
+            )
+        }
+    }
+}
+
