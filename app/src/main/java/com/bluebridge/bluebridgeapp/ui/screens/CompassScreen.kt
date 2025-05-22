@@ -1,6 +1,5 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import WellData
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
@@ -47,22 +46,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.bluebridge.bluebridgeapp.R
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.getLatitude
+import com.bluebridge.bluebridgeapp.data.model.getLongitude
 import com.bluebridge.bluebridgeapp.ui.components.TopBar
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.ui.components.compass.CompassView
 import com.bluebridge.bluebridgeapp.ui.components.compass.DistanceInfo
 import com.bluebridge.bluebridgeapp.ui.components.compass.MiniMapView
 import com.bluebridge.bluebridgeapp.ui.components.compass.rememberCompassSensor
+import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.calculateDistance
 import com.bluebridge.bluebridgeapp.utils.findNearestWells
 import com.bluebridge.bluebridgeapp.utils.formatDistance
 import com.bluebridge.bluebridgeapp.utils.lastKnownLocation
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
-import getLatitude
-import getLongitude
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 

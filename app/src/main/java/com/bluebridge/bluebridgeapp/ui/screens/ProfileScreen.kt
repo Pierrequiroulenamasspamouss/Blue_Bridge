@@ -1,6 +1,5 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import com.bluebridge.bluebridgeapp.data.model.UserData
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,20 +38,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.Location
-import com.bluebridge.bluebridgeapp.ui.components.ProfileMapView
+import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.ui.components.MiniMap
 import com.bluebridge.bluebridgeapp.ui.components.TopBar
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -271,21 +269,20 @@ fun ProfileScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
-            
-            // New map component
-            ProfileMapView(
-                userLocation = currentLocation,
-                selectedLocation = selectedLocation,
-                onLocationSelected = { location ->
-                    selectedLocation = location
-                    latitude = location.latitude.toString()
-                    longitude = location.longitude.toString()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
+            // TODO : Use a minimap composable
+            currentLocation?.let {
+                MiniMap(
+                    currentLocation = it,
+                    selectedLocation = selectedLocation,
+                    onLocationSelected = { location ->
+                        selectedLocation = location
+                        latitude = location.latitude.toString()
+                        longitude = location.longitude.toString()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(200.dp)
+                )
+            }
+
 
             // Save button
             Button(
@@ -357,7 +354,7 @@ fun ProfileScreen(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = userData?.role ?: "Unknown",
+                        text = userData.role,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -365,3 +362,4 @@ fun ProfileScreen(
         }
     }
 }
+

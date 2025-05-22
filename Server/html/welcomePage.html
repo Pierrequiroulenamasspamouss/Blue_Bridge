@@ -173,9 +173,18 @@
             <p>We work with organizations that share our vision for sustainable water management.</p>
             <div class="partners-list">
                 <!-- Partner cards will be added dynamically -->
-                <div class="partner-card">
-                    <h3>Coming Soon</h3>
-                    <p>Be the first to partner with us!</p>
+                <div class="partner-card" data-url="https://freedns.afraid.org/">
+                    <h3>Freedns.afraid.org</h3>
+                    <p>Internet traffic redirection (DNS provider) </p>
+                </div>
+                <div class="partner-card" data-url="https://www.openstreetmap.org/">
+                    <h3>OpenStreetMap</h3>
+                    <p>World's maps data provider</p>
+                </div>
+                <div class="partner-card" data-url="https://openweathermap.org/">
+                    <h3>OpenWeatherMap</h3>
+                    <p>Weather data provider</p>
+
                 </div>
             </div>
         </div>
@@ -184,5 +193,15 @@
             <p>&copy; 2025 BlueBridge. All rights reserved.</p>
         </div>
     </div>
+    <script>
+        document.querySelectorAll('.partner-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const url = card.getAttribute('data-url');
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

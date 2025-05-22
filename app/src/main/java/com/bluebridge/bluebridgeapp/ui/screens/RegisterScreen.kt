@@ -2,27 +2,29 @@ package com.bluebridge.bluebridgeapp.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.util.Patterns
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -31,6 +33,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,426 +45,201 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.Location
-import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
-import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.ui.components.MiniMap
 import com.bluebridge.bluebridgeapp.ui.components.PasswordField
-import com.bluebridge.bluebridgeapp.ui.components.WaterUsageTypeSelector
+import com.bluebridge.bluebridgeapp.ui.components.WaterNeedsSection
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.utils.getPasswordStrength
+import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
-import kotlinx.serialization.InternalSerializationApi
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-@SuppressLint("MutableCollectionMutableState", "AutoboxingStateCreation")
+@SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun RegisterScreen(
     navController: NavController,
     userViewModel: UserViewModel
 ) {
-    val currentTime = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var currentPriority by remember { mutableStateOf(6) }  // Default priority for "Other"
-    var customType by remember { mutableStateOf("") }  // For custom type input
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Form state
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    val waterNeeds = remember { mutableStateOf(mutableListOf<WaterNeed>()) }
-    var currentWaterNeedAmount by remember { mutableStateOf("") }
-    var currentWaterNeedType by remember { mutableStateOf("") }
-    var currentWaterNeedDescription by remember { mutableStateOf("") }
     var isWellOwner by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val api = RetrofitBuilder.getServerApi(context)
-
-    // State for location
     var currentLocation by remember { mutableStateOf<Location?>(null) }
     var selectedLocation by remember { mutableStateOf<Location?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    // Get current location if permission is granted
-    LaunchedEffect(Unit) {
-        if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-            fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                null
-            ).addOnSuccessListener { location ->
-                if (location != null) {
-                    currentLocation = Location(
-                        latitude = location.latitude,
-                        longitude = location.longitude,
-                        lastUpdated = currentTime
+    // Water needs state
+    var showWaterNeeds by remember { mutableStateOf(false) }
+    var waterNeedAmount by remember { mutableStateOf("") }
+    var waterNeedType by remember { mutableStateOf("") }
+    var waterNeedDesc by remember { mutableStateOf("") }
+    var waterNeedPriority by remember { mutableIntStateOf(6) }
+    var customWaterType by remember { mutableStateOf("") }
+    val waterNeeds = remember { mutableStateListOf<WaterNeed>() }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
+
+    // Handle registration state
+    val userState by userViewModel.state
+    LaunchedEffect(userState) {
+        when (userState) {
+            is UiState.Success -> {
+                navController.navigate(Routes.HOME_SCREEN) {
+                    popUpTo(Routes.LOGIN_SCREEN) { inclusive = true }
+                }
+            }
+            is UiState.Error -> {
+                isLoading = false
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = (userState as UiState.Error).message,
+                        duration = SnackbarDuration.Long
                     )
                 }
+            }
+            is UiState.Loading -> isLoading = true
+            else -> isLoading = false
+        }
+    }
+
+    // Get current location
+    LaunchedEffect(Unit) {
+        if (context.hasLocationPermission()) {
+            currentLocation = context.getCurrentLocation()?.let {
+                Location(it.latitude, it.longitude, LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
             }
         }
     }
 
-    val passwordStrength = getPasswordStrength(password)
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
         Column(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxWidth()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Create Account",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+            Text("Create Account", style = MaterialTheme.typography.headlineMedium)
+
+            // Required fields
+            SectionTitle("Required Information")
+            EmailField(email) { email = it }
+            //Password field (with strength)
+            PasswordField(
+                password, { password = it }, "Password",
+                isVisible = isPasswordVisible,
+                onVisibilityChange = { isPasswordVisible = !isPasswordVisible },
+                passwordStrength = getPasswordStrength(password)
+            )
+            //confirmation Password field (without strength)
+            PasswordField(
+                confirmPassword, { confirmPassword = it }, "Confirm Password",
+                isVisible = isConfirmPasswordVisible,
+                onVisibilityChange = { isPasswordVisible = !isPasswordVisible }
             )
 
-            // Required fields section
-            Text(
-                text = "Required Information",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Email (required)
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email *") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Password (required)
-            PasswordField(
-                value = password,
-                onValueChange = { password = it },
-                label = "Password *",
-                isVisible = passwordVisible,
-                onVisibilityChange = { passwordVisible = !passwordVisible },
-                passwordStrength = passwordStrength
-            )
-            
-            // Confirm password (required)
-            PasswordField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = "Confirm Password *",
-                isVisible = confirmPasswordVisible,
-                onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible }
-            )
-            
-            // First Name (required)
-            OutlinedTextField(
-                value = firstName,
-                onValueChange = { firstName = it },
-                label = { Text("First Name *") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Last Name (required)
-            OutlinedTextField(
-                value = lastName,
-                onValueChange = { lastName = it },
-                label = { Text("Last Name *") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Optional fields section
-            Text(
-                text = "Optional Information",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            )
-            
-            // Username (optional)
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username (Optional)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+            NameField(firstName, { firstName = it }, "First Name")
+            NameField(lastName, { lastName = it }, "Last Name")
 
-            // Location selection using MiniMap
-            Text(
-                text = "Your Location",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // MiniMap component
+            // Optional fields
+            SectionTitle("Optional Information")
+            NameField(username, { username = it }, "Username")
+            PhoneField(phoneNumber) { phoneNumber = it }
+
+            // Location
+            Text("Your Location", style = MaterialTheme.typography.titleSmall)
             MiniMap(
                 currentLocation = currentLocation,
                 selectedLocation = selectedLocation,
-                onLocationSelected = { location ->
-                    selectedLocation = location
-                },
+                onLocationSelected = { selectedLocation = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(250.dp)
             )
-            
-            // Phone Number (optional)
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("Phone Number (Optional)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Water Needs (optional)
-            if (waterNeeds.value.isNotEmpty()) {
-                Text(
-                    text = "Water Needs",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                // Display added water needs
-                waterNeeds.value.forEach { need ->
-                    androidx.compose.material3.Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            Text("Amount: ${need.amount} liters", style = MaterialTheme.typography.bodyMedium)
-                            Text("Type: ${need.usageType}", style = MaterialTheme.typography.bodySmall)
-                            Text("Priority: P${need.priority}", style = MaterialTheme.typography.bodySmall)
-                            Text("Description: ${need.description}", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            
-            // Collapsible water needs section
-            var showWaterNeedsSection by remember { mutableStateOf(false) }
-            
-            Button(
-                onClick = { showWaterNeedsSection = !showWaterNeedsSection },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (showWaterNeedsSection) "Hide Water Needs Form" else "Add Water Needs (Optional)")
-            }
-            
-            if (showWaterNeedsSection) {
-                OutlinedTextField(
-                    value = currentWaterNeedAmount,
-                    onValueChange = {
-                        if (it.isEmpty() || it.all(Char::isDigit)) currentWaterNeedAmount = it
-                    },
-                    label = { Text("Amount (liters)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                WaterUsageTypeSelector(
-                    currentWaterNeedType = currentWaterNeedType,
-                    onWaterNeedTypeChange = { currentWaterNeedType = it },
-                    currentPriority = currentPriority,
-                    onPriorityChange = { currentPriority = it },
-                    customType = customType,
-                    onCustomTypeChange = { customType = it }
-                )
-                
-                OutlinedTextField(
-                    value = currentWaterNeedDescription,
-                    onValueChange = { currentWaterNeedDescription = it },
-                    label = { Text("Description (Optional)") },
-                    singleLine = false,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Button(
-                    onClick = {
-                        val amount = currentWaterNeedAmount.toIntOrNull()
-                        if (amount != null && amount > 0) {
-                            // Get priority based on type (or use the selected priority for "Other")
-                            val priority = when (currentWaterNeedType) {
-                                "Absolute emergency" -> 0
-                                "Medical" -> 1
-                                "Drinking" -> 2
-                                "Farming" -> 3
-                                "Industry" -> 4
-                                else -> currentPriority // Use selected priority for "Other"
-                            }
 
-                            waterNeeds.value.add(
-                                WaterNeed(
-                                    amount = amount,
-                                    usageType = if (currentWaterNeedType == "Other") customType else currentWaterNeedType,
-                                    description = currentWaterNeedDescription,
-                                    priority = priority
-                                )
-                            )
-                            currentWaterNeedAmount = ""
-                            currentWaterNeedType = ""
-                            currentWaterNeedDescription = ""
-                            customType = ""
-                            currentPriority = 6 // Reset to default for next entry
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Add Water Need")
-                }
-            }
+            // Water needs
+            WaterNeedsSection(
+                showWaterNeeds = showWaterNeeds,
+                onToggle = { showWaterNeeds = !showWaterNeeds },
+                waterNeeds = waterNeeds,
+                amount = waterNeedAmount,
+                onAmountChange = { waterNeedAmount = it },
+                type = waterNeedType,
+                onTypeChange = { waterNeedType = it },
+                desc = waterNeedDesc,
+                onDescChange = { waterNeedDesc = it },
+                priority = waterNeedPriority,
+                onPriorityChange = { waterNeedPriority = it },
+                customType = customWaterType,
+                onCustomTypeChange = { customWaterType = it }
+            )
 
             // Well owner toggle
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Are you a well owner?")
-                Switch(checked = isWellOwner, onCheckedChange = { isWellOwner = it })
+                Switch(
+                    checked = isWellOwner,
+                    onCheckedChange = { isWellOwner = it }
+                )
             }
 
             // Register button
             Button(
                 onClick = {
-                    scope.launch {
-                        try {
-                            // Validate required inputs
-                            if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank()) {
-                                errorMessage = "Please fill in all required fields (marked with *)"
-                                snackbarHostState.showSnackbar(errorMessage!!)
-                                return@launch
-                            }
-
-                            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                errorMessage = "Please enter a valid email address"
-                                snackbarHostState.showSnackbar(errorMessage!!)
-                                return@launch
-                            }
-
-                            if (password != confirmPassword) {
-                                errorMessage = "Passwords do not match"
-                                snackbarHostState.showSnackbar(errorMessage!!)
-                                return@launch
-                            }
-
-                            // Use default values for optional fields
-                            val actualUsername = username.takeIf { it.isNotBlank() } ?: firstName.lowercase()
-                            
-                            // Use selected location or current location or default
-                            val locationData = selectedLocation ?: currentLocation ?: Location(
-                                latitude = 0.0,
-                                longitude = 0.0,
-                                lastUpdated = currentTime
-                            )
-
-                            val encrypted = encryptPassword(password)
-                            var request = RegisterRequest(
-                                email = email.trim(),
-                                password = encrypted,
-                                firstName = firstName.trim(),
-                                lastName = lastName.trim(),
-                                username = actualUsername,
-                                location = locationData,
-                                waterNeeds = waterNeeds.value,
-                                isWellOwner = isWellOwner,
-                                role = "user",
-                                phoneNumber = phoneNumber.trim().ifBlank { null },
-                                themePreference = 0 // Default theme
-                            )
-
-                            // Send registration request
-                            Log.d("RegisterScreen", "Sending registration request: $request")
-
-                            // Call API and wait for response
-                            val registrationSuccess = api.register(request)
-                            
-                            if (registrationSuccess.isSuccessful && registrationSuccess.body()?.status == "success") {
-                                // If server reports success, show success message
-
-                                userViewModel.handleEvent(
-                                    UserEvent.Login(
-                                        LoginRequest(
-                                            email = email,
-                                            password = encrypted
-                                        )
-                                    )
-                                )
-                                snackbarHostState.showSnackbar("User was successfully registered")
-                                
-                                // Then trigger the register event in the view model to save user data locally
-                                //userViewModel.handleEvent(Register(request))
-                                
-                                // Navigate to home screen after registration
-                                navController.navigate(Routes.HOME_SCREEN) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        inclusive = true
-                                    }
-                                }
-                            } else {
-                                // Handle error
-                                val errorMsg = registrationSuccess.errorBody()?.string() ?: "Registration failed"
-                                snackbarHostState.showSnackbar(errorMsg)
-                            }
-                        } catch (e: Exception) {
-                            errorMessage = "Authentication failed: ${e.message}"
-                            snackbarHostState.showSnackbar(errorMessage!!)
-                            Log.e("RegisterScreen", "Auth failed", e)
+                    if (!validateForm(email, password, confirmPassword, firstName, lastName)) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Please fill all required fields")
                         }
+                        return@Button
                     }
+
+                    val request = RegisterRequest(
+                        email = email.trim(),
+                        password = encryptPassword(password),
+                        firstName = firstName.trim(),
+                        lastName = lastName.trim(),
+                        username = username.ifBlank { firstName.lowercase() },
+                        location = selectedLocation ?: currentLocation ?: Location(0.0, 0.0),
+                        waterNeeds = waterNeeds,
+                        role = if (isWellOwner) "well_owner" else "user",
+                        phoneNumber = phoneNumber.trim().takeIf { it.isNotBlank() }
+                    )
+
+                    userViewModel.register(request)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
-                Text("Sign Up")
+                if (isLoading) CircularProgressIndicator(Modifier.size(24.dp))
+                else Text("Sign Up")
             }
 
             TextButton(
@@ -469,17 +248,89 @@ fun RegisterScreen(
             ) {
                 Text("Already have an account? Login")
             }
-            
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
-    
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.padding(16.dp)
+}
+
+// Helper functions
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleMedium)
+}
+
+@Composable
+private fun NameField(value: String, onValueChange: (String) -> Unit, label: String) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
     )
 }
 
-//TODO : after registering, there is a waiting time for the snackbar to finish after returning home.
-//TODO : ALSO there is an issue that after returning home it tries again to log in.
-//TODO : create and use an event to register, like the login event in LoginScreen, but keep the same functionnality
+@Composable
+private fun EmailField(value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Email *") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
+        )
+    )
+}
+
+@Composable
+private fun PhoneField(value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.all { c -> c.isDigit() || c == '+' }) onValueChange(it) },
+        label = { Text("Phone") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Phone,
+            imeAction = ImeAction.Next
+        )
+    )
+}
+
+private fun validateForm(
+    email: String,
+    password: String,
+    confirmPassword: String,
+    firstName: String,
+    lastName: String
+): Boolean {
+    return email.isNotBlank() &&
+            Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
+            password.isNotBlank() &&
+            password == confirmPassword &&
+            firstName.isNotBlank() &&
+            lastName.isNotBlank()
+}
+
+// Extension functions for location
+fun Context.hasLocationPermission(): Boolean {
+    return ContextCompat.checkSelfPermission(
+        this,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+}
+
+@RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+suspend fun Context.getCurrentLocation(): android.location.Location? {
+    return try {
+        LocationServices.getFusedLocationProviderClient(this)
+            .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .await()
+    } catch (e: Exception) {
+        Log.e("Location", "Error fetching location", e)
+        null
+    }
+}

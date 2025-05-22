@@ -201,7 +201,7 @@ fun MiniMapView(
                         
                         // Add the marker to map
                         try {
-                            getOverlayManager().add(marker)
+                            overlayManager.add(marker)
                         } catch (e: Exception) {
                             Log.e(TAG, "Error adding user marker: ${e.message}")
                         }
@@ -217,7 +217,7 @@ fun MiniMapView(
                                 targetMarker.icon = context.getDrawable(
                                     R.drawable.small_water_drop_icon
                                 )
-                                getOverlayManager().add(targetMarker)
+                                overlayManager.add(targetMarker)
                                 Log.d(TAG, "Target marker added at: lat=$targetLatitude, lon=$targetLongitude")
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error adding target marker: ${e.message}")
@@ -232,7 +232,7 @@ fun MiniMapView(
                                 this
                             )
                             compassOverlay.enableCompass()
-                            getOverlayManager().add(compassOverlay)
+                            overlayManager.add(compassOverlay)
                             Log.d(TAG, "Compass overlay added to map")
                         } catch (e: Exception) {
                             Log.e(TAG, "Error adding compass overlay: ${e.message}")

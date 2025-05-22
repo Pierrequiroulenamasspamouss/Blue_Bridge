@@ -1,20 +1,6 @@
 package com.bluebridge.bluebridgeapp.ui.screens
-//TODO: unable to connect to the server message pops up each time you go back to the home screen. I want it to only do that each time the user opens the app, not each time he goes back to the HomeScreen
-//TODO: have the UrgentSmsScreen button accessible to users with not the role "guest" or no role at all (minimum logged in) , with the other buttons like the SettingsScreen or the WeatherScreen. Don't do a direct navigation, use the NavigationGraph
 
-import android.Manifest
-import android.app.DownloadManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.os.Build
-import android.os.Environment
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,14 +19,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.ExploreOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -53,11 +38,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,162 +51,43 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.R
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.components.FeatureCard
+import com.bluebridge.bluebridgeapp.ui.components.OfflineBanner
 import com.bluebridge.bluebridgeapp.ui.components.WelcomeHeader
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
-import com.bluebridge.bluebridgeapp.viewmodels.ServerState
-import com.bluebridge.bluebridgeapp.viewmodels.ServerViewModel
+import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 
-// Network utility object to check connectivity
-object NetworkUtils {
-    fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-               (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
-    }
-}
-
-@Composable
-fun OfflineBanner() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.SignalWifiOff,
-                contentDescription = "Offline",
-                tint = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                "You are currently offline. Some features may be limited.",
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
     userViewModel: UserViewModel,
-    serverViewModel: ServerViewModel
 ) {
     val context = LocalContext.current
     val userState by userViewModel.state
-    val notificationsEnabled by userViewModel.notificationsEnabled
+    var currentUserRole by remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showLocationPermissionDialog by remember { mutableStateOf(false) }
-    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
-    var showServerUnreachableDialog by remember { mutableStateOf(false) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     // Network connectivity state
-    var isOnline by remember { mutableStateOf(NetworkUtils.isNetworkAvailable(context)) }
+    var isOnline by remember { mutableStateOf(isNetworkAvailable(context)) }
 
-    // Server state
-    val serverState by serverViewModel.serverState.collectAsState()
-    val needsUpdate by serverViewModel.needsUpdate.collectAsState()
-    val isServerReachable by serverViewModel.isServerReachable.collectAsState()
-
-    // Check server status when online
-    LaunchedEffect(isOnline) {
-        if (isOnline) {
-            serverViewModel.checkServerStatus()
-        }
-    }
-
-    // Handle server state changes
-    LaunchedEffect(serverState) {
-        when (serverState) {
-            is ServerState.Error -> {
-                showServerUnreachableDialog = true
-            }
-            is ServerState.Success -> {
-                if (needsUpdate) {
-                    showUpdateDialog = true
-                }
-            }
-            else -> {}
-        }
-    }
-
-    // Register network callback to monitor connectivity changes
-    DisposableEffect(Unit) {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                isOnline = true
-            }
-            
-            override fun onLost(network: Network) {
-                isOnline = NetworkUtils.isNetworkAvailable(context)
-            }
-        }
-        
-        val networkRequest = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
-        
-        onDispose {
-            connectivityManager.unregisterNetworkCallback(networkCallback)
-        }
-    }
-
-    // Permission request launchers
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.entries.all { it.value }
-        if (!allGranted) {
-            Log.d("Permission", "Insufficient permissions")
-            // Handle permission denial if needed
-        }
-    }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            // Enable notifications in ViewModel
-            userViewModel.setNotificationsEnabled(true)
-        }
-    }
+    // Define user roles
+    val guestRole = 1
+    val userRole = 2
+    val wellOwnerRole = 3
+    val adminRole = 4
 
     // Check if user is logged in
     val isLoggedIn = when (userState) {
@@ -234,154 +97,14 @@ fun HomeScreen(
 
     // Extract user data if logged in
     val userData = if (userState is UiState.Success) {
+        Log.d("HomeScreen", "User data is available")
         (userState as UiState.Success<UserData>).data
     } else null
 
-    // Check if user is in guest mode
-    var isGuestMode by remember { mutableStateOf(false) }
-
+    //Get the role's value for easy permissions
     LaunchedEffect(Unit) {
-        isGuestMode = userViewModel.isGuestMode()
+        currentUserRole = userViewModel.repository.getRoleValue()
     }
-
-    // Check and request permissions
-    LaunchedEffect(Unit) {
-        // Location permissions
-        val locationPermissions = arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        val hasLocationPermissions = locationPermissions.all {
-            context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
-        }
-        if (!hasLocationPermissions) {
-            showLocationPermissionDialog = true
-        }
-
-        // Notification permission (Android 13+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationsEnabled) {
-            val hasNotificationPermission =
-                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                        PackageManager.PERMISSION_GRANTED
-
-            if (!hasNotificationPermission) {
-                showNotificationPermissionDialog = true
-            }
-        }
-    }
-
-    // Server unreachable dialog
-    if (showServerUnreachableDialog) {
-        AlertDialog(
-            onDismissRequest = { showServerUnreachableDialog = false },
-            title = { Text("Server Unreachable") },
-            text = { Text("The BlueBridge server is currently unreachable. Please contact support for assistance.") },
-            confirmButton = {
-                Button(onClick = { showServerUnreachableDialog = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    // Update available dialog
-    if (showUpdateDialog) {
-        AlertDialog(
-            onDismissRequest = { 
-                showUpdateDialog = false
-                serverViewModel.resetUpdateState()
-            },
-            title = { Text("Update Available") },
-            text = { Text("A new version of BlueBridge is available. Would you like to update now?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showUpdateDialog = false
-                        serverViewModel.resetUpdateState()
-                        // Download the new APK
-                        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                        val request = DownloadManager.Request("https://bluebridgehomeonthewater.com/download".toUri())
-                            .setTitle("BlueBridge Update")
-                            .setDescription("Downloading new version")
-                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "BlueBridge.apk")
-                        downloadManager.enqueue(request)
-                    }
-                ) {
-                    Text("Update Now")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { 
-                        showUpdateDialog = false
-                        serverViewModel.resetUpdateState()
-                    }
-                ) {
-                    Text("Later")
-                }
-            }
-        )
-    }
-
-    // Location permission dialog
-    if (showLocationPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showLocationPermissionDialog = false },
-            title = { Text("Location Permission") },
-            text = { Text("BlueBridge needs location access to show nearby water sources and users") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showLocationPermissionDialog = false
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    }
-                ) {
-                    Text("Allow")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLocationPermissionDialog = false }) {
-                    Text("Later")
-                }
-            }
-        )
-    }
-
-    // Notification permission dialog
-    if (showNotificationPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showNotificationPermissionDialog = false },
-            title = { Text(stringResource(R.string.notification_permission_title)) },
-            text = { Text(stringResource(R.string.notification_permission_message)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showNotificationPermissionDialog = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else {
-                            // For older Android versions, just enable without asking
-                            userViewModel.setNotificationsEnabled(true)
-                        }
-                    }
-                ) {
-                    Text(stringResource(R.string.notification_permission_allow))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showNotificationPermissionDialog = false }) {
-                    Text(stringResource(R.string.notification_permission_deny))
-                }
-            }
-        )
-    }
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -398,7 +121,7 @@ fun HomeScreen(
             if (!isOnline) {
                 OfflineBanner()
             }
-            
+
             // Welcome header
             WelcomeHeader(userData = userData, isLoggedIn = isLoggedIn)
 
@@ -445,7 +168,8 @@ fun HomeScreen(
                     onClick = { navController.navigate("${Routes.COMPASS_SCREEN}?lat=90&lon=0&name=North") },
                     modifier = Modifier.weight(1f)
                 )
-                if(isLoggedIn && !isGuestMode){
+
+                if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
                     FeatureCard(
                         icon = Icons.Default.Cloud,
                         title = "Weather",
@@ -454,7 +178,6 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f)
                     )
                 } else {
-
                     FeatureCard(
                         icon = Icons.Default.Settings,
                         title = "Settings",
@@ -469,7 +192,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (isLoggedIn && !isGuestMode) {
+                if (currentUserRole >= userRole) { // Show for logged-in users (user, well_owner, admin)
                     FeatureCard(
                         icon = Icons.Default.Visibility,
                         title = "Nearby Users",
@@ -477,14 +200,16 @@ fun HomeScreen(
                         onClick = { navController.navigate(Routes.NEARBY_USERS_SCREEN) },
                         modifier = Modifier.weight(1f)
                     )
-                    
-                    FeatureCard(
-                        icon = Icons.Default.Settings,
-                        title = "Settings",
-                        description = "Configure app preferences",
-                        onClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
-                        modifier = Modifier.weight(1f)
-                    )
+
+                    if (currentUserRole >= wellOwnerRole) { // Show urgent SMS only for well_owner and admin
+                        FeatureCard(
+                            icon = Icons.Default.Emergency,
+                            title = "Urgent SMS",
+                            description = "Send urgent messages to contacts",
+                            onClick = { navController.navigate(Routes.URGENT_SMS_SCREEN) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
@@ -540,7 +265,7 @@ fun HomeScreen(
             }
 
             // Account section
-            if (isLoggedIn) {
+            if (currentUserRole > guestRole) { // Show account section for logged-in users (user, well_owner, admin)
                 // User profile summary
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -677,5 +402,3 @@ fun HomeScreen(
         }
     }
 }
-
-

@@ -1,13 +1,11 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import WellData
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -38,7 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.data.model.UserData
-import com.bluebridge.bluebridgeapp.ui.components.WellCard
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.ActionState
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
@@ -46,9 +46,6 @@ import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
 
-//TODO: add back a "refresh" button to fetch all the wells data from the server, to get the latest news about the wells
-// also, there should be a "last refreshed" nearby each well, each time a well's data has successfully been refreshed ( not a "update of the contents, just get the latest news" )
-// finally, make the "last update" visible, for the user to know how old the data is. There is a "last refresh" for when the user latest got the data from the server, and a "latest update" with the data's age.
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, navController: NavController) {
@@ -64,7 +61,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
     val coroutineScope = rememberCoroutineScope()
     
     // Dialog state for well deletion confirmation
-    val (wellToDelete, setWellToDelete) = remember { mutableStateOf<WellData?>(null) }
+    var (wellToDelete, setWellToDelete) = remember { mutableStateOf<WellData?>(null) }
     
     // Get current user data to check if well owner or admin
     val userState = userViewModel.state.value
@@ -123,14 +120,30 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Monitor Wells",
+                text = "My Wells",
                 style = MaterialTheme.typography.headlineMedium
             )
             
-            Button(
-                onClick = { navController.navigate(Routes.WELL_PICKER_SCREEN) }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Browse Wells")
+                Button(
+                    onClick = { wellViewModel.loadWells() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Refresh")
+                }
+                
+                Button(
+                    onClick = { navController.navigate(Routes.BROWSE_WELLS_SCREEN) }
+                ) {
+                    Text("Browse Wells")
+                }
             }
         }
         
@@ -146,12 +159,12 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "No wells found",
+                        text = "No wells saved",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Add a well to start monitoring",
+                        text = "Browse wells to add them to your monitoring list",
                         style = MaterialTheme.typography.bodyLarge
                     )
                     
@@ -177,56 +190,31 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(wells) { well ->
-                    WellCard(
+                    EnhancedWellCard(
                         well = well,
-                        onItemClick = { wellId ->
-                            navController.navigate("${Routes.WELL_DETAILS_SCREEN}/$wellId")
-                        },
-                        showAdminActions = isWellOwner.value || isAdmin.value || tempAdminMode.value,
-                        onDeleteClick = { setWellToDelete(well) }
-                    )
-                }
-                
-                // Add new well button for admins and well owners
-                item {
-                    if (isAdmin.value || tempAdminMode.value) {
-                        Button(
-                            onClick = {
-                                val newWellId = (wells.lastOrNull()?.id?.toInt() ?: 0) + 1
-                                navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$newWellId")
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Well",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add New Well")
+                        onClick = { navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}") },
+                        onNavigateClick = {
+                            navController.navigate("${Routes.COMPASS_SCREEN}?lat=${well.wellLocation.latitude}&lon=${well.wellLocation.longitude}&name=${well.wellName}")
                         }
-                    }
+                    )
                 }
             }
         }
     }
     
-    // Delete confirmation dialog
-    wellToDelete?.let { well ->
+    // Well deletion confirmation dialog
+    if (wellToDelete != null) {
         AlertDialog(
             onDismissRequest = { setWellToDelete(null) },
             title = { Text("Delete Well") },
-            text = { Text("Are you sure you want to delete the well '${well.wellName}'?") },
+            text = { Text("Are you sure you want to delete this well? This action cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
-                        wellViewModel.deleteWell(well.espId)
+                        wellViewModel.deleteWell(wellToDelete.id.toString())
                         setWellToDelete(null)
                     }
                 ) {
@@ -234,9 +222,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { setWellToDelete(null) }
-                ) {
+                TextButton(onClick = { setWellToDelete(null) }) {
                     Text("Cancel")
                 }
             }

@@ -34,20 +34,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedDialog
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -56,41 +52,33 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditWaterNeedsScreen(navController: NavHostController, userViewModel: UserViewModel) {
-    val snackbarHostState = remember { SnackbarHostState() }
+fun EditWaterNeedsScreen(
+    userViewModel: UserViewModel,
+    navController: NavController
+) {
     val coroutineScope = rememberCoroutineScope()
-    var isLoading by remember { mutableStateOf(true) }
-    var showAddDialog by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-    var editingNeedIndex by remember { mutableStateOf(-1) }
-    
-    // State for current water needs
-    val waterNeeds = remember { mutableStateListOf<WaterNeed>() }
-    
-    // State for new water need
-    var newAmount by remember { mutableStateOf("") }
-    var newAmountSlider by remember { mutableFloatStateOf(50f) }
-    var newUsageType by remember { mutableStateOf("") }
-    var newDescription by remember { mutableStateOf("") }
-    var newPriority by remember { mutableStateOf(3) }
-    var customType by remember { mutableStateOf("") }
-    
-    // Add this state for delete confirmation
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var deletingNeedIndex by remember { mutableStateOf(-1) }
-    
-    // Load user data when screen is opened
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Initialize WaterNeedsManager
+    val waterManager = remember {
+        WaterNeedsManager(
+            coroutineScope = coroutineScope,
+            snackbarHostState = snackbarHostState,
+            userViewModel = userViewModel,
+            navController = navController
+        )
+    }
+
+    // Load initial data
     LaunchedEffect(Unit) {
-        isLoading = true
+        waterManager.isLoading = true
         try {
             val userData = userViewModel.repository.getUserData().first()
-            userData?.let {
-                // Make a copy of the list to avoid modification issues
-                waterNeeds.clear()
-                waterNeeds.addAll(it.waterNeeds)
-                if (waterNeeds.isEmpty()) {
-                    // Add a default water need if none exist
-                    waterNeeds.add(WaterNeed(0, "General", "", 3))
+            userData?.waterNeeds?.let { needs ->
+                waterManager.waterNeeds.clear()
+                waterManager.waterNeeds.addAll(needs)
+                if (waterManager.waterNeeds.isEmpty()) {
+                    waterManager.waterNeeds.add(WaterNeed(0, "General", "", 3))
                 }
             }
         } catch (e: Exception) {
@@ -98,214 +86,28 @@ fun EditWaterNeedsScreen(navController: NavHostController, userViewModel: UserVi
                 snackbarHostState.showSnackbar("Error loading water needs: ${e.message}")
             }
         } finally {
-            isLoading = false
+            waterManager.isLoading = false
         }
     }
-
-    // Add water need function
-    fun addWaterNeed() {
-        val amount = newAmount.toIntOrNull() ?: 0
-        if (amount > 0) {
-            val usageType = if (newUsageType == "Other") customType else newUsageType
-            if (usageType.isNotBlank()) {
-                val newNeed = WaterNeed(
-                    amount = amount,
-                    usageType = usageType,
-                    description = newDescription,
-                    priority = newPriority
-                )
-                waterNeeds.add(newNeed)
-                
-                // Reset fields
-                newAmount = ""
-                newAmountSlider = 50f
-                newUsageType = ""
-                newDescription = ""
-                newPriority = 3
-                customType = ""
-                showAddDialog = false
-            } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Please select a usage type")
-                }
-            }
-        } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Please enter a valid amount")
-            }
-        }
-    }
-    
-    // Update water need function
-    fun updateWaterNeed(index: Int) {
-        val amount = newAmount.toIntOrNull() ?: 0
-        if (amount > 0) {
-            val usageType = if (newUsageType == "Other") customType else newUsageType
-            if (usageType.isNotBlank()) {
-                val updatedNeed = WaterNeed(
-                    amount = amount,
-                    usageType = usageType,
-                    description = newDescription,
-                    priority = newPriority
-                )
-                waterNeeds[index] = updatedNeed
-                
-                // Reset fields
-                editingNeedIndex = -1
-                newAmount = ""
-                newAmountSlider = 50f
-                newUsageType = ""
-                newDescription = ""
-                newPriority = 3
-                customType = ""
-                showEditDialog = false
-            } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Please select a usage type")
-                }
-            }
-        } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Please enter a valid amount")
-            }
-        }
-    }
-    
-    // Delete water need function
-    fun deleteWaterNeed(index: Int) {
-        deletingNeedIndex = index
-        showDeleteConfirmDialog = true
-    }
-    
-    // Confirm delete function
-    fun confirmDeleteWaterNeed() {
-        waterNeeds.removeAt(deletingNeedIndex)
-        showDeleteConfirmDialog = false
-    }
-    
-    // Save all water needs function
-    fun saveAllWaterNeeds() {
-        isLoading = true
-        coroutineScope.launch {
-            try {
-                // Use the UserViewModel's updateWaterNeeds method instead of directly calling the repository
-                userViewModel.updateWaterNeeds(waterNeeds.toList())
-                snackbarHostState.showSnackbar("Water needs updated successfully")
-                navController.popBackStack()
-            } catch (e: Exception) {
-                snackbarHostState.showSnackbar("Error: ${e.message}")
-                isLoading = false
-            }
-        }
-    }
-    
-    // Prepare edit function
-    fun prepareEdit(index: Int) {
-        val need = waterNeeds[index]
-        newAmount = need.amount.toString()
-        newAmountSlider = need.amount.toFloat()
-        newUsageType = if (need.usageType in listOf("Absolute emergency", "Medical", "Drinking", "Farming", "Industry")) {
-            need.usageType
-        } else {
-            "Other"
-        }
-        newDescription = need.description
-        newPriority = need.priority
-        customType = if (need.usageType !in listOf("Absolute emergency", "Medical", "Drinking", "Farming", "Industry")) {
-            need.usageType
-        } else {
-            ""
-        }
-        editingNeedIndex = index
-        showEditDialog = true
-    }
-    
-    // Show add/edit dialogs within the composable
-    if (showAddDialog) {
-        WaterNeedDialog(
-            title = "Add Water Need",
-            amount = newAmount,
-            amountSlider = newAmountSlider,
-            usageType = newUsageType,
-            description = newDescription,
-            priority = newPriority,
-            customType = customType,
-            onAmountChange = { newAmount = it; newAmountSlider = it.toFloatOrNull() ?: 0f },
-            onAmountSliderChange = { newAmountSlider = it; newAmount = it.toInt().toString() },
-            onUsageTypeChange = { newUsageType = it },
-            onDescriptionChange = { newDescription = it },
-            onPriorityChange = { newPriority = it },
-            onCustomTypeChange = { customType = it },
-            onConfirm = { addWaterNeed() },
-            onDismiss = { showAddDialog = false }
-        )
-    }
-    
-    if (showEditDialog) {
-        WaterNeedDialog(
-            title = "Edit Water Need",
-            amount = newAmount,
-            amountSlider = newAmountSlider,
-            usageType = newUsageType,
-            description = newDescription,
-            priority = newPriority,
-            customType = customType,
-            onAmountChange = { newAmount = it; newAmountSlider = it.toFloatOrNull() ?: 0f },
-            onAmountSliderChange = { newAmountSlider = it; newAmount = it.toInt().toString() },
-            onUsageTypeChange = { newUsageType = it },
-            onDescriptionChange = { newDescription = it },
-            onPriorityChange = { newPriority = it },
-            onCustomTypeChange = { customType = it },
-            onConfirm = { updateWaterNeed(editingNeedIndex) },
-            onDismiss = { showEditDialog = false }
-        )
-    }
-    
-    // Add the delete confirmation dialog
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Delete Water Need") },
-            text = { Text("Are you sure you want to delete this water need?") },
-            confirmButton = {
-                Button(
-                    onClick = { confirmDeleteWaterNeed() },
-                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Edit Water Needs") },
+                title = { Text("Edit Water Needs") },
                 colors = topAppBarColors(
                     containerColor = colorScheme.primaryContainer,
                     titleContentColor = colorScheme.onPrimaryContainer
                 )
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+            if (waterManager.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
                     modifier = Modifier
@@ -313,107 +115,171 @@ fun EditWaterNeedsScreen(navController: NavHostController, userViewModel: UserVi
                         .padding(16.dp)
                 ) {
                     // Explanation card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Water Needs Information",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Text(
-                                text = "Specify your water needs by type, amount, and priority. This helps well owners understand community needs.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
+                    InfoCard()
 
                     // Water needs list
-                    if (waterNeeds.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No water needs added yet.\nTap the Add button to create one.",
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
+                    if (waterManager.waterNeeds.isEmpty()) {
+                        EmptyState()
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            items(waterNeeds.toList()) { need ->
-                                val index = waterNeeds.indexOf(need)
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(waterManager.waterNeeds.toList()) { need ->
+                                val index = waterManager.waterNeeds.indexOf(need)
                                 WaterNeedCard(
                                     waterNeed = need,
-                                    onEdit = { prepareEdit(index) },
-                                    onDelete = { deleteWaterNeed(index) }
+                                    onEdit = { waterManager.prepareEdit(index) },
+                                    onDelete = { waterManager.deleteWaterNeed(index) }
                                 )
                             }
                         }
                     }
 
-                    // Add buttons in a row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Add Water Need button
-                        Button(
-                            onClick = { showAddDialog = true },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add",
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text("Add Water Need")
-                        }
-
-                        // Save button
-                        Button(
-                            onClick = { saveAllWaterNeeds() },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Save,
-                                contentDescription = "Save",
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text("Save All")
-                        }
-                    }
+                    // Action buttons
+                    ActionButtons(
+                        onAddClick = { waterManager.showAddDialog = true },
+                        onSaveClick = { waterManager.saveAll() }
+                    )
                 }
+            }
+
+            // Dialogs
+            if (waterManager.showAddDialog) {
+                WaterNeedDialog(
+                    title = "Add Water Need",
+                    state = waterManager,
+                    onConfirm = { waterManager.addWaterNeed() },
+                    onDismiss = { waterManager.showAddDialog = false }
+                )
+            }
+
+            if (waterManager.showEditDialog) {
+                WaterNeedDialog(
+                    title = "Edit Water Need",
+                    state = waterManager,
+                    onConfirm = { waterManager.updateWaterNeed(waterManager.editingNeedIndex) },
+                    onDismiss = { waterManager.showEditDialog = false }
+                )
+            }
+
+            if (waterManager.showDeleteConfirmDialog) {
+                DeleteConfirmationDialog(
+                    onConfirm = { waterManager.confirmDelete() },
+                    onDismiss = { waterManager.showDeleteConfirmDialog = false }
+                )
             }
         }
     }
+}
+
+@Composable
+private fun InfoCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Water Needs Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = "Specify your water needs by type, amount, and priority. This helps well owners understand community needs.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "No water needs added yet.\nTap the Add button to create one.",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+@Composable
+private fun ActionButtons(
+    onAddClick: () -> Unit,
+    onSaveClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Button(
+            onClick = onAddClick,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add",
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text("Add Water Need")
+        }
+
+        Button(
+            onClick = onSaveClick,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Save,
+                contentDescription = "Save",
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text("Save All")
+        }
+    }
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Water Need") },
+        text = { Text("Are you sure you want to delete this water need?") },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

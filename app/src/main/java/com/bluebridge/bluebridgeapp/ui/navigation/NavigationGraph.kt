@@ -3,17 +3,19 @@ package com.bluebridge.bluebridgeapp.ui.navigation
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.network.SmsApi
 import com.bluebridge.bluebridgeapp.ui.screens.AdMobScreen
+import com.bluebridge.bluebridgeapp.ui.screens.BrowseWellsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.CompassScreen
 import com.bluebridge.bluebridgeapp.ui.screens.CreditsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.EasterEgg
@@ -27,18 +29,17 @@ import com.bluebridge.bluebridgeapp.ui.screens.NearbyUsersScreen
 import com.bluebridge.bluebridgeapp.ui.screens.ProfileScreen
 import com.bluebridge.bluebridgeapp.ui.screens.RegisterScreen
 import com.bluebridge.bluebridgeapp.ui.screens.SettingsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.UrgentSmsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.WeatherScreen
 import com.bluebridge.bluebridgeapp.ui.screens.WellConfigScreen
 import com.bluebridge.bluebridgeapp.ui.screens.WellDetailsScreen
-import com.bluebridge.bluebridgeapp.ui.screens.WellPickerScreen
 import com.bluebridge.bluebridgeapp.viewmodels.NearbyUsersViewModel
-import com.bluebridge.bluebridgeapp.viewmodels.ServerViewModel
+import com.bluebridge.bluebridgeapp.viewmodels.SmsViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WeatherViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
 
-//TODO: add the navigation to the UrgentSmsScreen
 @SuppressLint("StateFlowValueCalledInComposition")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -49,7 +50,7 @@ fun NavigationGraph(
     wellViewModel: WellViewModel,
     userViewModel: UserViewModel,
     weatherViewModel: WeatherViewModel,
-    serverViewModel: ServerViewModel
+    smsViewModel: SmsViewModel
 ) {
     
     NavHost(
@@ -66,14 +67,13 @@ fun NavigationGraph(
             if (userData == null || userData.role == "guest") {
                 HomeScreen(
                     navController = navController, userViewModel = userViewModel,
-                    serverViewModel = serverViewModel,
                 )
                 // Show loading screen while redirecting
                 LoadingScreen()
             } else {
                 EditWaterNeedsScreen(
-                    navController = navController,
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    navController = navController
                 )
             }
         }
@@ -83,7 +83,6 @@ fun NavigationGraph(
             HomeScreen(
                 navController = navController,
                 userViewModel = userViewModel,
-                serverViewModel = serverViewModel,
             )
         }
 
@@ -141,7 +140,6 @@ fun NavigationGraph(
 
                 else -> LoginScreen(
                     navController = navController,
-                    modifier = Modifier.fillMaxSize(),
                     userViewModel = userViewModel,
                 )
             }
@@ -157,20 +155,19 @@ fun NavigationGraph(
         }
 
         // Well Picker Screen
-        composable(Routes.WELL_PICKER_SCREEN) {
+        composable(Routes.BROWSE_WELLS_SCREEN) {
             val userState = userViewModel.state.value
-            val wellsState = wellViewModel.wellsListState.value
+            wellViewModel.wellsListState.value
 
             when (userState) {
-                is UiState.Success<*> -> WellPickerScreen(
+                is UiState.Success<*> -> BrowseWellsScreen(
                     userData = userState.data as? UserData,
-                    navController = navController,
-                    wellRepository = wellViewModel.repository
+                    navController = navController
                 )
                 else -> {
                     LaunchedEffect(Unit) {
                         navController.navigate(Routes.LOGIN_SCREEN) {
-                            popUpTo(Routes.WELL_PICKER_SCREEN) { inclusive = true }
+                            popUpTo(Routes.BROWSE_WELLS_SCREEN) { inclusive = true }
                         }
                     }
                 }
@@ -200,14 +197,24 @@ fun NavigationGraph(
             arguments = listOf(navArgument("wellId") { type = NavType.IntType })
         ) { backStackEntry ->
             val wellId = backStackEntry.arguments?.getInt("wellId") ?: 0
-            wellViewModel.loadWell(wellId)
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
 
-            WellConfigScreen(
-                wellViewModel = wellViewModel,
-                navController = navController,
-                wellId = wellId,
-                userViewModel = userViewModel,
-            )
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.WELL_CONFIG_SCREEN) { inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            } else {
+                WellConfigScreen(
+                    navController = navController,
+                    wellViewModel = wellViewModel,
+                    wellId = wellId,
+                    userViewModel = userViewModel
+                )
+            }
         }
 
         // Settings Screen
@@ -346,6 +353,31 @@ fun NavigationGraph(
                 userViewModel = userViewModel,
                 weatherViewModel = weatherViewModel
             )
+        }
+
+        // Urgent SMS Screen
+        composable(Routes.URGENT_SMS_SCREEN) {
+            val userState = userViewModel.state.value
+            val context = LocalContext.current
+            val userData = (userState as? UiState.Success<UserData>)?.data
+
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.URGENT_SMS_SCREEN) { this.inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            } else {
+
+                UrgentSmsScreen(
+                    navController = navController,
+                    smsViewModel = smsViewModel,
+                    userViewModel = userViewModel,
+                    smsApi = SmsApi(context),
+                    modifier = modifier
+                )
+            }
         }
 
         // Easter Egg Screen

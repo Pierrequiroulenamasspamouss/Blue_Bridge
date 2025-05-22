@@ -11,7 +11,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.bluebridge.bluebridgeapp.data.model.Location
-import com.bluebridge.bluebridgeapp.data.model.MovementSpeeds
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +26,7 @@ val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name =
 
 // Define preference keys
 object PreferencesKeys {
+    val USER_ID = stringPreferencesKey("user_id")
     val EMAIL = stringPreferencesKey("email")
     val FIRST_NAME = stringPreferencesKey("first_name")
     val LAST_NAME = stringPreferencesKey("last_name")
@@ -57,15 +57,24 @@ class UserPreferences(context: Context) {
             }
         }
         .map { preferences ->
+            Log.d("UserPreferences", "Reading preferences: isLoggedIn=${preferences[PreferencesKeys.IS_LOGGED_IN]}")
             if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
-                val email = preferences[PreferencesKeys.EMAIL] ?: return@map null
+                val email = preferences[PreferencesKeys.EMAIL] ?: run {
+                    Log.e("UserPreferences", "Email not found in preferences")
+                    return@map null
+                }
                 val firstName = preferences[PreferencesKeys.FIRST_NAME] ?: ""
                 val lastName = preferences[PreferencesKeys.LAST_NAME] ?: ""
                 val username = preferences[PreferencesKeys.USERNAME] ?: ""
                 val role = preferences[PreferencesKeys.ROLE] ?: "user"
                 val theme = preferences[PreferencesKeys.THEME] ?: 0
-                val isWellOwner = preferences[PreferencesKeys.IS_WELL_OWNER] ?: false
                 val token = preferences[PreferencesKeys.LOGIN_TOKEN]
+                val userId = preferences[PreferencesKeys.USER_ID] ?: run {
+                    Log.e("UserPreferences", "UserID not found in preferences")
+                    return@map null
+                }
+
+                Log.d("UserPreferences", "Found user data: email=$email, userId=$userId, role=$role")
 
                 // Parse location from JSON string
                 val locationJson = preferences[PreferencesKeys.LOCATION]
@@ -73,10 +82,11 @@ class UserPreferences(context: Context) {
                     try {
                         Json.decodeFromString<Location>(locationJson)
                     } catch (e: Exception) {
-                        Log.e("UserPreferences", "Error parsing location", e)
+                        Log.e("UserPreferences", "Error parsing location: $locationJson", e)
                         Location(0.0, 0.0)
                     }
                 } else {
+                    Log.d("UserPreferences", "No location found in preferences")
                     Location(0.0, 0.0)
                 }
 
@@ -86,10 +96,11 @@ class UserPreferences(context: Context) {
                     try {
                         Json.decodeFromString<List<WaterNeed>>(waterNeedsJson)
                     } catch (e: Exception) {
-                        Log.e("UserPreferences", "Error parsing water needs", e)
+                        Log.e("UserPreferences", "Error parsing water needs: $waterNeedsJson", e)
                         emptyList()
                     }
                 } else {
+                    Log.d("UserPreferences", "No water needs found in preferences")
                     emptyList()
                 }
 
@@ -98,28 +109,35 @@ class UserPreferences(context: Context) {
                     firstName = firstName,
                     lastName = lastName,
                     username = username,
+                    userId = userId,
                     role = role,
                     location = location,
                     themePreference = theme,
                     waterNeeds = waterNeeds,
-                    movementSpeeds = MovementSpeeds(),
                     loginToken = token
-                )
+                ).also {
+                    Log.d("UserPreferences", "Successfully constructed UserData object: $it")
+                }
             } else {
+                Log.d("UserPreferences", "User is not logged in")
                 null
             }
         }
 
-    suspend fun getUserData(): Flow<UserData?> = userDataFlow
+    fun getUserData(): Flow<UserData?> = userDataFlow
 
     suspend fun clearUserData() {
+        Log.d("UserPreferences", "Clearing all user data")
         dataStore.edit { preferences ->
             preferences.clear()
         }
+        Log.d("UserPreferences", "User data cleared successfully")
     }
 
     suspend fun saveUserData(userData: UserData) {
+        Log.d("UserPreferences", "Saving user data: $userData")
         dataStore.edit { preferences ->
+            preferences[PreferencesKeys.USER_ID] = userData.userId
             preferences[PreferencesKeys.EMAIL] = userData.email
             preferences[PreferencesKeys.FIRST_NAME] = userData.firstName
             preferences[PreferencesKeys.LAST_NAME] = userData.lastName
@@ -145,11 +163,7 @@ class UserPreferences(context: Context) {
                 preferences[PreferencesKeys.IS_GUEST] = true
             }
         }
-    }
-
-    suspend fun isLoggedIn(): Boolean {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.IS_LOGGED_IN] ?: false
+        Log.d("UserPreferences", "User data saved successfully")
     }
 
     suspend fun updateThemePreference(theme: Int) {
@@ -158,26 +172,6 @@ class UserPreferences(context: Context) {
         }
     }
 
-    suspend fun getTheme(): Int {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.THEME] ?: 0
-    }
-
-    suspend fun getUserEmail(): String? {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.EMAIL]
-    }
-
-    suspend fun getLoginToken(): String? {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.LOGIN_TOKEN]
-    }
-    
-    suspend fun getUserWaterNeeds(): String? {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.WATER_NEEDS]
-    }
-    
     suspend fun setUserWaterNeeds(waterNeeds: String) {
         dataStore.edit { preferences ->
             // We're storing as a stringified JSON array now, but keeping this method for backward compatibility
@@ -208,11 +202,6 @@ class UserPreferences(context: Context) {
         }
     }
     
-    suspend fun isGuestMode(): Boolean {
-        val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.IS_GUEST] ?: false
-    }
-    
     // Push notification methods
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
@@ -222,7 +211,7 @@ class UserPreferences(context: Context) {
     
     suspend fun areNotificationsEnabled(): Boolean {
         val preferences = dataStore.data.first()
-        return preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: false
+        return preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] == true
     }
     
     suspend fun saveNotificationToken(token: String) {

@@ -1,133 +1,161 @@
-const { usersDb, wellsDb, deviceTokensDb, User, Well, DeviceToken } = require('../models');
-const { v4: uuidv4 } = require('uuid');
-//TODO : fix that tool to work with the new database layout ( users, wells, deviceToken)
-async function seed() {
-    console.log('Starting database seeding...');
-    
+const { Sequelize } = require('sequelize');
+const path = require('path');
+const bcrypt = require('bcrypt');
+
+// Initialize database connections
+const usersDb = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.join(__dirname, '../data/users.sqlite'),
+    logging: false
+});
+
+const wellsDb = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.join(__dirname, '../data/wells.sqlite'),
+    logging: false
+});
+
+const deviceTokensDb = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.join(__dirname, '../data/deviceTokens.sqlite'),
+    logging: false
+});
+
+const { User, DeviceToken, Well } = require('../models');
+
+async function seedDatabases() {
     try {
-        // Sync all databases
-        await Promise.all([
-            usersDb.sync({ force: true }),
-            wellsDb.sync({ force: true }),
-            deviceTokensDb.sync({ force: true })
-        ]);
-        console.log('All databases synchronized');
-        
-        // Create sample users
-        const users = [
-            {
-                userId: uuidv4(),
-                email: 'pierresluse@gmail.com',
-                password: 'Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=',
-                firstName: 'Pierre',
-                lastName: 'Sluse',
-                username: 'pierresluse',
-                role: 'admin',
-                themePreference: 0,
-                location: { latitude: 48.8566, longitude: 2.3522, lastUpdated: new Date().toISOString() },
-                latitude: 48.8566,
-                longitude: 2.3522,
-                waterNeeds: [
-                    { amount: 100, usageType: 'Drinking', priority: 2, description: 'Daily drinking water' },
-                    { amount: 200, usageType: 'Farming', priority: 3, description: 'Small garden irrigation' }
-                ],
-                isWellOwner: true,
-                lastActive: new Date(),
-                loginToken: 'sample-token-123',
-                profileImageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-                bio: 'Administrator and water management specialist',
-                registrationDate: new Date(),
-                accountStatus: 'active',
-                notificationPreferences: { waterAlerts: true, communityUpdates: true }
-            },
-            {
-                userId: uuidv4(),
-                email: 'user@example.com',
-                password: 'Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=',
-                firstName: 'Test',
-                lastName: 'User',
-                username: 'testuser',
-                role: 'user',
-                themePreference: 0,
-                location: { latitude: 48.85, longitude: 2.35, lastUpdated: new Date().toISOString() },
-                latitude: 48.85,
-                longitude: 2.35,
-                waterNeeds: [
-                    { amount: 50, usageType: 'Drinking', priority: 2, description: 'Daily drinking water' }
-                ],
-                isWellOwner: false,
-                lastActive: new Date(),
-                loginToken: null,
-                profileImageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
-                bio: 'Regular community member',
-                registrationDate: new Date(),
-                accountStatus: 'active',
-                notificationPreferences: { waterAlerts: true, communityUpdates: false }
-            }
-        ];
-        
-        const createdUsers = await User.bulkCreate(users);
-        console.log(`Created ${users.length} sample users`);
+        // Sync all models
+        await User.sync({ force: true });
+        await DeviceToken.sync({ force: true });
+        await Well.sync({ force: true });
 
-        // Create device tokens for users
-        const deviceTokens = createdUsers.map(user => ({
-            userId: user.userId,
-            token: `sample-device-token-${user.userId}`,
+        //Create pierresluse user
+        const pierreslusePassword = "Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=";
+        const pierresluse = await User.create({
+            userId: 'God',
+            email: 'pierresluse@gmail.com',
+            phoneNumber: '+33666666666',
+            role: 'admin',
+            themePreference: 0,
+            password: pierreslusePassword,
+            firstName: 'Pierre',
+            lastName: 'Sluse',
+            username: 'Pi2R'
+        });
+
+        // Create admin user
+        const adminPassword = await bcrypt.hash('admin123', 10);
+        const admin = await User.create({
+            userId: 'admin',
+            email: 'admin@bluebridge.com',
+            password: adminPassword,
+            firstName: 'Admin',
+            lastName: 'User',
+            role: 'admin',
+            username: 'admin'
+        });
+
+        // Create regular user
+        const userPassword = await bcrypt.hash('user123', 10);
+        const user = await User.create({
+            userId: 'user',
+            email: 'user@bluebridge.com',
+            password: userPassword,
+            firstName: 'Regular',
+            lastName: 'User',
+            role: 'user',
+            username: 'user'
+        });
+
+        // Create well owner
+        const ownerPassword = await bcrypt.hash('owner123', 10);
+        const owner = await User.create({
+            userId: 'owner',
+            email: 'owner@bluebridge.com',
+            password: ownerPassword,
+            firstName: 'Well',
+            lastName: 'Owner',
+            role: 'well_owner',
+            username: 'owner'
+        });
+
+        // Create device tokens
+        await DeviceToken.create({
+            userId: pierresluse.userId,
+            token: 'Test',
             deviceType: 'android',
-            lastUsed: new Date()
-        }));
+            isActive: true
+        });
 
-        await DeviceToken.bulkCreate(deviceTokens);
-        console.log(`Created ${deviceTokens.length} device tokens`);
-        
-        // Create sample wells
-        const wells = [
-            {
-                espId: '1001',
-                wellName: 'Community Well A',
-                wellOwner: createdUsers[0].email,
-                ownerId: createdUsers[0].userId,
-                wellLocation: { latitude: 48.8566, longitude: 2.3522 },
-                wellWaterType: 'Clean',
-                wellCapacity: 1000,
-                wellWaterLevel: 750,
-                wellWaterConsumption: 10,
-                extraData: { description: 'Main community well near town center' },
-                wellStatus: 'Active',
-                lastUpdated: new Date(),
-                waterQuality: { ph: 7.2, turbidity: 0.5, tds: 150 }
+        await DeviceToken.create({
+            userId: admin.userId,
+            token: 'admin-device-token-1',
+            deviceType: 'android',
+            isActive: true
+        });
+
+        await DeviceToken.create({
+            userId: user.userId,
+            token: 'user-device-token-1',
+            deviceType: 'android',
+            isActive: true
+        });
+
+        await DeviceToken.create({
+            userId: owner.userId,
+            token: 'owner-device-token-1',
+            deviceType: 'android',
+            isActive: true
+        });
+
+        // Create wells
+        await Well.create({
+            espId : "esp32-001",
+            wellName: 'Central Park Well',
+            wellOwner: owner.email,
+            wellLocation: {latitude: 48.8589, longitude: 2.3469},
+            wellWaterType: 'Clean',
+            wellCapacity: 1000.0,
+            wellWaterLevel: 85.5,
+            wellWaterConsumption: 50.0,
+            extraData: {
+                description: 'Main water source for Central Park area',
+                contactInfo: 'Contact well owner for access',
+                accessInfo: '24/7 access with key',
+                notes: 'Regular maintenance every 3 months'
             },
-            {
-                espId: '1002',
-                wellName: 'Agricultural Well B',
-                wellOwner: createdUsers[0].email,
-                ownerId: createdUsers[0].userId,
-                wellLocation: { latitude: 48.85, longitude: 2.35 },
-                wellWaterType: 'Irrigation',
-                wellCapacity: 2000,
-                wellWaterLevel: 1200,
-                wellWaterConsumption: 35,
-                extraData: { description: 'Used primarily for crop irrigation' },
-                wellStatus: 'Active',
-                lastUpdated: new Date(),
-                waterQuality: { ph: 6.8, turbidity: 1.2, tds: 220 }
-            }
-        ];
-        
-        await Well.bulkCreate(wells);
-        console.log(`Created ${wells.length} sample wells`);
-        
-        console.log('Database seeding completed successfully');
+            wellStatus: 'Active',
+            lastUpdated: new Date(),
+            waterQuality: { ph: 7.2, turbidity: 0.5, tds: 120 }
+        });
+
+        await Well.create({
+            espId : "esp32-002",
+            wellName: 'River Well',
+            wellOwner: owner.email,
+            wellLocation: {latitude: 48.857, longitude: 2.3504},
+            wellWaterType: 'Clean',
+            wellCapacity: 800.0,
+            wellWaterLevel: 75.0,
+            wellWaterConsumption: 30.0,
+            extraData: {
+                description: 'Secondary water source near the river',
+                contactInfo: 'Contact well owner for access',
+                accessInfo: 'Daytime access only',
+                notes: 'Water quality monitoring daily'
+            },
+            wellStatus: 'Active',
+            lastUpdated: new Date(),
+            waterQuality: { ph: 7.0, turbidity: 0.7, tds: 150 }
+        });
+
+        console.log('Database seeded successfully!');
+        process.exit(0);
     } catch (error) {
         console.error('Error seeding database:', error);
-    } finally {
-        await Promise.all([
-            usersDb.close(),
-            wellsDb.close(),
-            deviceTokensDb.close()
-        ]);
+        process.exit(1);
     }
 }
 
-// Run the seed function
-seed(); 
+seedDatabases(); 

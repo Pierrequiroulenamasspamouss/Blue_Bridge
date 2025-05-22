@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models');
 const { Well, User } = db;
-const { validateToken } = require('./auth');
+const { validateToken } = require('../middleware/auth');
 const { getWeatherData } = require('../services/weatherService');
 
 function mapToShortenedWellData(well) {
@@ -63,8 +63,8 @@ router.get('/', async (req, res) => {
         if (wellWaterType) where.wellWaterType = wellWaterType;
         if (wellOwner) where.wellOwner = wellOwner;
         if (espId) where.espId = espId;
-        if (minWaterLevel) where.waterLevel = { [db.Sequelize.Op.gte]: minWaterLevel };
-        if (maxWaterLevel) where.waterLevel = { [db.Sequelize.Op.lte]: maxWaterLevel };
+        if (minWaterLevel) where.wellWaterLevel = { [db.Sequelize.Op.gte]: minWaterLevel };
+        if (maxWaterLevel) where.wellWaterLevel = { [db.Sequelize.Op.lte]: maxWaterLevel };
 
         // If coordinates are provided, find wells within radius
         if (latitude && longitude) {
@@ -77,10 +77,10 @@ router.get('/', async (req, res) => {
                 db.Sequelize.literal(`
                     (6371 * acos(
                         cos(radians(${lat})) * 
-                        cos(radians(latitude)) * 
-                        cos(radians(longitude) - radians(${lon})) + 
+                        cos(radians(JSON_EXTRACT(wellLocation, '$.latitude'))) * 
+                        cos(radians(JSON_EXTRACT(wellLocation, '$.longitude')) - radians(${lon})) + 
                         sin(radians(${lat})) * 
-                        sin(radians(latitude))
+                        sin(radians(JSON_EXTRACT(wellLocation, '$.latitude')))
                     )) <= ${rad}
                 `)
             ];
@@ -97,21 +97,12 @@ router.get('/', async (req, res) => {
             order: [['wellName', 'ASC']]  // Sort alphabetically by well name
         });
 
-        // Get weather data for each well if coordinates are provided
-//      if (latitude && longitude) {
-//          try {
-//              const weatherData = await getWeatherData(latitude, longitude);
-//              wells.forEach(well => {
-//                  well.dataValues.weather = weatherData;
-//              });
-//          } catch (error) {
-//              console.error('Error fetching weather data:', error);
-//          }
-//        }
+        // Map wells to shortened format
+        const mappedWells = wells.map(well => mapToShortenedWellData(well).data);
 
         res.json({
             status: 'success',
-            data: wells,
+            data: mappedWells,
             pagination: {
                 total,
                 page: parseInt(page),

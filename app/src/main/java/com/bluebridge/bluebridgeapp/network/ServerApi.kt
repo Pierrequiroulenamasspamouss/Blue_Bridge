@@ -1,13 +1,12 @@
 package com.bluebridge.bluebridgeapp.network
 
-import PaginatedWellsResponse
-import WellData
 import com.bluebridge.bluebridgeapp.data.model.BasicResponse
 import com.bluebridge.bluebridgeapp.data.model.CertificateResponse
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountResponse
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.LoginResponse
+import com.bluebridge.bluebridgeapp.data.model.NearbyUsersRequest
 import com.bluebridge.bluebridgeapp.data.model.NearbyUsersResponse
 import com.bluebridge.bluebridgeapp.data.model.NotificationTokenRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
@@ -16,17 +15,20 @@ import com.bluebridge.bluebridgeapp.data.model.ServerStatusResponse
 import com.bluebridge.bluebridgeapp.data.model.UpdateLocationRequest
 import com.bluebridge.bluebridgeapp.data.model.UpdateProfileRequest
 import com.bluebridge.bluebridgeapp.data.model.UpdateWaterNeedsRequest
+import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
+import com.bluebridge.bluebridgeapp.data.model.WeatherResponse
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.WellStatsResponse
+import com.bluebridge.bluebridgeapp.data.model.WellsResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-
 interface ServerApi {
-
 
     @GET("/api/wells/{espId}/details")
     suspend fun getWellDataById(
@@ -40,7 +42,7 @@ interface ServerApi {
         @Query("token") token: String
     ): Response<BasicResponse>
 
-    @POST("/api/wells/delete/{espId}")
+    @DELETE("/api/wells/{espId}")
     suspend fun deleteWell(
         @Path("espId") espId: String,
         @Query("email") email: String,
@@ -58,8 +60,8 @@ interface ServerApi {
     ): Response<RegisterResponse>
 
     @GET("/api/wells")
-    suspend fun getAllWells(): Response<PaginatedWellsResponse>
-    
+    suspend fun getAllWells(): Response<WellsResponse>
+
     @GET("/api/wells")
     suspend fun getWellsWithFilters(
         @Query("page") page: Int = 1,
@@ -71,18 +73,14 @@ interface ServerApi {
         @Query("espId") espId: String? = null,
         @Query("minWaterLevel") minWaterLevel: Int? = null,
         @Query("maxWaterLevel") maxWaterLevel: Int? = null
-    ): Response<PaginatedWellsResponse>
+    ): Response<WellsResponse>
 
     @GET("/api/wellStats")
     suspend fun getWellsStats(): Response<WellStatsResponse>
 
-    @GET("/api/nearby-users")
+    @POST("/api/nearby-users")
     suspend fun getNearbyUsers(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double,
-        @Query("radius") radius: Double,
-        @Query("email") email: String,
-        @Query("token") token: String
+        @Body request: NearbyUsersRequest
     ): Response<NearbyUsersResponse>
 
     @POST("/api/update-location")
@@ -115,13 +113,10 @@ interface ServerApi {
         @Body request: NotificationTokenRequest
     ): Response<BasicResponse>
     
-    @GET("/api/weather")
+    @POST("/api/weather")
     suspend fun getWeather(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double,
-        @Query("email") email: String,
-        @Query("token") token: String
-    ): Response<Map<String, Any>>
+        @Body request: WeatherRequest
+    ): Response<WeatherResponse>
 
     @GET("/status")
     suspend fun getServerStatus(): Response<ServerStatusResponse>

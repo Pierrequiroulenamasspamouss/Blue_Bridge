@@ -1,9 +1,10 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import WellData
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,23 +57,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.bluebridge.bluebridgeapp.data.WellEvents
 import com.bluebridge.bluebridgeapp.data.model.Location
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.ui.components.WellField
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 
 const val debug = true
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WellConfigScreen(
@@ -89,7 +93,24 @@ fun WellConfigScreen(
     var isSaving by remember { mutableStateOf(false) }
 
     val currentWellState = wellViewModel.currentWellState.value
-    val wellData = (currentWellState as? UiState.Success)?.data ?: WellData(id = wellId)
+    
+    val wellData = (currentWellState as? UiState.Success)?.data ?: WellData(
+        id = wellId,
+        wellName = "",
+        wellLocation = Location(0.0, 0.0),
+        wellWaterType = "",
+        wellCapacity = "",
+        wellWaterLevel = "",
+        lastRefreshTime = 0,
+        wellStatus = "",
+        //TODO: maybe have the WaterQuality ?
+        extraData = emptyMap(),
+        description = "",
+        lastUpdated = "",
+        espId = "",
+        wellWaterConsumption = "",
+        wellOwner = "",
+    )
     var lastSavedData by remember { mutableStateOf(wellData) }
     val isLoading = currentWellState is UiState.Loading
     val errorMessage = (currentWellState as? UiState.Error)?.message
@@ -528,7 +549,7 @@ fun WellConfigScreen(
 }
 
 @Composable
-fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun SectionHeader(title: String, icon: ImageVector) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier

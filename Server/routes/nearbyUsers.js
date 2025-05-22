@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models');
 const { User } = db;
-const { validateToken } = require('./auth');
+const { validateToken } = require('../middleware/auth');
 
 /**
  * Get nearby users within a specified radius
@@ -74,14 +74,14 @@ const toRad = (value) => {
 };
 
 // Get nearby users
-router.get('/', validateToken, async (req, res) => {
+router.post('/', validateToken, async (req, res) => {
     try {
-        const { latitude, longitude, radius = 50 } = req.query;
+        const { latitude, longitude, radius = 50, userId, token } = req.body;
         
-        if (!latitude || !longitude) {
+        if (!latitude || !longitude || !userId || !token) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Latitude and longitude are required'
+                message: 'Missing required fields'
             });
         }
 
@@ -94,6 +94,7 @@ router.get('/', validateToken, async (req, res) => {
 
         res.json({
             status: 'success',
+            message: 'Nearby users retrieved successfully',
             data: users
         });
     } catch (error) {

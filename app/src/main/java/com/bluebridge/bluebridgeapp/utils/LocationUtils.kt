@@ -1,15 +1,16 @@
 package com.bluebridge.bluebridgeapp.utils
 
-import WellData
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.getLatitude
+import com.bluebridge.bluebridgeapp.data.model.getLongitude
+import com.bluebridge.bluebridgeapp.data.model.hasValidCoordinates
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
-import getLatitude
-import getLongitude
-import hasValidCoordinates
+
 
 /**
  * Helper functions for location and distance calculations

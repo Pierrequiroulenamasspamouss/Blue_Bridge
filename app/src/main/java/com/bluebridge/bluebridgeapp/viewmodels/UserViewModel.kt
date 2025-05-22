@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
+import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
@@ -17,26 +18,69 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class UserViewModel(
-    val repository: UserRepository
+    val repository: UserRepository,
+
 ) : ViewModel() {
     companion object;
 
     // State management
     private val _state = mutableStateOf<UiState<UserData>>(UiState.Empty)
     val state = _state
-    
+
     // Push notification state
     private val _notificationsEnabled = mutableStateOf(false)
     val notificationsEnabled = _notificationsEnabled
 
-    fun handleEvent(event: UserEvent) {
+    suspend fun handleEvent(event: UserEvent) {
         when (event) {
-            is UserEvent.Register -> register(event.registerRequest)
-            is UserEvent.Login -> login(event.loginRequest)
-            is UserEvent.UpdateTheme -> updateTheme(event.theme)
-            is UserEvent.UpdateProfile -> updateProfile(event.userData)
-            is UserEvent.Logout -> logout()
-            is UserEvent.LoadUser -> loadUser()
+            is UserEvent.Login -> {
+                login(event.request)
+            }
+
+            is UserEvent.Register -> {
+                register(event.request)
+            }
+
+            is UserEvent.LoadUser -> {
+                loadUser()
+            }
+
+            is UserEvent.UpdateProfile -> {
+                updateProfile(event.userData)
+            }
+
+            is UserEvent.UpdateLocation -> {
+                updateLocation(event.location)
+            }
+
+            is UserEvent.UpdateWaterNeeds -> {
+                updateWaterNeeds(event.waterNeeds)
+            }
+
+            is UserEvent.UpdateThemePreference -> {
+                updateThemePreference(event.themePreference)
+            }
+
+            is UserEvent.UpdateNotificationsEnabled -> {
+                setNotificationsEnabled(event.enabled)
+            }
+
+            UserEvent.Logout -> {
+                logout()
+            }
+
+            UserEvent.LoginAsGuest -> {
+                loginAsGuest()
+            }
+        }
+    }
+
+    private fun updateThemePreference(i: Int) {}
+
+    private fun updateLocation(location: Location) {
+        viewModelScope.launch {
+            repository.updateLocation(location)
+            loadUser()
         }
     }
 
@@ -45,17 +89,19 @@ class UserViewModel(
             _state.value = UiState.Loading
             try {
                 Log.d("UserViewModel", "Attempting to load user data from preferences")
-                repository.getUserData().collect { userData ->
-                    userData?.let {
-                        Log.d("UserViewModel", "Successfully loaded user data: ${it.email}, is logged in: ${repository.isLoggedIn()}")
-                        _state.value = UiState.Success(it)
-                        
-                        // Check if notifications are enabled
-                        checkNotificationsEnabled()
-                    } ?: run {
-                        Log.e("UserViewModel", "User data is null from preferences")
-                        _state.value = UiState.Error("No user data available")
-                    }
+                val userData = repository.getUserData().first()
+                if (userData != null) {
+                    Log.d(
+                        "UserViewModel",
+                        "Successfully loaded user data: ${userData.email}, userId: ${userData.userId}"
+                    )
+                    _state.value = UiState.Success(userData)
+
+                    // Check if notifications are enabled
+                    checkNotificationsEnabled()
+                } else {
+                    Log.e("UserViewModel", "User data is null from preferences")
+                    _state.value = UiState.Error("No user data available")
                 }
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Failed to load user: ${e.message}", e)
@@ -64,68 +110,46 @@ class UserViewModel(
         }
     }
 
-    private fun updateTheme(theme: Int) {
+    fun register(request: RegisterRequest) {
         viewModelScope.launch {
             _state.value = UiState.Loading
             try {
-                // Save theme preference for both guest and regular users
-                repository.updateThemePreference(theme)
-                
-                // Determine if we're in guest mode
-                val isGuest = repository.isGuestMode()
-                
-                // For guest users, just update the current user data with the new theme
-                if (isGuest) {
-                    // Get current user data or create a new guest user data object
-                    val currentData = (_state.value as? UiState.Success<UserData>)?.data ?: UserData(
-                        email = "guest@bluebridge.app",
-                        firstName = "Guest",
-                        lastName = "User",
-                        username = "guest_user",
-                        role = "guest",
-                        loginToken = null,
-                        themePreference = theme  // Set the theme preference
-                    )
-                    
-                    // Create updated user data with new theme
-                    val updatedData = currentData.copy(themePreference = theme)
-                    
-                    // Save updated data and update state
-                    repository.saveUserData(updatedData)
-                    _state.value = UiState.Success(updatedData)
-                    Log.d("UserViewModel", "Updated theme for guest user to: $theme")
+                Log.d("UserViewModel", "Attempting registration for: ${request.email}")
+                val success = repository.register(request)
+
+                if (success) {
+                    Log.d("UserViewModel", "Registration successful for: ${request.email}")
+                    loadUser()
+                    //navController.navigate(Routes.LOGIN_SCREEN)//TODO: pop the user to the homescreen
+                    // Always register FCM token after successful registration regardless of notification preferences
+                    // This ensures the token is always up-to-date on the server
+                    registerForNotifications()
                 } else {
-                    // For regular users, just reload user data
-                    loadUser() 
+                    Log.e("UserViewModel", "Registration failed for: ${request.email}")
+                    _state.value = UiState.Error("Registration failed. Please try again.")
                 }
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Failed to update theme: ${e.message}", e)
-                _state.value = UiState.Error("Failed to update theme: ${e.message}")
-            }
-        }
-    }
-
-    private fun register(registerRequest: RegisterRequest) {
-        viewModelScope.launch {
-            _state.value = UiState.Loading
-            try {
-                val success = repository.register(registerRequest)
-                if (success) {
-                    loadUser()
-
-                    // Register for notifications if user allows
-                    if (_notificationsEnabled.value) {
-                        registerForNotifications()
+                Log.e("UserViewModel", "Registration error: ${e.message}", e)
+                when {
+                    e.message?.contains("Unable to resolve host") == true -> {
+                        _state.value =
+                            UiState.Error("No internet connection. Please check your network and try again.")
                     }
-                } else {
-                    _state.value = UiState.Error("Registration failed")
+
+                    e.message?.contains("timeout") == true -> {
+                        _state.value =
+                            UiState.Error("Connection timed out. Please check your network and try again.")
+                    }
+
+                    else -> {
+                        _state.value = UiState.Error("Registration failed. Please try again later.")
+                    }
                 }
-            } catch (_: Exception) {
             }
         }
     }
 
-    private fun login(request: LoginRequest) {
+    fun login(request: LoginRequest) {
         viewModelScope.launch {
             _state.value = UiState.Loading
             try {
@@ -135,17 +159,15 @@ class UserViewModel(
                 if (success) {
                     Log.d("UserViewModel", "Login successful for: ${request.email}")
                     loadUser()
-
-                    // Always register FCM token after successful login regardless of notification preferences
-                    // This ensures the token is always up-to-date on the server
-                    registerForNotifications() 
+                    // Register FCM token after successful login
+                    registerForNotifications()
                 } else {
                     Log.e("UserViewModel", "Login failed for: ${request.email}")
-                    _state.value = UiState.Error("Login failed. Please check your credentials and try again.")
+                    _state.value = UiState.Error("Login failed. Please check your credentials.")
                 }
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Login error: ${e.message}", e)
-                _state.value = UiState.Error("Login error: ${e.message}")
+                Log.e("UserViewModel", "Login failed with exception", e)
+                _state.value = UiState.Error("Login failed: ${e.message}")
             }
         }
     }
@@ -166,14 +188,12 @@ class UserViewModel(
                     lastName = "User",
                     username = "guest_user",
                     role = "guest",
-                    loginToken = null
+                    userId = "guest-UID"
                 )
 
                 // Save the guest user locally
                 repository.saveUserData(guestUserData)
 
-                // Set the guest flag in preferences
-                repository.setGuestMode(true)
 
                 // Update state
                 _state.value = UiState.Success(guestUserData)
@@ -186,25 +206,16 @@ class UserViewModel(
         }
     }
 
-    /**
-     * Check if the current user is in guest mode
-     */
-    suspend fun isGuestMode(): Boolean {
-        return repository.isGuestMode()
-    }
 
     fun logout() {
         viewModelScope.launch {
-            _state.value = UiState.Loading
             try {
-                // Unregister from notifications if they were enabled
-                if (_notificationsEnabled.value) {
-                    unregisterFromNotifications()
-                }
-
+                Log.d("UserViewModel", "Attempting to logout user")
                 repository.logout()
-                _state.value = UiState.Empty
+                Log.d("UserViewModel", "Logout successful")
+                _state.value = UiState.Error("Logged out")
             } catch (e: Exception) {
+                Log.e("UserViewModel", "Logout failed", e)
                 _state.value = UiState.Error("Logout failed: ${e.message}")
             }
         }
@@ -222,7 +233,7 @@ class UserViewModel(
                 Log.d("UserViewModel", "Attempting to delete account for: $email")
 
                 // Get the user's token
-                val token = repository.getAuthToken() ?: ""
+                val token = repository.getLoginToken() ?: ""
 
                 // Create delete request
                 val deleteRequest = DeleteAccountRequest(
@@ -246,7 +257,8 @@ class UserViewModel(
                     _state.value = UiState.Empty
                 } else {
                     Log.e("UserViewModel", "Failed to delete account for: $email")
-                    _state.value = UiState.Error("Account deletion failed. Please check your credentials and try again.")
+                    _state.value =
+                        UiState.Error("Account deletion failed. Please check your credentials and try again.")
                 }
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Account deletion error: ${e.message}", e)
@@ -264,7 +276,10 @@ class UserViewModel(
                 if (serverUpdateSuccess) {
                     Log.d("UserViewModel", "Profile updated on server")
                 } else {
-                    Log.w("UserViewModel", "Failed to update profile on server, saving locally only")
+                    Log.w(
+                        "UserViewModel",
+                        "Failed to update profile on server, saving locally only"
+                    )
                 }
 
                 // Always save locally regardless of server result to avoid data loss
@@ -278,10 +293,6 @@ class UserViewModel(
 
     suspend fun getUserEmail(): String? {
         return repository.getUserEmail()
-    }
-
-    suspend fun getUserWaterNeeds(): String? {
-        return repository.getUserWaterNeeds()
     }
 
     /**
@@ -320,7 +331,11 @@ class UserViewModel(
 
                 Log.d("UserViewModel", "Notifications enabled: $enabled")
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Error checking if notifications are enabled: ${e.message}", e)
+                Log.e(
+                    "UserViewModel",
+                    "Error checking if notifications are enabled: ${e.message}",
+                    e
+                )
             }
         }
     }
@@ -331,8 +346,9 @@ class UserViewModel(
     private fun registerForNotifications() {
         viewModelScope.launch {
             try {
+                val userData = repository.getUserData().first()
                 // Skip for guest users
-                if (repository.isGuestMode()) {
+                if (userData?.role == "guest") {
                     Log.d("UserViewModel", "Skipping notification registration for guest user")
                     return@launch
                 }
@@ -351,7 +367,7 @@ class UserViewModel(
 
                 // Send the token to the server
                 val email = repository.getUserEmail()
-                val authToken = repository.getAuthToken()
+                val authToken = repository.getLoginToken()
 
                 if (email != null && authToken != null) {
                     Log.d("UserViewModel", "Sending token to server for $email")
@@ -383,7 +399,7 @@ class UserViewModel(
 
                 // Send unregister request to server
                 val email = repository.getUserEmail()
-                val authToken = repository.getAuthToken()
+                val authToken = repository.getLoginToken()
 
                 if (email != null && authToken != null) {
                     Log.d("UserViewModel", "Unregistering token from server for $email")
@@ -392,7 +408,10 @@ class UserViewModel(
                     if (success) {
                         Log.d("UserViewModel", "Successfully unregistered notification token")
                     } else {
-                        Log.e("UserViewModel", "Failed to unregister notification token with server")
+                        Log.e(
+                            "UserViewModel",
+                            "Failed to unregister notification token with server"
+                        )
                     }
                 }
 
@@ -418,13 +437,17 @@ class UserViewModel(
 
     suspend fun updateWaterNeeds(waterNeeds: List<WaterNeed>) {
         try {
+            val userData = repository.getUserData().first()
             // First update water needs on server if not in guest mode
-            if (!repository.isGuestMode()) {
+            if (userData?.role != "guest") {
                 val serverUpdateSuccess = repository.updateWaterNeedsOnServer(waterNeeds)
                 if (serverUpdateSuccess) {
                     Log.d("UserViewModel", "Water needs updated on server")
                 } else {
-                    Log.w("UserViewModel", "Failed to update water needs on server, saving locally only")
+                    Log.w(
+                        "UserViewModel",
+                        "Failed to update water needs on server, saving locally only"
+                    )
                 }
             }
 
@@ -443,63 +466,69 @@ class UserViewModel(
             Log.e("UserViewModel", "Error updating water needs", e)
         }
     }
-    suspend fun setUserWaterNeeds(needs: String) {
-        try {
-            Log.d("UserViewModel", "Setting water needs: $needs")
 
-            // First get current userData
-            val userData = repository.getUserData().first()
-            if (userData == null) {
-                Log.e("UserViewModel", "Cannot update water needs: User data is null")
-                return
-            }
+    suspend fun getLoginToken(): String? {
+        return repository.getLoginToken()
+    }
 
-            // Create WaterNeed list
-            val waterNeeds = if (needs.isNotBlank()) {
-                val amount = needs.toIntOrNull() ?: 0
-                val description = "General water need"
-                listOf(
-                    WaterNeed(
-                        amount = amount,
-                        usageType = "General",
-                        priority = 3,
-                        description = description
-                    )
-                )
-            } else {
-                emptyList()
-            }
 
-            Log.d("UserViewModel", "Created water needs: $waterNeeds")
+    suspend fun getUserWaterNeeds(): String? {
+        return repository.getUserWaterNeeds()
+    }
 
-            // Update local preferences string value
-            repository.setUserWaterNeeds(needs)
-
-            // Try to update on server
-            viewModelScope.launch {
-                try {
-                    val serverUpdateSuccess = repository.updateWaterNeedsOnServer(waterNeeds)
-                    if (serverUpdateSuccess) {
-                        Log.d("UserViewModel", "Water needs updated on server")
-                    } else {
-                        Log.w(
-                            "UserViewModel",
-                            "Failed to update water needs on server, saving locally only"
-                        )
-                    }
-                } catch (e: Exception) {
-                    Log.e("UserViewModel", "Error updating water needs on server", e)
+    private suspend fun updateTheme(theme: Int) {
+        val userData = repository.getUserData().first()
+        if (userData != null) {
+            if (userData.themePreference != theme) {
+                repository.saveUserData(userData.copy(themePreference = theme))
+                if (userData.role != "guest") {
+                    repository.updateProfileOnServer(userData)
+                    Log.d("UserViewModel", "Theme updated locally and on server")
                 }
             }
         }
-        catch (e: Exception) {
-            Log.e("UserViewModel", "Error setting water needs", e)
+
+
+        suspend fun setUserWaterNeeds(needs: String) {
+            val userData = repository.getUserData().first()
+            if (userData != null) {
+                val newWaterNeeds = if (needs.isNotBlank()) {
+                    val amount = needs.toIntOrNull() ?: 0 // Default to 0 if conversion fails
+                    listOf(
+                        WaterNeed(
+                            amount = amount,
+                            usageType = "General",
+                            priority = 3,
+                            description = "General water need"
+                        )
+                    )
+                } else {
+                    emptyList()
+                }
+
+                if (userData.waterNeeds != newWaterNeeds) {
+                    // Save locally first
+                    repository.saveUserData(userData.copy(waterNeeds = newWaterNeeds))
+                    repository.setUserWaterNeeds(needs) // Also update the raw string preference if needed
+                    Log.d("UserViewModel", "Water needs updated locally: $newWaterNeeds")
+
+                    // Then try to update on server if not a guest
+                    if (userData.role != "guest") {
+                        viewModelScope.launch {
+                            try {
+                                repository.updateWaterNeedsOnServer(newWaterNeeds)
+                                Log.d("UserViewModel", "Water needs updated on server")
+                            } catch (e: Exception) {
+                                Log.e("UserViewModel", "Failed to update water needs on server", e)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
-
-    suspend fun getLoginToken(): String? {
-        return repository.getAuthToken()
-    }
-
 }
+
+
+
 

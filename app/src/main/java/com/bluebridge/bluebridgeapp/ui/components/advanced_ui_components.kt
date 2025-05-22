@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,13 +16,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -60,6 +65,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun WellField(
@@ -147,7 +153,6 @@ fun PasswordField(
 @SuppressLint("ClickableViewAccessibility")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-//TODO: change the little human icon to the blue location pin.
 fun MiniMap(
     currentLocation: Location? = null,
     selectedLocation: Location? = null,
@@ -177,20 +182,17 @@ fun MiniMap(
                                 position = GeoPoint(loc.latitude, loc.longitude)
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                                 title = "Your Location"
-                                icon = context.getDrawable(R.drawable.small_map_arrow)?.let { drawable ->
+                                icon = context.getDrawable(R.drawable.ic_location_pin)?.let { drawable ->
                                     val bitmap = createBitmap(
                                         drawable.intrinsicWidth,
                                         drawable.intrinsicHeight
                                     )
-                                    android.graphics.Canvas(bitmap).apply {
-                                        drawable.setBounds(0, 0, width, height)
-                                        drawable.draw(this)
-                                    }
+                                    drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+                                    drawable.draw(android.graphics.Canvas(bitmap))
                                     bitmap.toDrawable(context.resources)
                                 }
-                                overlays.add(this)
-                                controller.setCenter(position)
-                            }
+                                icon = icon
+                            }//.also { addMarker(it) } //TODO: check if this removal was critical or not
                         }
 
                         setOnTouchListener { _, event ->
@@ -219,9 +221,17 @@ fun MiniMap(
                             position = GeoPoint(loc.latitude, loc.longitude)
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                             title = "Selected"
-                            icon = context.getDrawable(R.drawable.ic_location_pin)
-                            //overlays.add(this)
-                        }
+                            icon = context.getDrawable(R.drawable.ic_location_pin)?.let { drawable ->
+                                val bitmap = createBitmap(
+                                    drawable.intrinsicWidth,
+                                    drawable.intrinsicHeight
+                                )
+                                drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+                                drawable.draw(android.graphics.Canvas(bitmap))
+                                bitmap.toDrawable(context.resources)
+                            }
+                            icon = icon
+                        }.also { mapView.overlays.add(it) }
                         mapView.invalidate()
                     }
                 }
@@ -240,7 +250,7 @@ fun MiniMap(
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer
             ) {
-                Icon(Icons.Default.MyLocation, "Current Location")
+                Icon(Icons.Default.LocationOn, "Current Location")
             }
         }
     }
@@ -319,3 +329,35 @@ fun TopBar(topBarMessage: String,isIcon : Boolean = true,iconId : Int = R.drawab
     }
 }
 
+@Composable
+fun OfflineBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.SignalWifiOff,
+                contentDescription = "Offline",
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                "You are currently offline. Some features may be limited.",
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}

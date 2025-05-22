@@ -1,13 +1,15 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import ShortenedWellData
-import WellData
 import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -33,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,38 +46,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
 import com.bluebridge.bluebridgeapp.data.model.Location
+import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.components.FiltersSection
 import com.bluebridge.bluebridgeapp.ui.components.MapView
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
-import com.bluebridge.bluebridgeapp.utils.fetchWellDetailsFromServer
-import getLatitude
-import getLongitude
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(InternalSerializationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WellPickerScreen(
+fun BrowseWellsScreen(
+
     userData: UserData?,
-    navController: NavController,
-    wellRepository: WellRepository
+    navController: NavController
+
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Pagination state
-    var currentPage by remember { mutableStateOf(1) }
+    var currentPage by remember { mutableIntStateOf(1) }
     val pageSize = 20
     var hasMorePages by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
@@ -92,8 +92,7 @@ fun WellPickerScreen(
     var showMap by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
-    var wells by remember { mutableStateOf<List<ShortenedWellData>>(emptyList()) }
-    var stats by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var wells by remember { mutableStateOf<List<WellData>>(emptyList()) }
 
     // Load initial data
     LaunchedEffect(Unit) {
@@ -115,7 +114,7 @@ fun WellPickerScreen(
     }
 
     // Load more when reaching end of list
-    val loadMore = {
+    LaunchedEffect(wells.size, hasMorePages) {
         if (!isLoading && hasMorePages) {
             currentPage++
             isLoading = true
@@ -139,27 +138,39 @@ fun WellPickerScreen(
             }
         }
     }
-    //TODO: the filtering is done by the server (with the research), not the app. Fix that. the filters should have a "search" button to send a request to the server for the filtered list
-    // Apply filters
-    LaunchedEffect(searchQuery, selectedWaterType, selectedStatus, minWaterLevel, maxWaterLevel) {
+
+    // Apply filters with search button
+    val applyFilters = {
         currentPage = 1
         isLoading = true
-        loadWells(
-            page = currentPage,
-            pageSize = pageSize,
-            searchQuery = searchQuery,
-            waterType = selectedWaterType,
-            status = selectedStatus,
-            minWaterLevel = minWaterLevel,
-            maxWaterLevel = maxWaterLevel,
-            context = context,
-            snackbarHostState = snackbarHostState,
-            onSuccess = { newWells, hasMore ->
-                wells = newWells
-                hasMorePages = hasMore
-                isLoading = false
-            }
-        )
+        coroutineScope.launch {
+            loadWells(
+                page = currentPage,
+                pageSize = pageSize,
+                searchQuery = searchQuery,
+                waterType = selectedWaterType,
+                status = selectedStatus,
+                minWaterLevel = minWaterLevel,
+                maxWaterLevel = maxWaterLevel,
+                context = context,
+                snackbarHostState = snackbarHostState,
+                onSuccess = { newWells, hasMore ->
+                    wells = newWells
+                    hasMorePages = hasMore
+                    isLoading = false
+                }
+            )
+        }
+    }
+
+
+    // Capacity range filter
+    var capacityRange by remember { mutableStateOf<ClosedRange<Int>?>(null) }
+    val updateCapacityRange = { range: ClosedRange<Int>? ->
+        capacityRange = range
+        minWaterLevel = range?.start
+        maxWaterLevel = range?.endInclusive
+        applyFilters()
     }
 
     Scaffold(
@@ -198,99 +209,100 @@ fun WellPickerScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("Search wells...") },
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                leadingIcon = { Icon(Icons.Default.Search, "Search") }
+                modifier = Modifier
+                    .fillMaxWidth(),
+                placeholder = { Text("Search well by name or description") },
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = {
+                        // Call getWellsWithFilters with current filter values
+                        applyFilters()
+                    }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                }
             )
 
             // Filters section
             if (showFilters) {
                 FiltersSection(
                     selectedWaterType = selectedWaterType,
-                    onWaterTypeSelected = { selectedWaterType = it },
                     selectedStatus = selectedStatus,
-                    onStatusSelected = { selectedStatus = it },
                     showNearbyOnly = showNearbyOnly,
-                    onNearbyOnlyChange = { showNearbyOnly = it },
-                    capacityRange = (minWaterLevel?.toFloat() ?: 0f)..(maxWaterLevel?.toFloat() ?: 1000f),
-                    onCapacityRangeChange = { range ->
-                        minWaterLevel = range.start.toInt()
-                        maxWaterLevel = range.endInclusive.toInt()
-                    }
+                    onWaterTypeSelected = { selectedWaterType = it },
+                    onStatusSelected = { selectedStatus = it },
+                    capacityRange = capacityRange,
+                    onCapacityRangeChange = updateCapacityRange,
+                    onNearbyOnlyChange = { showNearbyOnly = it }
                 )
             }
 
             // Content
-            if (isLoading && wells.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else if (showMap) {
+            if (showMap) {
+                // Map view
                 MapView(
-                    wells = wells,
+                    wells = wells.map { well ->
+                        ShortenedWellData( // Ensure the fields here match the expected type
+                            wellName = well.wellName, // Assuming these fields exist in WellData
+                            wellLocation = well.wellLocation, // Handle potential nulls
+                            wellWaterType = well.wellWaterType, // Assuming these fields exist in WellData
+                            wellStatus = well.wellStatus, // Assuming these fields exist in WellData
+                            wellCapacity = well.wellCapacity, // Handle potential nulls
+                            wellWaterLevel = well.wellWaterLevel, // Handle potential nulls
+                            espId = well.espId // Handle potential nulls
+                        )
+                    }.toList(), // Make sure it's a List<ShortenedWellData>
                     userLocation = userLocation,
                     onWellClicked = { well ->
-                        coroutineScope.launch {
-                            isLoading = true
-                            val fullWell = fetchWellDetailsFromServer(
-                                well.espId,
-                                snackbarHostState = snackbarHostState,
-                                context = context
-                            )
-                            isLoading = false
-                            selectedWell = fullWell
-                        }
+                        selectedWell = wells.find { it.id == 1 } //TODO: use the next number for the ID of the already saved wells on the app
                     },
-                    onNavigateToWell = { latitude, longitude, name ->
-                        val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                        navController.navigate(
-                            "${Routes.COMPASS_SCREEN}?lat=$latitude&lon=$longitude&name=$encodedName"
-                        )
+                    onNavigateToWell = { lat, lon, name ->
+                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$name")
                     }
                 )
             } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(wells) { well ->
-                        EnhancedWellCard(
-                            well = well,
-                            onClick = {
-                                coroutineScope.launch {
-                                    isLoading = true
-                                    val fullWell = fetchWellDetailsFromServer(
-                                        well.espId,
-                                        snackbarHostState = snackbarHostState,
-                                        context = context
-                                    )
-                                    isLoading = false
-                                    selectedWell = fullWell
-                                }
-                            },
-                            onNavigateClick = {
-                                val latitude = well.getLatitude()
-                                val longitude = well.getLongitude()
-                                if (latitude != null && longitude != null) {
-                                    val encodedName = URLEncoder.encode(well.wellName, StandardCharsets.UTF_8.toString())
-                                    navController.navigate(
-                                        "${Routes.COMPASS_SCREEN}?lat=$latitude&lon=$longitude&name=$encodedName"
-                                    )
-                                } else {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Well location not available")
-                                    }
-                                }
-                            }
+                // List view
+                if (wells.isEmpty() && !isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No wells found with the applied filters",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(wells) { well ->
+                            EnhancedWellCard(
+                                well = well,
+                                onClick = {
+                                    selectedWell = well
+                                },
+                                onNavigateClick = {
+                                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                                }
+                            )
+                        }
 
-                    if (hasMorePages) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
+                        if (hasMorePages) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
@@ -302,38 +314,9 @@ fun WellPickerScreen(
         selectedWell?.let { well ->
             EnhancedWellDetailsDialog(
                 well = well,
-                onAdd = {
-                    coroutineScope.launch {
-                        val currentWells = wellRepository.wellListFlow.first()
-                        val duplicateExists = currentWells.any { it.espId == well.espId }
-
-                        if (duplicateExists) {
-                            snackbarHostState.showSnackbar("This well is already in your list")
-                        } else {
-                            val newId = (currentWells.maxOfOrNull { it.id } ?: 0) + 1
-                            val newWell = well.copy(id = newId)
-                            wellRepository.saveWell(newWell)
-                            snackbarHostState.showSnackbar("Well added to your list")
-                            selectedWell = null
-                        }
-                    }
-                },
                 onDismiss = { selectedWell = null },
-                onNavigate = {
-                    val latitude = well.getLatitude()
-                    val longitude = well.getLongitude()
-                    if (latitude != null && longitude != null) {
-                        val encodedName = URLEncoder.encode(well.wellName, StandardCharsets.UTF_8.toString())
-                        navController.navigate(
-                            "${Routes.COMPASS_SCREEN}?lat=$latitude&lon=$longitude&name=$encodedName"
-                        )
-                        selectedWell = null
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Well location not available")
-                        }
-                    }
-                }
+                onNavigate = { navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}") },
+                onAdd = { /* No action needed for now */ }
             )
         }
     }
@@ -349,7 +332,7 @@ private suspend fun loadWells(
     maxWaterLevel: Int?,
     context: Context,
     snackbarHostState: SnackbarHostState,
-    onSuccess: (List<ShortenedWellData>, Boolean) -> Unit
+    onSuccess: (List<WellData>, Boolean) -> Unit
 ) {
     try {
         val serverApi = RetrofitBuilder.getServerApi(context)
@@ -366,9 +349,8 @@ private suspend fun loadWells(
         if (response.isSuccessful) {
             val wellsResponse = response.body()
             if (wellsResponse != null) {
-                Log.d("WellPickerScreen", "Wells loaded successfully")
-                onSuccess(wellsResponse.wells, 10 > page * pageSize) //TODO : fix that because there is no defined value for the max pages , 10 is a placeholder. there should be a max size, defined by the server response {"status":"success","data":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}.
-            //TODO : also make a grayed out message for saying there is no wells found with the applied filters if the list is empty ("data":[])
+                Log.d("BrowseWellsScreen", "Wells loaded successfully")
+                onSuccess(wellsResponse.data, 10 > page * pageSize)
             } else {
                 snackbarHostState.showSnackbar("No wells found")
             }
@@ -376,8 +358,7 @@ private suspend fun loadWells(
             snackbarHostState.showSnackbar("Failed to load wells")
         }
     } catch (e: Exception) {
-        Log.e("WellPickerScreen", "Error loading wells", e)
+        Log.e("BrowseWellsScreen", "Error loading wells", e)
         snackbarHostState.showSnackbar("Error: ${e.message}")
     }
 }
-

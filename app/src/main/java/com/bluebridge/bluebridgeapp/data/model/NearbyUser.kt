@@ -26,13 +26,17 @@ sealed class NearbyUsersState {
 }
 
 @Serializable
-data class NearbyUsersResponse(
-    val status: String,
-    val data: List<NearbyUser> = emptyList()
+data class NearbyUsersRequest(
+    val latitude: Double,
+    val longitude: Double,
+    val radius: Double,
+    val userId: String,
+    val token: String
 )
 
 @Serializable
-data class NearbyUsersData(
-    val users: List<NearbyUser>,
-    val waterNeeds: List<WaterNeed> = emptyList()
+data class NearbyUsersResponse(
+    val status: String,
+    val message: String,
+    val data: List<NearbyUser> = emptyList()
 )

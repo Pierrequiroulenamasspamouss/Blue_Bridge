@@ -1,11 +1,12 @@
 package com.bluebridge.bluebridgeapp.data
 
-import com.bluebridge.bluebridgeapp.data.model.UserData
 import android.content.Context
 import androidx.compose.material3.SnackbarHostState
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
+import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.viewmodels.WellPickerViewModel.WellFilters
 
 open class WellEvents {
@@ -18,32 +19,34 @@ open class WellEvents {
     data class WaterLevelEntered(val wellWaterLevel: String) : WellEvents()
     data class ConsumptionEntered(val wellWaterConsumption: String) : WellEvents()
     data class EspIdEntered(val espId: String) : WellEvents()
-
-
 }
-open class WellPickerEvent{
-    data class UpdateFilters(val filters: WellFilters) : WellPickerEvent()
+
+open class WellPickerEvent {
     data class Refresh(val context: Context, val snackbarHostState: SnackbarHostState) : WellPickerEvent()
-    data class FetchDetails(val id: String): WellPickerEvent()
     data class UpdateSearchQuery(val query: String) : WellPickerEvent()
     data class UpdateWaterTypeFilter(val waterType: String?) : WellPickerEvent()
     data class UpdateStatusFilter(val status: String?) : WellPickerEvent()
     object ResetFilters : WellPickerEvent()
 }
 
-open class UserEvent{
-    data class Register(val registerRequest: RegisterRequest) : UserEvent()
-    data class Login(val loginRequest: LoginRequest) : UserEvent()
+open class UserEvent {
     data class UpdateTheme(val theme: Int) : UserEvent()
+    data class LoadUser(val userId: String) : UserEvent()
+    data class Login(val request: LoginRequest) : UserEvent()
+    data class Register(val request: RegisterRequest) : UserEvent()
     data class UpdateProfile(val userData: UserData) : UserEvent()
+    data class UpdateLocation(val location: Location) : UserEvent()
+    data class UpdateWaterNeeds(val waterNeeds: List<WaterNeed>) : UserEvent()
+    data class UpdateThemePreference(val themePreference: Int) : UserEvent()
+    data class UpdateNotificationsEnabled(val enabled: Boolean) : UserEvent()
     object Logout : UserEvent()
-    object LoadUser : UserEvent()
+    object LoginAsGuest : UserEvent()
 }
-open class NearbyUserEvent{
+
+open class NearbyUserEvent {
     data class Refresh(val latitude: Double, val longitude: Double, val radius: Double) : NearbyUserEvent()
     data class SearchUser(val latitude: Double, val longitude: Double, val radius: Double): NearbyUserEvent()
     data class UpdateRadius(val radius: Double): NearbyUserEvent()
     data class ApplyFilters(val filters: Map<String, String>): NearbyUserEvent()
     object ResetFilters: NearbyUserEvent()
-
 }

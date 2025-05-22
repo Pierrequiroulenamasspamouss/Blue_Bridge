@@ -1,32 +1,31 @@
 package com.bluebridge.bluebridgeapp.utils
 
-import ShortenedWellData
-import WellData
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
-import com.bluebridge.bluebridgeapp.R
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.repository.WellRepositoryImpl
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
-private const val TAG = "NetworkUtils"
+fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-/**
- * Get the base API URL from strings.xml
- */
-fun getBaseApiUrl(context: Context): String {
-    return context.getString(R.string.ProductionServerUrl)
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
 }
-
 /**
  * Check if internet connection is available
  */
@@ -36,8 +35,6 @@ fun checkInternetConnection(context: Context): Boolean {
     val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
     return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
 }
-
-
 
 /**
  * Fetch details for a specific well by ESP ID
@@ -88,7 +85,6 @@ suspend fun retrieveDataFromServer(
     wellRepositoryImpl: WellRepositoryImpl,
     context: Context
 ): Boolean {
-
     return withContext(Dispatchers.IO) {
         try {
             if (!checkInternetConnection(context)) {
@@ -136,22 +132,6 @@ suspend fun retrieveDataFromServer(
 }
 
 /**
- * Refresh all wells in the data store
- */
-suspend fun refreshAllWells(context: Context, wellDataStore: WellRepositoryImpl): Pair<Int, Int> {
-    val wells = wellDataStore.wellListFlow.first()
-    var successCount = 0
-
-    wells.forEach { well ->
-        if (refreshSingleWell(well.id, wellDataStore, context)) {
-            successCount++
-        }
-    }
-
-    return Pair(successCount, wells.size)
-}
-
-/**
  * Refresh a single well by ID
  */
 suspend fun refreshSingleWell(
@@ -183,7 +163,7 @@ suspend fun refreshSingleWell(
                 wellRepositoryImpl = wellRepositoryImpl,
                 context = context
             )
-        } ?: false
+        } == true
         Log.d("RefreshDebug", "Refresh ${if (success) "succeeded" else "failed"}")
         success
     } catch (e: Exception) {

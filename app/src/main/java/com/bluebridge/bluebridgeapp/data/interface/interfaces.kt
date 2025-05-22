@@ -1,18 +1,29 @@
 package com.bluebridge.bluebridgeapp.data.`interface`
 
-import PaginatedWellsResponse
-import ShortenedWellData
-import com.bluebridge.bluebridgeapp.data.model.UserData
-import WellData
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
+import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.NearbyUser
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
+import com.bluebridge.bluebridgeapp.data.model.ServerStatusData
+import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
+import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.WellsResponse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import java.io.Serializable
 
+interface ServerRepository {
+    suspend fun getServerStatus(): Result<ServerStatusData>
+    val isServerReachable: Boolean
+}
+
 interface UserRepository {
+    suspend fun getRole(): String
+    suspend fun getRoleValue(): Int
+    suspend fun getUserId(): String
     suspend fun register(registerRequest: RegisterRequest): Boolean
     suspend fun login(loginRequest: LoginRequest): Boolean
     suspend fun getUserData(): Flow<UserData?>
@@ -21,7 +32,6 @@ interface UserRepository {
     suspend fun setUserWaterNeeds(waterNeeds: String)
     suspend fun clearUserData()
     suspend fun getLoginToken(): String?
-    suspend fun getAuthToken(): String?
     suspend fun isLoggedIn(): Boolean
     suspend fun saveUserData(userData: UserData)
     suspend fun logout()
@@ -31,10 +41,6 @@ interface UserRepository {
     suspend fun updateWaterNeedsOnServer(waterNeeds: List<WaterNeed>): Boolean
     suspend fun deleteAccount(deleteRequest: DeleteAccountRequest): Boolean
     
-    // Guest mode methods
-    suspend fun setGuestMode(isGuest: Boolean)
-    suspend fun isGuestMode(): Boolean
-    
     // Push notification methods
     suspend fun setNotificationsEnabled(enabled: Boolean)
     suspend fun areNotificationsEnabled(): Boolean
@@ -43,6 +49,18 @@ interface UserRepository {
     suspend fun clearNotificationToken()
     suspend fun registerNotificationToken(email: String, authToken: String, fcmToken: String): Boolean
     suspend fun unregisterNotificationToken(email: String, authToken: String, fcmToken: String): Boolean
+    suspend fun updateLocation(location: Location): Boolean {
+        return try {
+            val userData = getUserData().firstOrNull()
+            userData?.let {
+                val updatedUser = it.copy(location = location)
+                saveUserData(updatedUser)
+                updateProfileOnServer(updatedUser)
+            } == true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
 
 interface NearbyUsersRepository {
@@ -60,7 +78,7 @@ interface NearbyUsersRepository {
 interface WellRepository {
     val wellListFlow: Flow<List<WellData>>
     suspend fun getWells(): List<WellData>
-    suspend fun getWellById(espId: String): WellData
+    suspend fun getWellById(id: Int): WellData?
     suspend fun getAllWells(): List<ShortenedWellData>
     suspend fun getFilteredWells(
         page: Int = 1,
@@ -72,9 +90,9 @@ interface WellRepository {
         espId: String? = null,
         minWaterLevel: Int? = null,
         maxWaterLevel: Int? = null
-    ): Result<PaginatedWellsResponse>
+    ): Result<WellsResponse>
     suspend fun saveWell(well: WellData): Boolean
-    suspend fun saveWellList(wells: List<WellData>)
+    suspend fun updateWell(well: WellData): Boolean
     suspend fun getWell(wellId: Int): WellData?
     suspend fun deleteWell(espId: String): Boolean
     suspend fun getFavoriteWells(): Flow<List<ShortenedWellData>>
@@ -87,6 +105,8 @@ interface WellRepository {
     suspend fun deleteWellAt(index: Int)
     suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean
 }
+
+
 
 
 
