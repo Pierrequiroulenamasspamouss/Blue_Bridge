@@ -1,25 +1,53 @@
-import sqlite3
+from database_manager import DatabaseManager
 import json
 import re
+from datetime import datetime
 
-#TODO : fix this to use the new database (wells.sqlite)
-DB_PATH = "database.sqlite"
+db = DatabaseManager()
 
-def connect_db():
-    return sqlite3.connect(DB_PATH)
+def get_db_connection():
+    return db._get_connection('wells')
 
-def get_all_wells(conn):
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM wells")
-    rows = cursor.fetchall()
-    columns = [desc[0] for desc in cursor.description]
-    return [dict(zip(columns, row)) for row in rows], columns
+def get_all_wells():
+    return db.wells().get_all_wells()
 
-def update_well_field(conn, well_id, field_name, new_value):
-    cursor = conn.cursor()
-    cursor.execute(f"UPDATE wells SET {field_name} = ? WHERE id = ?", (new_value, well_id))
-    conn.commit()
-    print(f"{field_name} updated for well ID {well_id}.")
+def get_well_by_id(well_id):
+    return db.wells().get_well(well_id)
+
+def get_well_by_esp_id(esp_id):
+    return db.wells().get_well_by_esp_id(esp_id)
+
+def update_well_data(well_id, data):
+    return db.wells().update_well(well_id, {
+        'water_level': data.get('water_level'),
+        'water_quality': json.dumps(data.get('water_quality')),
+        'status': data.get('status'),
+        'last_update': datetime.now().isoformat()
+    })
+
+def add_well(well_data):
+    return db.wells().create_well({
+        'name': well_data.get('name'),
+        'description': well_data.get('description'),
+        'latitude': well_data.get('latitude'),
+        'longitude': well_data.get('longitude'),
+        'water_level': well_data.get('water_level'),
+        'water_quality': json.dumps(well_data.get('water_quality')),
+        'status': well_data.get('status'),
+        'owner': well_data.get('owner'),
+        'contact_info': well_data.get('contact_info'),
+        'access_info': well_data.get('access_info'),
+        'notes': well_data.get('notes'),
+        'espId': well_data.get('espId'),
+        'wellWaterConsumption': well_data.get('wellWaterConsumption'),
+        'wellWaterType': well_data.get('wellWaterType')
+    })
+
+def delete_well(well_id):
+    return db.wells().delete_well(well_id)
+
+def update_well_field(well_id, field_name, new_value):
+    return db.wells().update_well(well_id, {field_name: new_value})
 
 def parse_indices(input_str, list_len):
     input_str = input_str.strip().lower()
@@ -47,8 +75,7 @@ def parse_indices(input_str, list_len):
     return sorted(i for i in indices if 0 <= i < list_len)
 
 def main():
-    conn = connect_db()
-    wells, columns = get_all_wells(conn)
+    wells = get_all_wells()
 
     if not wells:
         print("No wells found.")
@@ -56,7 +83,7 @@ def main():
 
     print("\nWells:")
     for idx, well in enumerate(wells):
-        print(f"{idx}: ID={well['id']} Name={well.get('name', '(no name)')}")
+        print(f"{idx}: ID={well['id']} Name={well['name']}")
 
     try:
         selection = int(input("\nEnter the number of the well to edit: ").strip())
@@ -66,14 +93,16 @@ def main():
         return
 
     print("\nWell data:")
-    for idx, col in enumerate(columns):
-        print(f"{idx}: {col} = {well[col]}")
+    for key, value in well.items():
+        print(f"{key}: {value}")
 
     try:
-        field_index = int(input("\nEnter field number to edit: ").strip())
-        field_name = columns[field_index]
+        field_name = input("\nEnter field name to edit: ").strip()
+        if field_name not in well:
+            print("Invalid field name.")
+            return
     except (ValueError, IndexError):
-        print("Invalid field number.")
+        print("Invalid field name.")
         return
 
     value = well[field_name]
@@ -101,8 +130,7 @@ def main():
         removed = parsed.pop(i)
         print(f"Deleted index {i}: {removed}")
 
-    update_well_field(conn, well["id"], field_name, json.dumps(parsed))
-    conn.close()
+    update_well_field(well['id'], field_name, json.dumps(parsed))
 
 if __name__ == "__main__":
     main()

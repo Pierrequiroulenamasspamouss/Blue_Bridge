@@ -1,6 +1,5 @@
 #!/bin/bash
-#TODO  missing the new directory APK at installation. Fix that. Also clean the folder of the previous install.
-#TODO : force the rewrite of all the files into the /opt directory if they are already there.
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,14 +21,38 @@ if ! command -v npm &> /dev/null; then
 fi
 
 # Create necessary directories
-echo -e "${YELLOW}Creating necessary directories...${NC}"
-mkdir -p data
-mkdir -p ssl
-mkdir -p html
+mkdir -p /opt/bluebridge
+mkdir -p /opt/bluebridge/APK
+mkdir -p /opt/bluebridge/ssl
+mkdir -p /opt/bluebridge/html
+mkdir -p /opt/bluebridge/data
+
+# Clean previous installation
+rm -rf /opt/bluebridge/*
+
+# Copy files with force
+cp -f server.js /opt/bluebridge/
+cp -f package.json /opt/bluebridge/
+cp -f .greenlockrc /opt/bluebridge/
+cp -f routeExplorer.js /opt/bluebridge/
+
+# Copy directories with force
+cp -rf routes /opt/bluebridge/
+cp -rf models /opt/bluebridge/
+cp -rf services /opt/bluebridge/
+cp -rf scripts /opt/bluebridge/
+cp -rf APK /opt/bluebridge/
+cp -rf ssl /opt/bluebridge/
+cp -rf html /opt/bluebridge/
+cp -rf data /opt/bluebridge/
 
 # Install dependencies
-echo -e "${YELLOW}Installing dependencies...${NC}"
+cd /opt/bluebridge
 npm install
+
+# Set permissions
+chmod +x /opt/bluebridge/server.js
+chmod +x /opt/bluebridge/scripts/*.js
 
 # Create SSL certificates if they don't exist
 if [ ! -f "ssl/private.key" ] || [ ! -f "ssl/certificate.crt" ]; then

@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bluebridge.bluebridgeapp.data.model.UserData
@@ -42,11 +43,12 @@ import com.bluebridge.bluebridgeapp.viewmodels.WeatherViewModel
 @Composable
 fun WeatherScreen(
     userViewModel: UserViewModel,
-    weatherViewModel: WeatherViewModel
+    weatherViewModel: WeatherViewModel,
+    modifier: Modifier = Modifier
 ) {
-
     val snackbarHostState = remember { SnackbarHostState() }
     val colorScheme = MaterialTheme.colorScheme
+    LocalContext.current
     
     // Get user data for location
     val userState = userViewModel.state.value
@@ -91,7 +93,7 @@ fun WeatherScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
@@ -187,5 +189,3 @@ fun WeatherScreen(
         }
     }
 }
-
-//TODO somewhere in the line there is a cast from UserRepositoryImpl into context that causes an error. Find and fix

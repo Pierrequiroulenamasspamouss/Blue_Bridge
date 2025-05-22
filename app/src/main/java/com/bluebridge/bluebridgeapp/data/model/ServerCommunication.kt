@@ -54,7 +54,6 @@ data class RegisterRequest(
     val location: Location,
     val waterNeeds: List<WaterNeed>,
     val phoneNumber: String? = null,
-    val isWellOwner: Boolean = false,
     val role: String = "user",
     val themePreference: Int = 0, // 0: System Default, 1: Light, 2: Dark
 )
@@ -78,9 +77,7 @@ data class LoginRequest(
 data class LoginResponse(
     val status: String,
     val message: String? = null,
-    // The login token is stored locally and when the user tries to log from a second device, the login token gets updated
-    // and the first user automatically gets logout because the token isn't his login data
-    val userData: UserData // Get back the user data stored in the database
+    val data: UserData // Get back the user data stored in the database
 )
 
 

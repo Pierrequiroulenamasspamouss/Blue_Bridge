@@ -1,10 +1,11 @@
 package com.bluebridge.bluebridgeapp.data.model
 
-import java.util.Date
+import kotlinx.serialization.Serializable
 
 /**
  * Data class representing weather forecast data
  */
+@Serializable
 data class WeatherData(
     val date: String,
     val time: String,
@@ -19,5 +20,18 @@ data class WeatherData(
     val rainAmount: Double,
     val pressure: Int,
     val windDirection: Int,
-    val sunset: Date
-) 
+    val sunset: String,
+)
+
+@Serializable
+data class WeatherRequest(
+    val location: Location,
+    val userId: String,
+    val loginToken: String,
+)
+@Serializable
+data class WeatherResponse(
+    val status: String,
+    val message: String,
+    val data: WeatherData,
+)

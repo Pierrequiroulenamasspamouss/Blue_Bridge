@@ -1,5 +1,6 @@
-//TODO : add a favicon.ico to fix this issue : [2025-05-20T23:38:02.255Z] GET /favicon.ico
-
+//TO CHANGE IF UPDATES NEEDED
+const appLatestVersion = '0.1.2';
+const serverVersion = '1.0.1';
 /**
  * @fileoverview Main server file for the BlueBridge API.
  * This file sets up the Express application, configures middleware,
@@ -8,15 +9,15 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { usersDb, wellsDb, deviceTokensDb } = require('./models');
 const routes = require('./routes');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { initializeFirebase } = require('./services/firebaseService');
-const appLatestVersion = '1.1.1';
-const serverVersion = '1.0.0';
+const sequelize = require('./config/database');
+const models = require('./models');
+
 
 /**
  * Loads environment variables from a .env file.
@@ -44,6 +45,11 @@ const PORT = process.env.PORT || 3000;
 /** Middleware */
 app.use(cors());
 app.use(express.json());
+
+// Handle favicon request
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'assets', 'favicon.ico'));
+});
 
 /** Add specific CORS headers for notifications endpoint */
 app.use('/api/notifications/*', (req, res, next) => {
@@ -326,13 +332,11 @@ const generateApiTree = () => {
 };
 
 /** API routes */
-app.use('/api/auth', routes.auth.router);
-app.use('/api/wells', routes.wells);
-app.use('/api/nearby-users', routes.nearbyUsers);
-app.use('/api/notifications', routes.notifications);
-app.use('/api/certificates', routes.certificates);
-app.use('/api/weather', routes.weather);
-app.use('/api/wellstatistics', routes.wellStatistics);
+app.use('/api', routes);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'html')));
+app.use(express.static(path.join(__dirname, 'assets')));
 
 /**
  * API Tree route.
@@ -398,10 +402,10 @@ app.use((req, res, next) => {
 
 /** Error handling middleware. */
 app.use((err, req, res, next) => {
-    console.error('Server Error:', err.stack);
+    console.error(err.stack);
     res.status(500).json({
-        message: 'Something went wrong!',
-        error: isDev ? err.message : undefined
+        error: 'Internal Server Error',
+        message: isDev ? err.message : 'Something went wrong'
     });
 });
 
@@ -413,29 +417,28 @@ app.use((err, req, res, next) => {
  */
 async function startServer() {
     try {
-        /** Sync database */
-        await Promise.all([
-            usersDb.sync(),
-            wellsDb.sync(),
-            deviceTokensDb.sync()
-        ]);
-        console.log('All databases synced successfully');
-
         /** Initialize Firebase */
-        console.log('Initializing Firebase Admin SDK...');
+        console.log('✅ Firebase Admin SDK initialized successfully using service account file');
         await initializeFirebase();
-        console.log('Firebase initialized successfully');
+
+        /** Initialize database */
+        console.log('✅ Database connection established successfully');
+        await sequelize.authenticate();
+
+        /** Sync database */
+        console.log('✅ Database models synchronized');
+        await sequelize.sync();
 
         /**
          * Start HTTP server
          * Create and start the HTTP server.
          */
-        const httpPort = process.env.HTTP_PORT || 3000;
-        const httpServer = http.createServer(app);
-        httpServer.listen(httpPort, () => {
-            console.log(`HTTP Server running on port ${httpPort}`);
+        const server = http.createServer(app);
+        server.listen(PORT, () => {
+            console.log(`🚀 Server is running on port ${PORT}`);
+            console.log(`📝 API Documentation available at http://localhost:${PORT}/api-docs`);
         });
-        httpServer.on('error', (err) => {
+        server.on('error', (err) => {
             console.error('Failed to start HTTP server:', err);
             process.exit(1);
         });
@@ -458,7 +461,7 @@ async function startServer() {
             console.log('SSL certificates not found. HTTPS server not started.');
         }
     } catch (error) {
-        console.error('Unable to start server:', error);
+        console.error('❌ Server startup failed:', error);
         process.exit(1);
     }
 }

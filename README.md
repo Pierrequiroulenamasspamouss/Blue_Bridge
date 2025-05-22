@@ -8,7 +8,6 @@ NearbyUsersScreen       bluebridge.wellmonitoring       E  Error fetching nearby
 adb shell am start -a android.intent.action.SENDTO -d sms:+32491142936 --es sms_body "Automatic_message2" --ez exit_on_sent true &&adb shell input tap 960 2170
 (to use with a phone connected to the server) 
 
---> TODO:send MMSes now (find a command)
 
 # BlueBridge - Community Water Well Monitoring
 

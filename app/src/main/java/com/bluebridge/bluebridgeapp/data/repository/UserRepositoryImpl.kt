@@ -15,6 +15,7 @@ import com.bluebridge.bluebridgeapp.network.ServerApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 
 
@@ -28,18 +29,7 @@ class UserRepositoryImpl(
             val response = api.register(request)
             if (response.isSuccessful && response.body()?.status == "success") {
                 val userDataResponse = response.body()!!.userData
-                val userData = UserData(
-                    email = request.email,
-                    firstName = request.firstName,
-                    lastName = request.lastName,
-                    username = request.username,
-                    role = request.role,
-                    themePreference = request.themePreference,
-                    location = request.location,
-                    waterNeeds = request.waterNeeds,
-                    lastLogin = null,
-                    loginToken = userDataResponse?.loginToken
-                )
+                val userData = UserData(email = request.email, userId = userDataResponse!!.userId, firstName = request.firstName, lastName = request.lastName, username = request.username, role = request.role, location = request.location, themePreference = request.themePreference, waterNeeds = request.waterNeeds, loginToken = userDataResponse.loginToken)
                 Log.d("UserRepository", "Registration successful: $userData")
                 saveUserData(userData)
                 true
@@ -52,17 +42,17 @@ class UserRepositoryImpl(
             false
         }
     }
-
     override suspend fun login(request: LoginRequest): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d("UserRepository", "Attempting login with email: ${request.email}")
             val response = api.login(request)
             
             if (response.isSuccessful && response.body()?.status == "success") {
-                val userDataResponse = response.body()!!.userData
+                val userDataResponse = response.body()!!.data
                 Log.d("UserRepository", "Login successful for ${request.email}, received userData: $userDataResponse")
                 
                 val userData = UserData(
+                    userId = userDataResponse.userId,
                     email = userDataResponse.email,
                     firstName = userDataResponse.firstName,
                     lastName = userDataResponse.lastName,
@@ -94,18 +84,38 @@ class UserRepositoryImpl(
             false
         }
     }
+    override suspend fun getRole(): String = getUserData().firstOrNull()?.role.toString()
+    override suspend fun getRoleValue(): Int {
+        return getRole().let { role ->
+            // Define user roles
+            val guestRole = 1
+            val userRole = 2
+            val wellOwnerRole = 3
+            val adminRole = 4
 
+            when (role) {
+                "guest" -> guestRole
+                "user" -> userRole
+                "well_owner" -> wellOwnerRole
+                "admin" -> adminRole
+                else -> 0 // Default or unknown role
+
+            }
+        }
+    }
+    override suspend fun getUserId(): String = getUserData().firstOrNull()?.userId.toString()
     override suspend fun getUserData(): Flow<UserData?> = preferences.getUserData()
-
-    override suspend fun getLoginToken(): String? = preferences.getLoginToken()
-
-    override suspend fun getAuthToken(): String? = preferences.getLoginToken()
-
-    override suspend fun getUserEmail(): String? = preferences.getUserEmail()
-
-    override suspend fun getUserWaterNeeds(): String? = preferences.getUserWaterNeeds()
-
+    override suspend fun getLoginToken(): String? = getUserData().firstOrNull()?.loginToken
+    override suspend fun getUserEmail(): String? = getUserData().firstOrNull()?.email
+    override suspend fun getUserWaterNeeds(): String? = getUserData().firstOrNull()?.waterNeeds.toString()
     override suspend fun setUserWaterNeeds(waterNeeds: String) = preferences.setUserWaterNeeds(waterNeeds)
+    override suspend fun getTheme(): Int = getUserData().firstOrNull()?.themePreference ?: 0
+    override suspend fun isLoggedIn(): Boolean {
+        val result = getUserData().firstOrNull()?.loginToken != null
+        Log.d("UserRepository", "Checking login state: isLoggedIn=$result")
+        return result
+    }
+
 
     override suspend fun clearUserData() {
         Log.d("UserRepository", "Clearing user data from DataStore")
@@ -118,24 +128,10 @@ class UserRepositoryImpl(
         }
     }
 
-    override suspend fun isLoggedIn(): Boolean {
-        val result = preferences.isLoggedIn()
-        Log.d("UserRepository", "Checking login state: isLoggedIn=$result")
-        return result
-    }
-
     override suspend fun saveUserData(userData: UserData) = preferences.saveUserData(userData)
 
     override suspend fun logout() {
         clearUserData()
-    }
-
-    override suspend fun updateThemePreference(theme: Int) {
-        preferences.updateThemePreference(theme)
-    }
-
-    override suspend fun getTheme(): Int {
-        return preferences.getTheme()
     }
 
     override suspend fun deleteAccount(deleteRequest: DeleteAccountRequest): Boolean = withContext(Dispatchers.IO) {
@@ -159,6 +155,10 @@ class UserRepositoryImpl(
             Log.e("UserRepository", "Delete account failed with exception", e)
             false
         }
+    }
+
+    override suspend fun updateThemePreference(theme: Int) {
+        preferences.updateThemePreference(theme)
     }
 
     override suspend fun updateProfileOnServer(userData: UserData): Boolean = withContext(Dispatchers.IO) {
@@ -263,15 +263,6 @@ class UserRepositoryImpl(
                 false
             }
         }
-    }
-
-    // Guest mode methods
-    override suspend fun setGuestMode(isGuest: Boolean) = withContext(Dispatchers.IO) {
-        preferences.setGuestMode(isGuest)
-    }
-
-    override suspend fun isGuestMode(): Boolean = withContext(Dispatchers.IO) {
-        preferences.isGuestMode()
     }
 
     // Push notification methods

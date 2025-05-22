@@ -1,13 +1,13 @@
 package com.bluebridge.bluebridgeapp.data.local
 
-import ShortenedWellData
-import WellData
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -46,23 +46,7 @@ class WellPreferences(val context: Context) {
         saveWellList(updated)
     }
 
-    suspend fun deleteWellAt(index: Int) {
-        val current = getCurrentWellList()
-        if (index in current.indices) {
-            val updated = current.toMutableList().apply { removeAt(index) }
-            saveWellList(updated)
-        }
-    }
-    
-    suspend fun swapWells(from: Int, to: Int) {
-        val current = getCurrentWellList().toMutableList()
-        if (from in current.indices && to in current.indices) {
-            val temp = current[from]
-            current[from] = current[to]
-            current[to] = temp
-            saveWellList(current)
-        }
-    }
+
 
     suspend fun getFavoriteWells(): List<ShortenedWellData> {
         val prefs = context.wellDataStore.data.first()
@@ -87,11 +71,28 @@ class WellPreferences(val context: Context) {
         }.getOrElse { emptyList<WellData>() }
     }
 
-    suspend fun isEspIdUnique(id: String, currentId: Int): Boolean {
-        return getCurrentWellList().none { it.espId == id && it.id != currentId }
+    fun updateWell(data: WellData) {
+        TODO ()
+    }
+    suspend fun deleteWellAt(index: Int) {
+        val current = getCurrentWellList()
+        if (index in current.indices) {
+            val updated = current.toMutableList().apply { removeAt(index) }
+            saveWellList(updated)
+        }
     }
 
-    suspend fun clearAllWells() {
-        context.wellDataStore.edit { prefs -> prefs.remove(WELLS_KEY) }
+    suspend fun swapWells(from: Int, to: Int) {
+        val current = getCurrentWellList().toMutableList()
+        if (from in current.indices && to in current.indices) {
+            val temp = current[from]
+            current[from] = current[to]
+            current[to] = temp
+            saveWellList(current)
+        }
+    }
+
+    fun deleteWell(string: String) {
+        TODO()
     }
 }

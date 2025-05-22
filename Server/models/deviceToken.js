@@ -2,15 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const DeviceToken = sequelize.define('DeviceToken', {
-
-        tokenId: {
-            type: DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
-            primaryKey: true
-        },
         userId: {
             type: DataTypes.UUID,
             allowNull: false,
+            primaryKey: true,
             references: {
                 model: 'Users',
                 key: 'userId'
@@ -19,11 +14,11 @@ module.exports = (sequelize) => {
         token: {
             type: DataTypes.STRING(255),
             allowNull: false,
-            unique: true
+            primaryKey: true
         },
         deviceType: {
             type: DataTypes.STRING(20),
-            allowNull: false,
+            allowNull: true,
             defaultValue: 'android'
         },
         lastUsed: {
@@ -34,6 +29,9 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         }
+    }, {
+        tableName: 'device_tokens',
+        timestamps: true
     });
 
     return DeviceToken;

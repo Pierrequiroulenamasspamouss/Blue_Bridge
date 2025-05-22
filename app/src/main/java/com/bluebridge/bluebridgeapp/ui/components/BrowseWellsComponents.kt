@@ -1,11 +1,9 @@
 package com.bluebridge.bluebridgeapp.ui.components
 
-import ShortenedWellData
-import WellData
+
 import android.annotation.SuppressLint
 import android.os.Build
 import android.view.ViewGroup
-import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.RequiresApi
@@ -40,8 +38,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.bluebridge.bluebridgeapp.data.model.Location
-import getLatitude
-import getLongitude
+import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import kotlinx.coroutines.Job
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
@@ -149,18 +148,18 @@ fun MapView(
                     """.trimIndent()
 
                     // Set up JavaScript interface for callback from WebView
-                    addJavascriptInterface(object : Any() {
-                        @JavascriptInterface
-                        fun onWellSelected(espId: String) {
-                            val well = wells.find { it.espId == espId }
-                            well?.let { onWellClicked(it) }
-                        }
+//                    addJavascriptInterface(object : Any() {
+//                        @JavascriptInterface
+//                        fun onWellSelected(espId: String) {
+//                            val well = wells.find { it.espId == espId }
+//                            well?.let { onWellClicked(it as ShortenedWellData) }
+//                        }
 
-                        @JavascriptInterface
-                        fun navigateToWell(lat: Double, lon: Double, name: String) {
-                            onNavigateToWell(lat, lon, name)
-                        }
-                    }, "AndroidInterface")
+//                        @JavascriptInterface
+//                        fun navigateToWell(lat: Double, lon: Double, name: String) {
+//                            onNavigateToWell(lat, lon, name)
+//                        }
+//                    }, "AndroidInterface")
 
                     loadDataWithBaseURL("https://openstreetmap.org", html, "text/html", "UTF-8", null)
                     webView = this
@@ -173,7 +172,7 @@ fun MapView(
 
 @Composable
 fun EnhancedWellCard(
-    well: ShortenedWellData,
+    well: WellData,
     onClick: () -> Unit,
     onNavigateClick: () -> Unit
 ) {
@@ -350,19 +349,21 @@ fun FiltersSection(
     onWaterTypeSelected: (String?) -> Unit,
     selectedStatus: String?,
     onStatusSelected: (String?) -> Unit,
-    capacityRange: ClosedFloatingPointRange<Float>,
-    onCapacityRangeChange: (ClosedFloatingPointRange<Float>) -> Unit,
+    capacityRange: ClosedRange<Int>?,
+    onCapacityRangeChange: (ClosedRange<Int>?) -> Job,
     showNearbyOnly: Boolean,
     onNearbyOnlyChange: (Boolean) -> Unit
 ) {
+    // Convert capacityRange to a float range for the RangeSlider
+    val floatCapacityRange = capacityRange?.let { it.start.toFloat()..it.endInclusive.toFloat() } ?: 0f..0f
     Column(Modifier.padding(8.dp)) {
         Text("Filters", style = MaterialTheme.typography.titleMedium)
-
         // Water Type filters
         Row(Modifier.padding(vertical = 4.dp)) {
             FilterChip(
                 selected = selectedWaterType == "Clean",
-                onClick = { onWaterTypeSelected(if (selectedWaterType != "Clean") "Clean" else null) },
+                onClick = { onWaterTypeSelected(if (selectedWaterType != "Clean") "Clean" else null)
+                },
                 label = { Text("Clean") }
             )
             Spacer(Modifier.width(4.dp))
@@ -394,12 +395,13 @@ fun FiltersSection(
             )
         }
 
+        //TODO: fix this: horrible type mismatch: fix
         // Capacity range
-        Text("Capacity Range: ${capacityRange.start.toInt()} - ${capacityRange.endInclusive.toInt()}")
+        Text("Capacity Range: ${capacityRange?.start?.toInt()} - ${capacityRange?.endInclusive?.toInt()}")
         RangeSlider(
-            value = capacityRange,
-            onValueChange = onCapacityRangeChange,
-            valueRange = 0f..10000f,
+            value = floatCapacityRange,
+            onValueChange = { newRange -> onCapacityRangeChange(newRange.start.toInt()..newRange.endInclusive.toInt()) },
+            valueRange = 0f..10000f, // Define the total possible range
             steps = 20
         )
 

@@ -1,7 +1,5 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import com.bluebridge.bluebridgeapp.data.model.UserData
-import WellData
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
@@ -44,13 +42,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.getLatitude
+import com.bluebridge.bluebridgeapp.data.model.getLongitude
+import com.bluebridge.bluebridgeapp.data.model.hasValidCoordinates
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
-import getLatitude
-import getLongitude
-import hasValidCoordinates
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -72,8 +72,8 @@ fun WellDetailsScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val wellState = wellViewModel.currentWellState.value
-    val well = (wellState as? com.bluebridge.bluebridgeapp.viewmodels.UiState.Success<WellData>)?.data
-    val isLoading = wellState is com.bluebridge.bluebridgeapp.viewmodels.UiState.Loading
+    val well = (wellState as? UiState.Success<WellData>)?.data
+    val isLoading = wellState is UiState.Loading
     // Load well data
     LaunchedEffect(wellId) {
         wellViewModel.loadWell(wellId)

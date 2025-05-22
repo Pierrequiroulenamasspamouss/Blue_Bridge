@@ -1,42 +1,29 @@
-const { Sequelize } = require('sequelize');
-const path = require('path');
+const sequelize = require('../config/database');
+const User = require('./user');
+const DeviceToken = require('./deviceToken');
+const Well = require('./well');
 
-// Create separate database connections
-const usersDb = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../data/users.sqlite'),
-    logging: false
+// Initialize models
+const models = {
+    User: User(sequelize),
+    DeviceToken: DeviceToken(sequelize),
+    Well: Well(sequelize)
+};
+
+// Set up associations
+Object.keys(models).forEach(modelName => {
+    if (models[modelName].associate) {
+        models[modelName].associate(models);
+    }
 });
 
-const wellsDb = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../data/wells.sqlite'),
-    logging: false
-});
+// Sync database
+sequelize.sync() //TODO: check if { alter: true, force: false } is useful or not inside sequelize.sync({ alter: true, force: false })
+    .then(() => {
+        console.log('Database synced successfully');
+    })
+    .catch(err => {
+        console.error('Error syncing database:', err);
+    });
 
-const deviceTokensDb = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../data/deviceTokens.sqlite'),
-    logging: false
-});
-
-// Import models
-const User = require('./user')(usersDb);
-const Well = require('./well')(wellsDb);
-const DeviceToken = require('./deviceToken')(deviceTokensDb);
-
-// Define associations
-User.hasMany(DeviceToken, { foreignKey: 'userId' });
-DeviceToken.belongsTo(User, { foreignKey: 'userId' });
-
-Well.belongsTo(User, { foreignKey: 'ownerId' });
-User.hasMany(Well, { foreignKey: 'ownerId' });
-
-module.exports = {
-    usersDb,
-    wellsDb,
-    deviceTokensDb,
-    User,
-    Well,
-    DeviceToken
-}; 
+module.exports = models; 

@@ -15,7 +15,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.1.1"
+        versionName = "0.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +50,13 @@ android {
     lint {
         baseline = file("lint-baseline.xml")
         abortOnError = false
+    }
+
+    // Add SMS functionality configuration
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
@@ -99,7 +106,9 @@ dependencies {
     implementation(libs.firebase.analytics.ktx)
     implementation(libs.firebase.inappmessaging.display)
 
-
+    // Add SMS functionality dependencies
+    implementation(libs.play.services.auth)
+    implementation(libs.play.services.auth.api.phone)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
     androidTestImplementation(libs.androidx.junit)

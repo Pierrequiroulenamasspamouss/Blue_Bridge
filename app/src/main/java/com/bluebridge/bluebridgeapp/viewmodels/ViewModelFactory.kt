@@ -1,11 +1,18 @@
 package com.bluebridge.bluebridgeapp.viewmodels
 
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.bluebridge.bluebridgeapp.data.`interface`.NearbyUsersRepository
+import com.bluebridge.bluebridgeapp.data.`interface`.ServerRepository
 import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
-import com.bluebridge.bluebridgeapp.data.repository.ServerRepository
+import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
+import com.bluebridge.bluebridgeapp.data.repository.WeatherRepository
+import com.bluebridge.bluebridgeapp.network.SmsApi
+
 
 sealed class UiState<out T> {
     object Loading : UiState<Nothing>()
@@ -15,31 +22,54 @@ sealed class UiState<out T> {
 }
 
 class ViewModelFactory(
+    private val context: Context,
     private val userRepository: UserRepository,
     private val wellRepository: WellRepository,
     private val nearbyUsersRepository: NearbyUsersRepository,
-    private val serverRepository: ServerRepository // Add this parameter
+    private val weatherRepository: WeatherRepository,
+    private val serverRepository: ServerRepository,
+    private val smsApi: SmsApi
+
 ) : ViewModelProvider.Factory {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(UserViewModel::class.java) -> {
-                UserViewModel(userRepository) as T
+                UserViewModel(
+                    repository = userRepository,
+                ) as T
             }
+
             modelClass.isAssignableFrom(WellViewModel::class.java) -> {
                 WellViewModel(wellRepository) as T
             }
+
             modelClass.isAssignableFrom(NearbyUsersViewModel::class.java) -> {
                 NearbyUsersViewModel(nearbyUsersRepository) as T
             }
+
             modelClass.isAssignableFrom(WeatherViewModel::class.java) -> {
-                WeatherViewModel(userRepository) as T
+                WeatherViewModel(
+                    weatherRepository = weatherRepository, userRepository = userRepository,
+                    context = context
+                ) as T
             }
-            modelClass.isAssignableFrom(ServerViewModel::class.java) -> { // Add this case
-                ServerViewModel(serverRepository) as T
+
+            modelClass.isAssignableFrom(ServerViewModel::class.java) -> {
+                ServerViewModel(
+                    serverRepository,
+                    context = context,
+                ) as T
             }
+
+            modelClass.isAssignableFrom(SmsViewModel::class.java) -> {
+                SmsViewModel(smsApi) as T
+            }
+
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }
+

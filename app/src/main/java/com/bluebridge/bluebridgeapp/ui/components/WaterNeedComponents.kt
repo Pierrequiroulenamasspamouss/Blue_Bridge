@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
 
 
 @Composable
@@ -141,18 +142,7 @@ fun WaterNeedCard(
 @Composable
 fun WaterNeedDialog(
     title: String,
-    amount: String,
-    amountSlider: Float,
-    usageType: String,
-    description: String,
-    priority: Int,
-    customType: String,
-    onAmountChange: (String) -> Unit,
-    onAmountSliderChange: (Float) -> Unit,
-    onUsageTypeChange: (String) -> Unit,
-    onDescriptionChange: (String) -> Unit,
-    onPriorityChange: (Int) -> Unit,
-    onCustomTypeChange: (String) -> Unit,
+    state: WaterNeedsManager,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -178,7 +168,7 @@ fun WaterNeedDialog(
 
                 // Amount slider
                 Text(
-                    text = "${amountSlider.toInt()} liters",
+                    text = "${state.newAmountSlider.toInt()} liters",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.primary,
@@ -186,19 +176,23 @@ fun WaterNeedDialog(
                 )
 
                 Slider(
-                    value = amountSlider,
-                    onValueChange = onAmountSliderChange,
+                    value = state.newAmountSlider,
+                    onValueChange = {
+                        state.newAmountSlider = it
+                        state.newAmount = it.toInt().toString()
+                    },
                     valueRange = 0f..1000f,
                     steps = 0
                 )
 
                 // Manual amount input
                 OutlinedTextField(
-                    value = amount,
+                    value = state.newAmount,
                     onValueChange = {
                         val filtered = it.filter { char -> char.isDigit() }
                         if (filtered.length <= 4) {
-                            onAmountChange(filtered)
+                            state.newAmount = filtered
+                            state.newAmountSlider = filtered.toFloatOrNull() ?: 0f
                         }
                     },
                     label = { Text("Amount (liters)") },
@@ -220,7 +214,7 @@ fun WaterNeedDialog(
                     onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
-                        value = usageType,
+                        value = state.newUsageType,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Select usage type") },
@@ -240,12 +234,12 @@ fun WaterNeedDialog(
                             DropdownMenuItem(
                                 text = { Text(type) },
                                 onClick = {
-                                    onUsageTypeChange(type)
+                                    state.newUsageType = type
                                     expanded = false
 
                                     // Set default priority based on type
                                     if (type != "Other") {
-                                        val newPriority = when (type) {
+                                        state.newPriority = when (type) {
                                             "Absolute emergency" -> 0
                                             "Medical" -> 1
                                             "Drinking" -> 2
@@ -253,7 +247,6 @@ fun WaterNeedDialog(
                                             "Industry" -> 4
                                             else -> 3
                                         }
-                                        onPriorityChange(newPriority)
                                     }
                                 }
                             )
@@ -262,14 +255,14 @@ fun WaterNeedDialog(
                 }
 
                 // Custom type for "Other"
-                if (usageType == "Other") {
+                if (state.newUsageType == "Other") {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = customType,
+                        value = state.customType,
                         onValueChange = {
                             // Limit to 15 characters
                             if (it.length <= 15) {
-                                onCustomTypeChange(it)
+                                state.customType = it
                             }
                         },
                         label = { Text("Custom Usage Type (max 15 chars)") },
@@ -293,8 +286,8 @@ fun WaterNeedDialog(
                 ) {
                     (0..5).forEach { p ->
                         FilterChip(
-                            selected = priority == p,
-                            onClick = { onPriorityChange(p) },
+                            selected = state.newPriority == p,
+                            onClick = { state.newPriority = p },
                             label = { Text("P$p") }
                         )
                     }
@@ -304,15 +297,18 @@ fun WaterNeedDialog(
 
                 // Description
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = onDescriptionChange,
+                    value = state.newDescription,
+                    onValueChange = { state.newDescription = it },
                     label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
+            Button(
+                onClick = onConfirm,
+                enabled = state.newAmount.isNotBlank() && state.newUsageType.isNotBlank()
+            ) {
                 Text("Save")
             }
         },

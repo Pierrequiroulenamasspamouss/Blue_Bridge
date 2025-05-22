@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!-- Base config: disallow cleartext unless explicitly allowed -->
-    <base-config cleartextTrafficPermitted="false">
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </base-config>
 
     <!-- Allow cleartext for specific debug-only override -->
     <debug-overrides>
         <trust-anchors>
-            <certificates src="@raw/ca" />
+            <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </debug-overrides>
 
     <!-- Allow HTTP (cleartext) for these domains -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">192.168.0.204</domain>
-
-        <domain includeSubdomains="true">bluebridge.homeonthewater.com</domain>
+        <domain includeSubdomains="false">192.168.0.204</domain> <!-- raspberry pi -->
+        <domain includeSubdomains="false">192.168.0.98</domain> <!-- my compooter -->
+        <domain includeSubdomains="true">bluebridge.homeonthewater.com</domain> <!-- actual server -->
     </domain-config>
 </network-security-config>

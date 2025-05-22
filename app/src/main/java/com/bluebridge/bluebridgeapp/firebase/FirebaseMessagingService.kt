@@ -3,7 +3,6 @@ package com.bluebridge.bluebridgeapp.firebase
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
@@ -53,7 +52,7 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
                 
                 // Check if the user is logged in (has email and auth token)
                 val email = userRepository.getUserEmail()
-                val authToken = userRepository.getAuthToken()
+                val authToken = userRepository.getLoginToken()
                 
                 if (email != null && authToken != null) {
                     // User is logged in, register the token with the server
@@ -97,7 +96,7 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Since Android O, notification channels are required
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

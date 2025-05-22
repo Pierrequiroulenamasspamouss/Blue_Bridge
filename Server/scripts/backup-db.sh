@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Configuration
-DB_PATH="/opt/bluebridge/database.sqlite"
+USER_DB_PATH="/opt/bluebridge/database.sqlite"
+WELLS_DB_PATH="/opt/bluebridge/wells.sqlite"
+TOKENS_DB_PATH="/opt/bluebridge/tokens.sqlite"
+
 BACKUP_DIR="/opt/bluebridge/backups"
 MAX_BACKUPS=7  # Keep a week's worth of backups
 DATE=$(date +%Y%m%d_%H%M%S)

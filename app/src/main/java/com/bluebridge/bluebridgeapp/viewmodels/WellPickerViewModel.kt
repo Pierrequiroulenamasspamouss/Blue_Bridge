@@ -1,12 +1,12 @@
 package com.bluebridge.bluebridgeapp.viewmodels
 
-import WellData
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridge.bluebridgeapp.data.WellPickerEvent
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -85,8 +85,8 @@ class WellPickerViewModel(private val repository: WellRepository) : ViewModel() 
         return wells.filter { well ->
             val matchesQuery = _filters.value.query.isEmpty() ||
                     well.wellName.contains(_filters.value.query, ignoreCase = true) ||
-                    well.wellOwner?.contains(_filters.value.query, ignoreCase = true) ?: false ||
-                    well.espId?.contains(_filters.value.query, ignoreCase = true) ?: false
+                    well.wellOwner?.contains(_filters.value.query, ignoreCase = true) == true ||
+                    well.espId?.contains(_filters.value.query, ignoreCase = true) == true
 
             val matchesWaterType = _filters.value.waterType == null ||
                     well.wellWaterType == _filters.value.waterType

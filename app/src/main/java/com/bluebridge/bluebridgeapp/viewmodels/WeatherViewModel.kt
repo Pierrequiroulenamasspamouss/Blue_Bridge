@@ -10,15 +10,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.WeatherData
+import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
+import com.bluebridge.bluebridgeapp.data.repository.WeatherRepository
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.util.Date
+import com.bluebridge.bluebridgeapp.data.model.Location as LocationData
 
-class WeatherViewModel(private val userRepository: UserRepository) : ViewModel() {
+class WeatherViewModel(
+    private val weatherRepository: WeatherRepository,
+    private val userRepository: UserRepository,
+    private val context: Context
+) : ViewModel() {
     // Weather state
     private val _weatherState = mutableStateOf<UiState<List<WeatherData>>>(UiState.Empty)
     val weatherState = _weatherState
@@ -39,14 +43,7 @@ class WeatherViewModel(private val userRepository: UserRepository) : ViewModel()
         _location.value = newLocation
         fetchWeatherForecast()
     }
-    
-    /**
-     * Use the device's location
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun useDeviceLocation(context: Context, latitude: Double, longitude: Double) {
-        setLocation(latitude, longitude)
-    }
+
 
     /**
      * Fetch the weather forecast from the server
@@ -59,14 +56,13 @@ class WeatherViewModel(private val userRepository: UserRepository) : ViewModel()
         
         viewModelScope.launch {
             try {
-                val email = userRepository.getUserEmail() ?: ""
-                val token = userRepository.getAuthToken() ?: ""
+
+                val token = userRepository.getLoginToken() ?: ""
 
                 val weatherData = fetchFromServer(
-                    currentLocation.latitude, 
-                    currentLocation.longitude,
-                    email,
-                    token
+                    location = LocationData(currentLocation.latitude, currentLocation.longitude,),
+                    userId = userRepository.getUserId(),
+                    loginToken = token
                 )
                 _weatherState.value = UiState.Success(weatherData)
             } catch (e: Exception) {
@@ -81,17 +77,21 @@ class WeatherViewModel(private val userRepository: UserRepository) : ViewModel()
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun fetchFromServer(
-        latitude: Double, 
-        longitude: Double,
-        email: String,
-        token: String
+        location: LocationData,
+        userId: String,
+        loginToken: String
     ): List<WeatherData> = withContext(Dispatchers.IO) {
         try {
             // Get the API client
-            val api = RetrofitBuilder.getServerApi(userRepository as Context)
-            
+            val api = RetrofitBuilder.getServerApi(context)
+
+            val request = WeatherRequest(
+                location = location,
+                userId = userId,
+                loginToken = loginToken,
+            )
             // Make the API call
-            val response = api.getWeather(latitude, longitude, email, token)
+            val response = api.getWeather(request)
             
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string() ?: "Unknown error"
@@ -104,25 +104,18 @@ class WeatherViewModel(private val userRepository: UserRepository) : ViewModel()
             }
             
             // Check if the status is success
-            val status = responseBody["status"] as? String
+            val status = responseBody.status
             if (status != "success") {
-                val message = responseBody["message"] as? String ?: "Unknown error"
+                val message = responseBody.message ?: "Unknown error"
                 throw Exception(message)
             }
             
             // Extract the weather data
-            val weatherData = responseBody["data"] as? Map<String, Any> ?: throw Exception("Invalid data format")
+            val weatherData = responseBody.data
+                ?: throw Exception("Invalid data format or 'data' field missing")
+
             val weatherList = mutableListOf<WeatherData>()
-            
-            // Create a weather data entry
-            val parsedData = parseWeatherData(weatherData)
-            
-            weatherList.add(parsedData)
-            
-            if (weatherData.containsKey("cachedAt")) {
-                // Add info about cache timestamp if available
-                Log.d("WeatherViewModel", "Weather data cached at: ${weatherData["cachedAt"]}")
-            }
+            weatherList.add(weatherData)
             
             return@withContext weatherList
         } catch (e: Exception) {
@@ -139,31 +132,4 @@ class WeatherViewModel(private val userRepository: UserRepository) : ViewModel()
         fetchWeatherForecast()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun parseWeatherData(data: Map<String, Any>): WeatherData {
-        val main = data["main"] as? Map<String, Any> ?: emptyMap()
-        val weather = (data["weather"] as? List<Map<String, Any>>)?.firstOrNull() ?: emptyMap()
-        val wind = data["wind"] as? Map<String, Any> ?: emptyMap()
-        val sys = data["sys"] as? Map<String, Any> ?: emptyMap()
-        val rain = data["rain"] as? Map<String, Any> ?: emptyMap()
-        val dt = (data["dt"] as? Number)?.toLong() ?: Instant.now().epochSecond
-        val date = Date(dt * 1000)
-
-        return WeatherData(
-            temperature = (main["temp"] as? Number)?.toDouble() ?: 0.0,
-            feelsLike = (main["feels_like"] as? Number)?.toDouble() ?: 0.0,
-            minTemperature = (main["temp_min"] as? Number)?.toDouble() ?: 0.0,
-            maxTemperature = (main["temp_max"] as? Number)?.toDouble() ?: 0.0,
-            humidity = (main["humidity"] as? Number)?.toInt() ?: 0,
-            description = (weather["description"] as? String) ?: "",
-            icon = (weather["icon"] as? String) ?: "",
-            windSpeed = (wind["speed"] as? Number)?.toDouble() ?: 0.0,
-            pressure = (main["pressure"] as? Number)?.toInt() ?: 0,
-            windDirection = (wind["deg"] as? Number)?.toInt() ?: 0,
-            sunset = (sys["sunset"] as? Number)?.toLong()?.let { Date(it * 1000) } ?: Date(),
-            date = SimpleDateFormat("yyyy-MM-dd").format(date),
-            time = SimpleDateFormat("HH:mm").format(date),
-            rainAmount = (rain["1h"] as? Number)?.toDouble() ?: 0.0
-        )
-    }
 } 

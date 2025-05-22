@@ -1,12 +1,15 @@
 package com.bluebridge.bluebridgeapp.viewmodels
 
-import WellData
+
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridge.bluebridgeapp.data.WellEvents
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
+import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.launch
 
 // Action state for tracking mutations like delete/update
@@ -17,6 +20,7 @@ sealed class ActionState {
     data class Error(val error: String) : ActionState()
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 class WellViewModel(val repository: WellRepository) : ViewModel() {
     // Current well state
     private val _currentWellState = mutableStateOf<UiState<WellData>>(UiState.Empty)
@@ -30,22 +34,25 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
     private val _actionState = mutableStateOf<ActionState>(ActionState.Idle)
     val actionState: State<ActionState> = _actionState
 
-    init {
-        loadWells()
-    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun loadWells() {
         viewModelScope.launch {
-            _wellsListState.value = UiState.Loading
             try {
-                repository.wellListFlow.collect { wells ->
-                    _wellsListState.value = if (wells.isEmpty()) {
-                        UiState.Empty
-                    } else {
-                        UiState.Success(wells)
-                    }
+                _wellsListState.value = UiState.Loading
+                val wells = repository.getWells()
+                val currentTime = (System.currentTimeMillis() / 1000) // Unix time
+                
+                // Update last refresh time for all wells
+                val updatedWells = wells.map { well ->
+                    well.copy(lastRefreshTime = currentTime)
                 }
+                
+                _wellsListState.value = UiState.Success(updatedWells)
+                _actionState.value = ActionState.Success("Wells refreshed successfully")
             } catch (e: Exception) {
                 _wellsListState.value = UiState.Error(e.message ?: "Failed to load wells")
+                _actionState.value = ActionState.Error(e.message ?: "Failed to load wells")
             }
         }
     }
@@ -90,14 +97,26 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
         }
     }
 
-    fun loadWell(wellId: Int) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loadWell(id: Int) {
         viewModelScope.launch {
-            _currentWellState.value = UiState.Loading
             try {
-                val well = repository.getWell(wellId) ?: WellData(id = wellId)
-                _currentWellState.value = UiState.Success(well)
+                val well = repository.getWell(id)
+                val currentTime = (System.currentTimeMillis() / 1000) // Unix time
+                
+                // Update last refresh time for the well
+                val updatedWell = well?.copy(lastRefreshTime = currentTime)
+                
+                // Update the well in the list if it exists
+                val currentWells = (_wellsListState.value as? UiState.Success)?.data ?: emptyList()
+                val updatedWells = currentWells.map { 
+                    if (it.id == id) updatedWell else it 
+                }
+                
+                _wellsListState.value = UiState.Success(updatedWells) as UiState<List<WellData>>
+                _actionState.value = ActionState.Success("Well refreshed successfully")
             } catch (e: Exception) {
-                _currentWellState.value = UiState.Error(e.message ?: "Failed to load well")
+                _actionState.value = ActionState.Error(e.message ?: "Failed to load well")
             }
         }
     }
