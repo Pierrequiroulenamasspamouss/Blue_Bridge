@@ -5,11 +5,22 @@
     <string name="helper">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
     <string name="projects">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
-    <!-- <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string> -->
+    <!--
+    RASPI:
+    <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string>
+    <string name="ProductionServerUrl">https://192.168.0.204:3443/</string>
 
+    LOCAL MACHINE:
     <string name="DevelopmentServerUrl">http://192.168.0.98:3000/</string>
     <string name="ProductionServerUrl">https://192.168.0.98:3443/</string>
-    <!-- <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>-->
+
+    GOOGLE:
+    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
+    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>
+    -->
+
+    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
+    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>
     <string name="sms_server_number">+32491142936</string>
 
     <!-- Firebase notifications -->
@@ -20,5 +31,4 @@
     <string name="notification_permission_deny">Later</string>
     <string name="login_as_guest">Continue as Guest</string>
 
-<!--    <string name=""></string>-->
 </resources>
