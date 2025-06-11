@@ -13,6 +13,9 @@ import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -26,11 +29,45 @@ class UserViewModel(
     // State management
     private val _state = mutableStateOf<UiState<UserData>>(UiState.Empty)
     val state = _state
+    private val _currentTheme = MutableStateFlow(0) // Default theme
+    val currentTheme: StateFlow<Int> = _currentTheme.asStateFlow()
 
     // Push notification state
     private val _notificationsEnabled = mutableStateOf(false)
-    val notificationsEnabled = _notificationsEnabled
 
+    init {
+        // Load theme preference immediately on ViewModel creation
+        loadThemePreference()
+    }
+
+    private fun loadThemePreference() {
+        viewModelScope.launch {
+            try {
+                // Load theme from SharedPreferences (not from user data)
+                val savedTheme = repository.getThemePreference() // You'll need to implement this
+                _currentTheme.value = savedTheme
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Failed to load theme preference", e)
+                _currentTheme.value = 0 // Default to system theme
+            }
+        }
+    }
+
+    fun updateTheme(themeValue: Int) {
+        viewModelScope.launch {
+            try {
+                // Save theme to SharedPreferences immediately
+                repository.saveThemePreference(themeValue) // You'll need to implement this
+
+                // Update the StateFlow to trigger recomposition
+                _currentTheme.value = themeValue
+
+                Log.d("UserViewModel", "Theme updated to: $themeValue")
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Failed to update theme", e)
+            }
+        }
+    }
     suspend fun handleEvent(event: UserEvent) {
         when (event) {
             is UserEvent.Login -> {
@@ -188,7 +225,10 @@ class UserViewModel(
                     lastName = "User",
                     username = "guest_user",
                     role = "guest",
-                    userId = "guest-UID"
+                    userId = "guest-UID" ,
+                    loginToken = "1234567890",
+                    themePreference = 0
+
                 )
 
                 // Save the guest user locally
@@ -205,7 +245,6 @@ class UserViewModel(
             }
         }
     }
-
 
     fun logout() {
         viewModelScope.launch {
@@ -368,10 +407,10 @@ class UserViewModel(
                 // Send the token to the server
                 val email = repository.getUserEmail()
                 val authToken = repository.getLoginToken()
-
+                val userId = repository.getUserId()
                 if (email != null && authToken != null) {
-                    Log.d("UserViewModel", "Sending token to server for $email")
-                    val success = repository.registerNotificationToken(email, authToken, token)
+                    Log.d("UserViewModel", "Sending token to server for user $userId")
+                    val success = repository.registerNotificationToken(userId, authToken, token)
 
                     if (success) {
                         Log.d("UserViewModel", "Successfully registered notification token")
@@ -471,62 +510,6 @@ class UserViewModel(
         return repository.getLoginToken()
     }
 
-
-    suspend fun getUserWaterNeeds(): String? {
-        return repository.getUserWaterNeeds()
-    }
-
-    private suspend fun updateTheme(theme: Int) {
-        val userData = repository.getUserData().first()
-        if (userData != null) {
-            if (userData.themePreference != theme) {
-                repository.saveUserData(userData.copy(themePreference = theme))
-                if (userData.role != "guest") {
-                    repository.updateProfileOnServer(userData)
-                    Log.d("UserViewModel", "Theme updated locally and on server")
-                }
-            }
-        }
-
-
-        suspend fun setUserWaterNeeds(needs: String) {
-            val userData = repository.getUserData().first()
-            if (userData != null) {
-                val newWaterNeeds = if (needs.isNotBlank()) {
-                    val amount = needs.toIntOrNull() ?: 0 // Default to 0 if conversion fails
-                    listOf(
-                        WaterNeed(
-                            amount = amount,
-                            usageType = "General",
-                            priority = 3,
-                            description = "General water need"
-                        )
-                    )
-                } else {
-                    emptyList()
-                }
-
-                if (userData.waterNeeds != newWaterNeeds) {
-                    // Save locally first
-                    repository.saveUserData(userData.copy(waterNeeds = newWaterNeeds))
-                    repository.setUserWaterNeeds(needs) // Also update the raw string preference if needed
-                    Log.d("UserViewModel", "Water needs updated locally: $newWaterNeeds")
-
-                    // Then try to update on server if not a guest
-                    if (userData.role != "guest") {
-                        viewModelScope.launch {
-                            try {
-                                repository.updateWaterNeedsOnServer(newWaterNeeds)
-                                Log.d("UserViewModel", "Water needs updated on server")
-                            } catch (e: Exception) {
-                                Log.e("UserViewModel", "Failed to update water needs on server", e)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 

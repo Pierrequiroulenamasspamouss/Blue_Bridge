@@ -37,9 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.bluebridge.bluebridgeapp.data.model.WeatherData
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.text.SimpleDateFormat
 
 @Composable
 fun EmptyWeatherState(onRefresh: () -> Unit) {
@@ -67,7 +66,6 @@ fun EmptyWeatherState(onRefresh: () -> Unit) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeatherContent(
     groupedWeather: Map<String, List<WeatherData>>,
@@ -126,15 +124,20 @@ fun LocationCard(userData: UserData?) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DayForecast(date: String, weatherItems: List<WeatherData>) {
     // Parse the date for display
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val displayFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
-
-    val parsedDate = LocalDate.parse(date, dateFormatter)
-    val displayDate = parsedDate.format(displayFormatter)
+    val displayDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val displayFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
+        val parsedDate = java.time.LocalDate.parse(date, dateFormatter)
+        parsedDate.format(displayFormatter)
+    } else {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+        val parsedDate = inputFormat.parse(date)
+        parsedDate?.let { outputFormat.format(it) } ?: date
+    }
 
     // Weather for current day
     Card(

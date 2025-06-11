@@ -1,21 +1,15 @@
 package com.bluebridge.bluebridgeapp.utils
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.util.Base64
 import androidx.compose.ui.graphics.Color
 import java.security.MessageDigest
-import java.util.Base64
 
 
-
-
-
-@RequiresApi(Build.VERSION_CODES.O)
 fun encryptPassword(password: String): String {
     val bytes = password.toByteArray()
     val md = MessageDigest.getInstance("SHA-256")
     val digest = md.digest(bytes)
-    return Base64.getEncoder().encodeToString(digest)
+    return Base64.encodeToString(digest, Base64.NO_WRAP)
 }
 
 

@@ -11,12 +11,10 @@ import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 val Context.wellDataStore: DataStore<Preferences> by preferencesDataStore(name = "well_preferences")
-
 class WellPreferences(val context: Context) {
     companion object {
         val FAVORITE_WELLS_KEY = stringPreferencesKey("favorite_wells")
@@ -25,7 +23,7 @@ class WellPreferences(val context: Context) {
     
     val wellListFlow: Flow<List<WellData>> = context.wellDataStore.data.map { prefs ->
         val raw = prefs[WELLS_KEY] ?: return@map emptyList()
-        runCatching { Json.decodeFromString<List<WellData>>(raw) }.getOrElse { emptyList() }
+        Json.decodeFromString<List<WellData>>(raw)
     }
 
     suspend fun saveWellList(wells: List<WellData>) {
@@ -35,64 +33,46 @@ class WellPreferences(val context: Context) {
     }
 
     suspend fun getWell(wellId: Int): WellData? {
-        return getCurrentWellList().find { it.id == wellId }
+        return wellListFlow.first().find { it.id == wellId }
     }
 
     suspend fun saveWell(well: WellData) {
-        val current = getCurrentWellList()
+        val current = wellListFlow.first()
         val updated = current
             .filterNot { it.id == well.id }
             .plus(well)
         saveWellList(updated)
     }
 
-
-
     suspend fun getFavoriteWells(): List<ShortenedWellData> {
         val prefs = context.wellDataStore.data.first()
         val raw = prefs[FAVORITE_WELLS_KEY] ?: return emptyList()
-        return runCatching {
-            Json.decodeFromString(ListSerializer(ShortenedWellData.serializer()), raw)
-        }.getOrElse { emptyList() }
+        return Json.decodeFromString(raw)
     }
 
     suspend fun saveFavoriteWells(wells: List<ShortenedWellData>) {
         context.wellDataStore.edit { prefs ->
-            prefs[FAVORITE_WELLS_KEY] = Json.encodeToString(ListSerializer(ShortenedWellData.serializer()), wells)
+            prefs[FAVORITE_WELLS_KEY] = Json.encodeToString(wells)
         }
     }
 
-    private suspend fun getCurrentWellList(): List<WellData> {
-        val prefs = context.wellDataStore.data.first()
-        val raw = prefs[WELLS_KEY] ?: return emptyList()
-
-        return runCatching {
-            Json.decodeFromString(ListSerializer(WellData.serializer()), raw)
-        }.getOrElse { emptyList<WellData>() }
-    }
-
-    fun updateWell(data: WellData) {
-        TODO ()
-    }
-    suspend fun deleteWellAt(index: Int) {
-        val current = getCurrentWellList()
-        if (index in current.indices) {
-            val updated = current.toMutableList().apply { removeAt(index) }
-            saveWellList(updated)
-        }
-    }
-
-    suspend fun swapWells(from: Int, to: Int) {
-        val current = getCurrentWellList().toMutableList()
-        if (from in current.indices && to in current.indices) {
-            val temp = current[from]
-            current[from] = current[to]
-            current[to] = temp
+    suspend fun updateWell(wellData: WellData) {
+        val current = wellListFlow.first().toMutableList()
+        val index = current.indexOfFirst { it.id == wellData.id }
+        if (index != -1) {
+            current[index] = wellData
             saveWellList(current)
         }
     }
 
-    fun deleteWell(string: String) {
-        TODO()
+
+    suspend fun deleteWell(wellId: String) {
+        val current = wellListFlow.first()
+        val updated = current.filterNot { it.id.toString() == wellId }
+        saveWellList(updated)
+    }
+
+    suspend fun getAllWells(): List<WellData> {
+        return wellListFlow.first()
     }
 }

@@ -60,10 +60,11 @@ import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
 
 @SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -127,7 +128,8 @@ fun RegisterScreen(
     LaunchedEffect(Unit) {
         if (context.hasLocationPermission()) {
             currentLocation = context.getCurrentLocation()?.let {
-                Location(it.latitude, it.longitude, LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+                val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                Location(it.latitude, it.longitude, formatter.format(Date()))
             }
         }
     }

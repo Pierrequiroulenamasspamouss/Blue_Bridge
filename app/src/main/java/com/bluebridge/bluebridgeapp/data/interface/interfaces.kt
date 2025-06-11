@@ -21,6 +21,8 @@ interface ServerRepository {
 }
 
 interface UserRepository {
+    suspend fun getThemePreference(): Int
+    suspend fun saveThemePreference(theme: Int)
     suspend fun getRole(): String
     suspend fun getRoleValue(): Int
     suspend fun getUserId(): String
@@ -80,6 +82,7 @@ interface WellRepository {
     suspend fun getWells(): List<WellData>
     suspend fun getWellById(id: Int): WellData?
     suspend fun getAllWells(): List<ShortenedWellData>
+    suspend fun getSavedWells(): List<WellData>
     suspend fun getFilteredWells(
         page: Int = 1,
         limit: Int = 20,

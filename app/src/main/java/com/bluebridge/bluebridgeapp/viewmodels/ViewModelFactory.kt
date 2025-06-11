@@ -9,7 +9,6 @@ import com.bluebridge.bluebridgeapp.data.`interface`.NearbyUsersRepository
 import com.bluebridge.bluebridgeapp.data.`interface`.ServerRepository
 import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
-import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
 import com.bluebridge.bluebridgeapp.data.repository.WeatherRepository
 import com.bluebridge.bluebridgeapp.network.SmsApi
 
@@ -53,7 +52,7 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(WeatherViewModel::class.java) -> {
                 WeatherViewModel(
                     weatherRepository = weatherRepository, userRepository = userRepository,
-                    context = context
+                    context = context,
                 ) as T
             }
 

@@ -1,8 +1,6 @@
 package com.bluebridge.bluebridgeapp.ui.components
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,15 +28,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bluebridge.bluebridgeapp.data.model.WellData
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WellCard(
     well: WellData,
@@ -46,7 +42,6 @@ fun WellCard(
     showAdminActions: Boolean = false,
     showLastRefresh: Boolean = false,
     showLastUpdate: Boolean = false,
-    onDelete: () -> Unit = {},
     onEdit: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onViewDetails: () -> Unit = {},
@@ -83,7 +78,7 @@ fun WellCard(
                             }
                         }
 
-                        IconButton(onClick = onDelete) {
+                        IconButton(onClick = onDeleteClick) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete Well",
@@ -178,15 +173,87 @@ fun WellCard(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun EnhancedWellCard(
+    well: WellData,
+    onClick: () -> Unit,
+    onNavigateClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    // Calculate water level percentage safely outside composable
+    val waterLevelInfo = if (well.wellWaterLevel.toString().isNotBlank() && well.wellCapacity.isNotBlank()) {
+        calculateWaterLevelInfo(well.wellWaterLevel, well.wellCapacity)
+    } else null
+
+    Card(
+        Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onClick() }
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(well.wellName, style = MaterialTheme.typography.titleMedium)
+                StatusIndicator(well.wellStatus)
+            }
+
+            Text(text = "Latitude: ${well.wellLocation.latitude}\n Longitude: ${well.wellLocation.longitude}" , style = MaterialTheme.typography.bodySmall)
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Type: ${well.wellWaterType}", style = MaterialTheme.typography.bodySmall)
+
+                if (well.wellCapacity.isNotBlank()) {
+                    Text("Capacity: ${well.wellCapacity}L", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            // Water level indicator using pre-calculated values
+            waterLevelInfo?.let { (progress, percentage) ->
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    color = when {
+                        percentage > 70 -> Color.Green
+                        percentage > 30 -> Color.Yellow
+                        else -> Color.Red
+                    }
+                )
+                Text("Water Level: $percentage%", style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Navigate button
+            Button(
+                onClick = onNavigateClick,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Navigate")
+            }
+        }
+    }
+}
+
 private fun formatDateTime(dateTime: String): String {
     return try {
-        val instant = Instant.parse(dateTime)
-        val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
-        localDateTime.format(formatter)
+        // Assuming the input dateTime string is in ISO 8601 format like "2023-10-27T10:15:30Z"
+        // Adjust the inputFormat pattern if your dateTime string format is different.
+        // Use SimpleDateFormat for compatibility with API 25 and earlier.
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") // Adjust if needed
+        inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC") // Assuming input is UTC
+        val date: Date? = inputFormat.parse(dateTime)
+        val outputFormat = SimpleDateFormat("MMM dd, yyyy HH:mm")
+        outputFormat.timeZone = java.util.TimeZone.getDefault() // Format to local time zone
+        date?.let { outputFormat.format(it) } ?: dateTime
     } catch (e: Exception) {
-        Log.e("DateTimeFormat", "Error formatting date", e)
+        Log.e("DateTimeFormat", "Error formatting date: $dateTime", e)
         dateTime
     }
 }
+

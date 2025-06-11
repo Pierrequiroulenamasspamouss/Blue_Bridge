@@ -23,6 +23,10 @@ class WellRepositoryImpl(
 
     override val wellListFlow: Flow<List<WellData>> = preferences.wellListFlow
 
+    override suspend fun getSavedWells(): List<WellData> = withContext(Dispatchers.IO) {
+        preferences.getAllWells()
+    }
+
     override suspend fun getWells(): List<WellData> = withContext(Dispatchers.IO) {
         try {
             val response = api.getAllWells()

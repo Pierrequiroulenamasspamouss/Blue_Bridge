@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.ExploreOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,6 +79,7 @@ fun HomeScreen(
     var currentUserRole by remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
@@ -84,11 +87,15 @@ fun HomeScreen(
     var isOnline by remember { mutableStateOf(isNetworkAvailable(context)) }
 
     // Define user roles
+    val unregisteredRole = 0
     val guestRole = 1
     val userRole = 2
     val wellOwnerRole = 3
     val adminRole = 4
-
+    //Get the role's value for easy permissions
+    LaunchedEffect(Unit) {
+        currentUserRole = userViewModel.repository.getRoleValue()
+    }
     // Check if user is logged in
     val isLoggedIn = when (userState) {
         is UiState.Success -> true
@@ -101,10 +108,7 @@ fun HomeScreen(
         (userState as UiState.Success<UserData>).data
     } else null
 
-    //Get the role's value for easy permissions
-    LaunchedEffect(Unit) {
-        currentUserRole = userViewModel.repository.getRoleValue()
-    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -175,14 +179,6 @@ fun HomeScreen(
                         title = "Weather",
                         description = "Check upcoming weather forecast",
                         onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    FeatureCard(
-                        icon = Icons.Default.Settings,
-                        title = "Settings",
-                        description = "Configure app preferences",
-                        onClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -265,7 +261,7 @@ fun HomeScreen(
             }
 
             // Account section
-            if (currentUserRole > guestRole) { // Show account section for logged-in users (user, well_owner, admin)
+            if (currentUserRole >= guestRole) { // Show account section for logged-in users (user, well_owner, admin)
                 // User profile summary
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -314,28 +310,60 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                        if (currentUserRole > 1 ) { // to not have the option to edit your profile as a guest
                             OutlinedButton(
                                 onClick = { navController.navigate(Routes.PROFILE_SCREEN) },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Edit Profile")
                             }
-
+                        }
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        userViewModel.logout()
-                                        navController.navigate(Routes.HOME_SCREEN) {
-                                            popUpTo(Routes.HOME_SCREEN) { inclusive = true }
-                                        }
-                                    }
-                                },
+                                onClick = { showLogoutDialog = true },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Logout")
                             }
+
+                            if (showLogoutDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showLogoutDialog = false },
+                                    title = { Text("Confirm Logout") },
+                                    text = { Text("Are you sure you want to log out?") },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                showLogoutDialog = false
+                                                coroutineScope.launch {
+                                                    userViewModel.logout()
+                                                    navController.navigate(Routes.HOME_SCREEN) {
+                                                        popUpTo(Routes.HOME_SCREEN) { inclusive = true }
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text("Logout")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showLogoutDialog = false }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        Button(
+                            onClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Settings", modifier = Modifier.padding(end = 8.dp))
+                            Text("Settings")
                         }
                     }
                 }

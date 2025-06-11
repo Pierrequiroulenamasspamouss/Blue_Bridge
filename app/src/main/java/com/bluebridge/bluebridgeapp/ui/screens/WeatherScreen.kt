@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,18 +26,24 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.components.EmptyWeatherState
 import com.bluebridge.bluebridgeapp.ui.components.WeatherContent
+import com.bluebridge.bluebridgeapp.ui.navigation.Routes.LOGIN_SCREEN
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WeatherViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -44,16 +51,21 @@ import com.bluebridge.bluebridgeapp.viewmodels.WeatherViewModel
 fun WeatherScreen(
     userViewModel: UserViewModel,
     weatherViewModel: WeatherViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController : NavController
 ) {
+    val userState by userViewModel.state // Observe the state directly for recomposition
+    // Observe login state
+
+
+    var showInvalidTokenDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val colorScheme = MaterialTheme.colorScheme
     LocalContext.current
     
     // Get user data for location
-    val userState = userViewModel.state.value
-    val userData = (userState as? UiState.Success<UserData>)?.data
-    
+    val userData = (userState as? UiState.Success<UserData>)?.data // userState is already observed
+
     // Weather data state
     val weatherState = weatherViewModel.weatherState.value
     
@@ -69,9 +81,7 @@ fun WeatherScreen(
     // Initialize with user location if available
     LaunchedEffect(userData) {
         userData?.let {
-            if (it.location.latitude != null && it.location.longitude != null) {
-                weatherViewModel.setLocation(it.location.latitude, it.location.longitude)
-            }
+            weatherViewModel.setLocation(it.location.latitude, it.location.longitude)
         }
     }
     
@@ -111,6 +121,7 @@ fun WeatherScreen(
                 }
                 
                 is UiState.Success -> {
+
                     if (weatherState.data.isEmpty()) {
                         EmptyWeatherState(onRefresh = { weatherViewModel.refreshWeather() })
                     } else {
@@ -149,16 +160,44 @@ fun WeatherScreen(
                             )
                             Text("Retry")
                         }
+
+                        if (weatherState.message.contains("Invalid token")) {
+                            LaunchedEffect(Unit) {
+                                showInvalidTokenDialog = true
+                                userViewModel.logout()
+                            }
+                        }
+
+                        if (showInvalidTokenDialog) {
+                            AlertDialog(
+                                onDismissRequest = {
+                                    showInvalidTokenDialog = false
+                                    navController.navigate(LOGIN_SCREEN) {
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            inclusive = true
+                                        }
+                                    }
+                                },
+                                title = { Text("Session Expired") },
+                                text = { Text("You have been logged out. This might be because you logged in on another device.") },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        showInvalidTokenDialog = false
+                                        navController.navigate(LOGIN_SCREEN) {
+                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                        }
+                                    }) { Text("OK") }
+                                }
+                            )
+                        }
                     }
                 }
                 
                 else -> {
                     // Get user location if available
                     userData?.let {
-                        if (it.location.latitude != null && it.location.longitude != null) {
-                            LaunchedEffect(Unit) {
-                                weatherViewModel.setLocation(it.location.latitude, it.location.longitude)
-                            }
+                        LaunchedEffect(Unit) {
+                            weatherViewModel.setLocation(it.location.latitude, it.location.longitude)
                         }
                     }
                     

@@ -1,9 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Blue Bridge</string>
-    <string name="app_dev">Pierre Sluse</string>
-    <string name="app_designer">Joel Wandege</string>
-    <string name="helper">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
-    <string name="projects">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
+    <string name="app_name" translatable="false">Blue Bridge</string>
+    <string name="app_dev" translatable="false">Pierre Sluse</string>
+    <string name="app_designer" translatable="false">Joel Wandege</string>
+    <string name="helper" translatable="false">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
+    <string name="projects" translatable="false">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
     <!--
     RASPI:
@@ -19,16 +19,20 @@
     <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>
     -->
 
-    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
-    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>
-    <string name="sms_server_number">+32491142936</string>
+    <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
+    <string name="ProductionServerUrl" translatable="false">https://bluebridge.homeonthewater.com/</string>
+
 
     <!-- Firebase notifications -->
-    <string name="default_notification_channel_id">bluebridge_notifications</string>
-    <string name="notification_permission_title">Enable Notifications</string>
+
+    <string name="default_notification_channel_id" translatable="false">bluebridge_notifications</string>
     <string name="notification_permission_message">Get updates about water levels, nearby users, and important alerts.</string>
     <string name="notification_permission_allow">Allow</string>
     <string name="notification_permission_deny">Later</string>
     <string name="login_as_guest">Continue as Guest</string>
+    <string name="notification_permission_title">Enable Notifications</string>
+
+    <!-- Emergency phone number -->
+    <string name="sms_server_number" translatable="false">+32491142936</string>
 
 </resources>

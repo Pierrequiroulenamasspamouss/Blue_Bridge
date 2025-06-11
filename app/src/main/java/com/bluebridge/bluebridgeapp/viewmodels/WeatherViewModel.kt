@@ -64,10 +64,17 @@ class WeatherViewModel(
                     userId = userRepository.getUserId(),
                     loginToken = token
                 )
+
                 _weatherState.value = UiState.Success(weatherData)
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching weather: ${e.message}", e)
                 _weatherState.value = UiState.Error("Failed to load weather data: ${e.message}")
+                Log.d("WeatherViewModel", e.message, e)
+                if (e.message == "Invalid token") {
+                    Log.e("WeatherViewModel", "Invalid token, logging out")
+                    userRepository.logout()
+                }
+
             }
         }
     }
@@ -92,31 +99,36 @@ class WeatherViewModel(
             )
             // Make the API call
             val response = api.getWeather(request)
-            
+
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                if (errorBody.contains("Invalid token")) {
+                    userRepository.logout()
+                    Log.e("WeatherViewModel", "Invalid token, logging out")
+                }
                 throw Exception("API call failed: $errorBody")
+
             }
-            
+
             val responseBody = response.body()
             if (responseBody == null) {
                 throw Exception("Empty response from server")
             }
-            
+
             // Check if the status is success
             val status = responseBody.status
             if (status != "success") {
                 val message = responseBody.message ?: "Unknown error"
                 throw Exception(message)
             }
-            
+
             // Extract the weather data
             val weatherData = responseBody.data
                 ?: throw Exception("Invalid data format or 'data' field missing")
 
             val weatherList = mutableListOf<WeatherData>()
             weatherList.add(weatherData)
-            
+
             return@withContext weatherList
         } catch (e: Exception) {
             Log.e("WeatherViewModel", "Error fetching weather from API: ${e.message}", e)

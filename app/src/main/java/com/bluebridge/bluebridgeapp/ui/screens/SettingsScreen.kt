@@ -1,6 +1,5 @@
 package com.bluebridge.bluebridgeapp.ui.screens
 
-import com.bluebridge.bluebridgeapp.data.model.UserData
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
@@ -37,7 +36,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
 import com.bluebridge.bluebridgeapp.ui.components.ThemeOption
@@ -56,7 +59,6 @@ import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -65,7 +67,7 @@ import java.util.Locale
 fun SettingsScreen(
     userViewModel: UserViewModel,
     navController: NavController,
-    userState: UiState<UserData>
+    userState: UiState<UserData>,
 ) {
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -74,18 +76,27 @@ fun SettingsScreen(
     var passwordForDeletion by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val userData = (userState as? UiState.Success<UserData>)?.data
-    var easterCount by remember { mutableStateOf(0) }
-    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
-    
+    var easterCount by remember { mutableIntStateOf(0) }
+    var currentUserRole by remember { mutableIntStateOf(0) }
+
+    // Get current theme preference directly from ViewModel's theme state
+    val currentThemePreference by userViewModel.currentTheme.collectAsState()
+
+    //Get the role's value for easy permissions
+    LaunchedEffect(Unit) {
+        currentUserRole = userViewModel.repository.getRoleValue()
+    }
+
+    val guestRole = 1
+
     // Log userData state for debugging
     val isGuest = userData == null
     Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData.email}"}")
-    
+
     // Default values for guest mode
     val displayName = if (isGuest) "Guest" else "${userData.firstName} ${userData.lastName}"
     val email = userData?.email ?: "Not logged in"
     val role = userData?.role?.replaceFirstChar { it.uppercase() } ?: "Guest"
-    val themePreference = userData?.themePreference ?: 0
     val latitude = userData?.location?.latitude ?: 0.0
     val longitude = userData?.location?.longitude ?: 0.0
 
@@ -98,8 +109,7 @@ fun SettingsScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        },
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -113,7 +123,7 @@ fun SettingsScreen(
                     icon = Icons.Default.Person,
                     title = "Account",
                     subtitle = displayName,
-                    onClick = { 
+                    onClick = {
                         if (isGuest) {
                             navController.navigate(Routes.LOGIN_SCREEN)
                         } else {
@@ -121,13 +131,13 @@ fun SettingsScreen(
                         }
                     }
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.Email,
                     title = "Email",
                     subtitle = email
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.Badge,
                     title = "Role",
@@ -135,37 +145,32 @@ fun SettingsScreen(
                     onClick = {
                         easterCount++
                         if (easterCount >= 6) {
-                            if (easterCount >= 11) {
-                                navController.navigate(Routes.EASTER_EGG_SCREEN)
-                                if (userData?.role == "user" || userData?.role == "guest") {
-                                    userData.role = "admin"
-                                }
-                            }
                             coroutineScope.launch {
-                                val message = when (easterCount) {
+                                when (easterCount) {
                                     6 -> "Easter egg mode activated! Click 5 more times..."
                                     7 -> "Keep going... 4 more clicks!"
                                     8 -> "Almost there... 3 more clicks!"
                                     9 -> "So close... 2 more clicks!"
                                     10 -> "One more click!"
-                                    11 -> "Congratulations! You've unlocked the secret game!"
+                                    11 -> {
+                                        navController.navigate(Routes.EASTER_EGG_SCREEN)
+                                        "Congratulations! You've unlocked the secret game!"
+                                    }
                                     else -> "Easter egg activated: ${easterCount - 5}"
                                 }
-
-                                snackbarHostState.showSnackbar(message,duration = androidx.compose.material3.SnackbarDuration.Short )
-
+                                // Afficher un toast ou un snackbar avec le message
                             }
                         }
                     }
                 )
             }
-            
+
             // Appearance Section
             SettingsSection(title = "Appearance") {
                 SettingsItem(
                     icon = Icons.Default.Palette,
                     title = "Theme",
-                    subtitle = when (themePreference) {
+                    subtitle = when (currentThemePreference) {
                         0 -> "System Default"
                         1 -> "Light"
                         2 -> "Dark"
@@ -182,9 +187,9 @@ fun SettingsScreen(
                     onClick = { showThemeDialog = true }
                 )
             }
-            
-            // Location Section
-            if (!isGuest) {
+
+            if (currentUserRole > guestRole) {
+                // Location Section
                 SettingsSection(title = "Location") {
                     SettingsItem(
                         icon = Icons.Default.LocationOn,
@@ -193,27 +198,25 @@ fun SettingsScreen(
                         onClick = { navController.navigate(Routes.PROFILE_SCREEN) }
                     )
                 }
-                
+
                 // Water Needs Section
                 SettingsSection(title = "Water Needs") {
-                    if (userData.waterNeeds?.isNotEmpty() == true) {
+                    if (userData?.waterNeeds?.isNotEmpty() == true) {
                         userData.waterNeeds.forEach { need ->
                             SettingsItem(
                                 icon = Icons.Default.Opacity,
-                                title = need.usageType.capitalize(Locale.getDefault()),
+                                title = need.usageType.replaceFirstChar { it.uppercase() },
                                 subtitle = "${need.amount}L - Priority: ${need.priority}"
                             )
                         }
                     } else {
-                        // Show a message when there are no water needs
                         SettingsItem(
                             icon = Icons.Default.Opacity,
                             title = "No water needs configured",
                             subtitle = "Tap below to add your water needs"
                         )
                     }
-                    
-                    // Always show the Edit Water Needs button
+
                     TextButton(
                         onClick = { navController.navigate(Routes.EDIT_WATER_NEEDS_SCREEN) },
                         modifier = Modifier.padding(start = 16.dp)
@@ -222,7 +225,7 @@ fun SettingsScreen(
                     }
                 }
             }
-            
+
             // Support Section
             SettingsSection(title = "Support") {
                 SettingsItem(
@@ -231,7 +234,7 @@ fun SettingsScreen(
                     subtitle = "Help us by viewing ads",
                     onClick = { navController.navigate(Routes.ADMOB_SCREEN) }
                 )
-                
+
                 SettingsItem(
                     icon = Icons.Default.Badge,
                     title = "Credits",
@@ -239,7 +242,7 @@ fun SettingsScreen(
                     onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
                 )
             }
-            
+
             // Account Actions Section
             SettingsSection(title = "Account Actions") {
                 if (isGuest) {
@@ -257,8 +260,7 @@ fun SettingsScreen(
                         onClick = { showLogoutDialog = true },
                         tint = MaterialTheme.colorScheme.error
                     )
-                    
-                    // Add Delete Account option
+
                     SettingsItem(
                         icon = Icons.Default.Delete,
                         title = "Delete Account",
@@ -269,8 +271,22 @@ fun SettingsScreen(
                 }
             }
         }
-        
+
         // Theme Selection Dialog
+        val themes = listOf(
+            "System Default" to 0,
+            "Light" to 1,
+            "Dark" to 2,
+            "Green" to 3,
+            "Pink" to 4,
+            "Red" to 5,
+            "Purple" to 6,
+            "Yellow" to 7,
+            "Tan" to 8,
+            "Orange" to 9,
+            "Cyan" to 10
+        )
+
         if (showThemeDialog) {
             AlertDialog(
                 onDismissRequest = { showThemeDialog = false },
@@ -279,148 +295,17 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier.verticalScroll(rememberScrollState())
                     ) {
-                        // System Default theme
-                        ThemeOption(
-                            title = "System Default",
-                            isSelected = themePreference == 0,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(0))
+                        themes.forEach { (themeName, themeValue) ->
+                            ThemeOption(
+                                title = themeName,
+                                isSelected = currentThemePreference == themeValue,
+                                onClick = {
+                                    userViewModel.updateTheme(themeValue)
+                                    showThemeDialog = false
+
                                 }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Light theme
-                        ThemeOption(
-                            title = "Light",
-                            isSelected = themePreference == 1,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(1))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Dark theme
-                        ThemeOption(
-                            title = "Dark",
-                            isSelected = themePreference == 2,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(2))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Green theme
-                        ThemeOption(
-                            title = "Green",
-                            isSelected = themePreference == 3,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(3))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Pink theme
-                        ThemeOption(
-                            title = "Pink",
-                            isSelected = themePreference == 4,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(4))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Red theme
-                        ThemeOption(
-                            title = "Red",
-                            isSelected = themePreference == 5,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(5))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Purple theme
-                        ThemeOption(
-                            title = "Purple",
-                            isSelected = themePreference == 6,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(6))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Yellow theme
-                        ThemeOption(
-                            title = "Yellow",
-                            isSelected = themePreference == 7,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(7))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Tan theme
-                        ThemeOption(
-                            title = "Tan",
-                            isSelected = themePreference == 8,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(8))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Orange theme
-                        ThemeOption(
-                            title = "Orange",
-                            isSelected = themePreference == 9,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(9))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
-                        
-                        // Cyan theme
-                        ThemeOption(
-                            title = "Cyan",
-                            isSelected = themePreference == 10,
-                            onClick = {
-                                coroutineScope.launch {
-                                    userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.UpdateTheme(10))
-                                }
-                                // Simply close the dialog without navigation
-                                showThemeDialog = false
-                            }
-                        )
+                            )
+                        }
                     }
                 },
                 confirmButton = {
@@ -430,7 +315,7 @@ fun SettingsScreen(
                 }
             )
         }
-        
+
         // Logout Confirmation Dialog
         if (showLogoutDialog) {
             AlertDialog(
@@ -458,23 +343,22 @@ fun SettingsScreen(
                 }
             )
         }
-        
-        // Delete Account Dialog (Password Verification)
+
+        // Delete Account Dialog
         if (showDeleteAccountDialog) {
             AlertDialog(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showDeleteAccountDialog = false
                     passwordForDeletion = ""
                 },
                 title = { Text("Delete Account") },
-                text = { 
+                text = {
                     Column {
                         Text(
                             "To delete your account, please enter your password to confirm. This action is permanent and cannot be undone.",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                        // Use a proper password field instead of regular OutlinedTextField
                         var passwordVisible by remember { mutableStateOf(false) }
                         OutlinedTextField(
                             value = passwordForDeletion,
@@ -509,7 +393,7 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { 
+                        onClick = {
                             showDeleteAccountDialog = false
                             passwordForDeletion = ""
                         }
@@ -519,16 +403,16 @@ fun SettingsScreen(
                 }
             )
         }
-        
+
         // Final Delete Account Confirmation Dialog
         if (showDeleteAccountConfirmationDialog) {
             AlertDialog(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showDeleteAccountConfirmationDialog = false
                     passwordForDeletion = ""
                 },
                 title = { Text("Confirm Delete Account") },
-                text = { 
+                text = {
                     Text(
                         "WARNING: This will permanently delete your account and all associated data. This action cannot be undone. Are you absolutely sure?",
                         style = MaterialTheme.typography.bodyMedium,
@@ -539,12 +423,12 @@ fun SettingsScreen(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
-                                userViewModel.deleteAccount(userData?.email ?: "",
+                                userViewModel.deleteAccount(
+                                    userData?.email ?: "",
                                     encryptPassword(passwordForDeletion)
                                 )
                                 showDeleteAccountConfirmationDialog = false
                                 passwordForDeletion = ""
-                                // Navigate to home screen after account deletion
                                 navController.navigate(Routes.HOME_SCREEN) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -556,7 +440,7 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { 
+                        onClick = {
                             showDeleteAccountConfirmationDialog = false
                             passwordForDeletion = ""
                         }
@@ -568,4 +452,3 @@ fun SettingsScreen(
         }
     }
 }
-

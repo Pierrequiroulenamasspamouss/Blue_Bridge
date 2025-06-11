@@ -159,4 +159,21 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
             false
         }
     }
+
+
+    fun getSavedWells() {
+        viewModelScope.launch {
+            _wellsListState.value = UiState.Loading
+            try {
+                val savedWells = repository.getSavedWells()
+                _wellsListState.value = UiState.Success(savedWells)
+                _actionState.value = ActionState.Success("Saved wells loaded successfully")
+            } catch (e: Exception) {
+                _wellsListState.value =
+                    UiState.Error(e.message ?: "Failed to load saved wells")
+                _actionState.value = ActionState.Error(e.message ?: "Failed to load saved wells")
+            }
+        }
+    }
+
 }

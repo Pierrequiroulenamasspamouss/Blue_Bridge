@@ -2,10 +2,8 @@ package com.bluebridge.bluebridgeapp.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,11 +51,10 @@ import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -65,7 +62,8 @@ fun ProfileScreen(
     userViewModel: UserViewModel,
 
 ) {
-    val currentTime = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+    val currentTime = sdf.format(Date())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -319,27 +317,7 @@ fun ProfileScreen(
             
             // Easter egg - clickable card for role
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    easterEggCount++
-                    if (easterEggCount >= 6) {
-                        scope.launch {
-                            val message = when (easterEggCount) {
-                                6 -> "Easter egg mode activated! Click 5 more times..."
-                                7 -> "Keep going... 4 more clicks!"
-                                8 -> "Almost there... 3 more clicks!"
-                                9 -> "So close... 2 more clicks!"
-                                10 -> "One more click!"
-                                11 -> "Congratulations! You've unlocked the secret game!"
-                                else -> "Easter egg activated: ${easterEggCount - 5}"
-                            }
-                            snackbarHostState.showSnackbar(message)
-                            if (easterEggCount >= 11) {
-                                navController.navigate("easter_egg")
-                            }
-                        }
-                    }
-                }
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier

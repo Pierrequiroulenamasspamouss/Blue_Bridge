@@ -2,6 +2,7 @@ package com.bluebridge.bluebridgeapp.ui.screens
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,12 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -28,9 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,26 +52,27 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, navController: NavController) {
+    // Observe the wells list state from ViewModel
     val wellsState = wellViewModel.wellsListState.value
-    val wells: List<WellData> = when (wellsState) {
+    val wellsList = when (wellsState) {
         is UiState.Success -> wellsState.data
         else -> emptyList()
     }
-    
+
     val actionState = wellViewModel.actionState.value
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Dialog state for well deletion confirmation
-    var (wellToDelete, setWellToDelete) = remember { mutableStateOf<WellData?>(null) }
-    
+    var wellToDelete by remember { mutableStateOf<WellData?>(null) }
+
     // Get current user data to check if well owner or admin
     val userState = userViewModel.state.value
     val isWellOwner = remember { mutableStateOf(false) }
     val isAdmin = remember { mutableStateOf(false) }
     val tempAdminMode = remember { mutableStateOf(false) }
-    
+
     // Get user data from UserViewModel
     LaunchedEffect(userState) {
         if (userState is UiState.Success<*>) {
@@ -77,7 +81,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                 isWellOwner.value = userData.role.equals("well_owner", ignoreCase = true)
                 isAdmin.value = userData.role.equals("admin", ignoreCase = true)
             }
-            
+
             // Check shared preferences for temporary admin mode
             context.getSharedPreferences("bluebridge", Context.MODE_PRIVATE).let { prefs ->
                 tempAdminMode.value = prefs.getBoolean("temp_admin_mode", false)
@@ -85,11 +89,12 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
         }
     }
 
-    // Force refresh the wells list when screen is displayed
+    // Load locally saved wells when the screen is displayed
     LaunchedEffect(Unit) {
-        wellViewModel.loadWells()
+        wellViewModel.getSavedWells()
+        Log.d("MonitorScreen", "got saved wells: ")
     }
-    
+
     // Show snackbar for action state updates
     LaunchedEffect(actionState) {
         when (actionState) {
@@ -123,12 +128,12 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                 text = "My Wells",
                 style = MaterialTheme.typography.headlineMedium
             )
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { wellViewModel.loadWells() }
+                    onClick = { wellViewModel.getSavedWells() }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
@@ -138,7 +143,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Refresh")
                 }
-                
+
                 Button(
                     onClick = { navController.navigate(Routes.BROWSE_WELLS_SCREEN) }
                 ) {
@@ -146,87 +151,119 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                 }
             }
         }
-        
-        if (wells.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+
+        when (wellsState) {
+            is UiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No wells saved",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Browse wells to add them to your monitoring list",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    
-                    if (isWellOwner.value || isAdmin.value || tempAdminMode.value) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = {
-                                val newWellId = 1
-                                navController.navigate("${Routes.WELL_CONFIG_SCREEN}/$newWellId")
-                            }
+                    CircularProgressIndicator()
+                }
+            }
+            is UiState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Error: ${wellsState.message}")
+                }
+            }
+            is UiState.Success -> {
+                if (wellsList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Well",
-                                modifier = Modifier.size(18.dp)
+                            Text(
+                                text = "No wells saved",
+                                style = MaterialTheme.typography.titleLarge
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add New Well")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Browse wells to add them to your monitoring list",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+
+                            if (isWellOwner.value || isAdmin.value || tempAdminMode.value) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = {
+                                        navController.navigate("${Routes.WELL_CONFIG_SCREEN}/new")
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Add Well",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Add New Well")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(wellsList.size) { index ->
+                            val well = wellsList[index]
+                            EnhancedWellCard(
+                                well = well,
+                                onClick = {
+                                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                                },
+                                onNavigateClick = {
+                                    navController.navigate(
+                                        "${Routes.COMPASS_SCREEN}?" +
+                                                "lat=${well.wellLocation?.latitude}" +
+                                                "&lon=${well.wellLocation?.longitude}" +
+                                                "&name=${well.wellName}"
+                                    )
+                                },
+                                onDeleteClick = { wellToDelete = well }
+                            )
                         }
                     }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(wells) { well ->
-                    EnhancedWellCard(
-                        well = well,
-                        onClick = { navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}") },
-                        onNavigateClick = {
-                            navController.navigate("${Routes.COMPASS_SCREEN}?lat=${well.wellLocation.latitude}&lon=${well.wellLocation.longitude}&name=${well.wellName}")
-                        }
-                    )
-                }
+            UiState.Empty -> {
+                // Handle empty state if needed
             }
         }
     }
-    
+
     // Well deletion confirmation dialog
-    if (wellToDelete != null) {
+    wellToDelete?.let { well ->
         AlertDialog(
-            onDismissRequest = { setWellToDelete(null) },
+            onDismissRequest = { wellToDelete = null },
             title = { Text("Delete Well") },
             text = { Text("Are you sure you want to delete this well? This action cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
-                        wellViewModel.deleteWell(wellToDelete.id.toString())
-                        setWellToDelete(null)
+                        well.id?.let { id ->
+                            wellViewModel.deleteWell(id.toString())
+                        }
+                        wellToDelete = null
                     }
                 ) {
                     Text("Delete")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { setWellToDelete(null) }) {
+                TextButton(onClick = { wellToDelete = null }) {
                     Text("Cancel")
                 }
             }
         )
     }
 }
-

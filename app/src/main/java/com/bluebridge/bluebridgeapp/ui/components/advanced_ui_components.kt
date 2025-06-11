@@ -63,8 +63,8 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
 @Composable
@@ -151,7 +151,6 @@ fun PasswordField(
 }
 
 @SuppressLint("ClickableViewAccessibility")
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MiniMap(
     currentLocation: Location? = null,
@@ -161,6 +160,10 @@ fun MiniMap(
 ) {
     val context = LocalContext.current
     var mapView by remember { mutableStateOf<MapView?>(null) }
+    val dateFormat = remember {
+        // Ensure this format is compatible with your backend or how you parse it elsewhere.
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
+    }
 
     Card(
         modifier = modifier,
@@ -205,7 +208,7 @@ fun MiniMap(
                                     Location(
                                         geoPoint.latitude,
                                         geoPoint.longitude,
-                                        LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                                        dateFormat.format(Date())
                                     )
                                 )
                             }
@@ -242,7 +245,7 @@ fun MiniMap(
                     currentLocation?.let { loc ->
                         mapView?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
                         onLocationSelected(loc.copy(
-                            lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+                            lastUpdated = dateFormat.format(Date())
                             )
                         )
                     }

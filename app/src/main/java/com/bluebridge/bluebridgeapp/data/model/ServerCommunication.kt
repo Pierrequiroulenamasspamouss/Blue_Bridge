@@ -130,7 +130,7 @@ data class DeleteAccountResponse(
  */
 @Serializable
 data class NotificationTokenRequest(
-    val email: String,
+    val userId: String,
     val token: String,
     val deviceToken: String
 )

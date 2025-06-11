@@ -20,6 +20,7 @@ import com.bluebridge.bluebridgeapp.ui.screens.CompassScreen
 import com.bluebridge.bluebridgeapp.ui.screens.CreditsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.EasterEgg
 import com.bluebridge.bluebridgeapp.ui.screens.EditWaterNeedsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.FeatureNotImplementedScreen
 import com.bluebridge.bluebridgeapp.ui.screens.HomeScreen
 import com.bluebridge.bluebridgeapp.ui.screens.LoadingScreen
 import com.bluebridge.bluebridgeapp.ui.screens.LoginScreen
@@ -52,13 +53,15 @@ fun NavigationGraph(
     weatherViewModel: WeatherViewModel,
     smsViewModel: SmsViewModel
 ) {
-    
+
     NavHost(
         navController = navController,
         startDestination = Routes.HOME_SCREEN,
         modifier = modifier
     ) {
-
+        composable(Routes.FEATURE_NOT_IMPLEMENTED) {
+            FeatureNotImplementedScreen(navController = navController) { navController.popBackStack() }
+        }
         composable(Routes.EDIT_WATER_NEEDS_SCREEN) {
             val userState = userViewModel.state.value
             val userData = (userState as? UiState.Success<UserData>)?.data
@@ -194,12 +197,15 @@ fun NavigationGraph(
         // Well Config Screen
         composable(
             route = "${Routes.WELL_CONFIG_SCREEN}/{wellId}",
-            arguments = listOf(navArgument("wellId") { type = NavType.IntType })
+            arguments = listOf(navArgument("wellId") {
+                type = NavType.StringType
+            })
         ) { backStackEntry ->
-            val wellId = backStackEntry.arguments?.getInt("wellId") ?: 0
+            val wellIdParam = backStackEntry.arguments?.getString("wellId") ?: ""
             val userState = userViewModel.state.value
             val userData = (userState as? UiState.Success<UserData>)?.data
 
+            // Check authentication first
             if (userData == null || userData.role == "guest") {
                 LaunchedEffect(Unit) {
                     navController.navigate(Routes.LOGIN_SCREEN) {
@@ -207,7 +213,17 @@ fun NavigationGraph(
                     }
                 }
                 LoadingScreen()
-            } else {
+            }
+            // Handle new well case
+            else if (wellIdParam == Routes.WELL_CONFIG_NEW) {
+                FeatureNotImplementedScreen(
+                    onBackClick = { navController.popBackStack() },
+                    navController = navController
+                )
+            }
+            // Handle existing well case
+            else {
+                val wellId = wellIdParam.toIntOrNull() ?: 0
                 WellConfigScreen(
                     navController = navController,
                     wellViewModel = wellViewModel,
@@ -216,7 +232,6 @@ fun NavigationGraph(
                 )
             }
         }
-
         // Settings Screen
         composable(Routes.SETTINGS_SCREEN) {
             val userState = userViewModel.state.value
@@ -351,7 +366,9 @@ fun NavigationGraph(
         composable(Routes.WEATHER_SCREEN) {
             WeatherScreen(
                 userViewModel = userViewModel,
-                weatherViewModel = weatherViewModel
+                weatherViewModel = weatherViewModel,
+                modifier = modifier,
+                navController = navController,
             )
         }
 

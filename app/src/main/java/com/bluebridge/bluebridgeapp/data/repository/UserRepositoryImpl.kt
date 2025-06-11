@@ -88,12 +88,14 @@ class UserRepositoryImpl(
     override suspend fun getRoleValue(): Int {
         return getRole().let { role ->
             // Define user roles
+            val unregisteredRole = 0
             val guestRole = 1
             val userRole = 2
             val wellOwnerRole = 3
             val adminRole = 4
 
             when (role) {
+                "unregistered" -> unregisteredRole
                 "guest" -> guestRole
                 "user" -> userRole
                 "well_owner" -> wellOwnerRole
@@ -116,6 +118,13 @@ class UserRepositoryImpl(
         return result
     }
 
+    override suspend fun getThemePreference(): Int {
+        return preferences.getThemePreference() // You'll need to implement this in UserPreferences
+    }
+
+    override suspend fun saveThemePreference(theme: Int) {
+        preferences.saveThemePreference(theme) // You'll need to implement this in UserPreferences
+    }
 
     override suspend fun clearUserData() {
         Log.d("UserRepository", "Clearing user data from DataStore")
@@ -131,7 +140,7 @@ class UserRepositoryImpl(
     override suspend fun saveUserData(userData: UserData) = preferences.saveUserData(userData)
 
     override suspend fun logout() {
-        clearUserData()
+                clearUserData()
     }
 
     override suspend fun deleteAccount(deleteRequest: DeleteAccountRequest): Boolean = withContext(Dispatchers.IO) {
@@ -287,15 +296,15 @@ class UserRepositoryImpl(
     }
 
     override suspend fun registerNotificationToken(
-        email: String, 
+        userId: String,
         authToken: String, 
         fcmToken: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            Log.d("UserRepository", "Registering notification token for $email")
+            Log.d("UserRepository", "Registering notification token for user $userId")
             
             val request = NotificationTokenRequest(
-                email = email,
+                userId = userId,
                 token = authToken,
                 deviceToken = fcmToken
             )
@@ -317,15 +326,15 @@ class UserRepositoryImpl(
     }
 
     override suspend fun unregisterNotificationToken(
-        email: String, 
-        authToken: String, 
+        userId: String,
+        authToken: String,
         fcmToken: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            Log.d("UserRepository", "Unregistering notification token for $email")
+            Log.d("UserRepository", "Unregistering notification token for $userId")
             
             val request = NotificationTokenRequest(
-                email = email,
+                userId = userId,
                 token = authToken,
                 deviceToken = fcmToken
             )

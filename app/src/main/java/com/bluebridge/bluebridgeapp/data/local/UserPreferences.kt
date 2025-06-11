@@ -44,7 +44,7 @@ object PreferencesKeys {
 }
 
 class UserPreferences(context: Context) {
-
+    private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     private val dataStore: DataStore<Preferences> = context.userDataStore
 
     val userDataFlow: Flow<UserData?> = dataStore.data
@@ -128,10 +128,12 @@ class UserPreferences(context: Context) {
 
     suspend fun clearUserData() {
         Log.d("UserPreferences", "Clearing all user data")
+        var clearedPreferences: Preferences? = null
         dataStore.edit { preferences ->
             preferences.clear()
+            clearedPreferences = preferences
         }
-        Log.d("UserPreferences", "User data cleared successfully")
+        Log.d("UserPreferences", "User data cleared successfully: New user data: $clearedPreferences")
     }
 
     suspend fun saveUserData(userData: UserData) {
@@ -166,6 +168,14 @@ class UserPreferences(context: Context) {
         Log.d("UserPreferences", "User data saved successfully")
     }
 
+
+    fun getThemePreference(): Int {
+        return prefs.getInt("theme_preference", 0) // Default to system theme
+    }
+
+    fun saveThemePreference(theme: Int) {
+        prefs.edit().putInt("theme_preference", theme).apply()
+    }
     suspend fun updateThemePreference(theme: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME] = theme

@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.UserData
@@ -93,7 +94,7 @@ fun BrowseWellsScreen(
     var showStats by remember { mutableStateOf(false) }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
     var wells by remember { mutableStateOf<List<WellData>>(emptyList()) }
-
+    val wellPreferences = WellPreferences(context)
     // Load initial data
     LaunchedEffect(Unit) {
         loadWells(
@@ -290,7 +291,7 @@ fun BrowseWellsScreen(
                                 onNavigateClick = {
                                     navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
                                 }
-                            )
+                            ) {}
                         }
 
                         if (hasMorePages) {
@@ -316,7 +317,14 @@ fun BrowseWellsScreen(
                 well = well,
                 onDismiss = { selectedWell = null },
                 onNavigate = { navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}") },
-                onAdd = { /* No action needed for now */ }
+                onAdd = {
+                    // Launch a coroutine to handle the suspend function
+                    coroutineScope.launch {  // or viewModelScope if in a ViewModel
+                        wellPreferences.saveWell(well)
+                    }
+                    selectedWell = null
+                    //navController.navigate(Routes.MONITORING_SCREEN)
+                }
             )
         }
     }

@@ -28,9 +28,9 @@ class ServerViewModel(
     val needsUpdate: StateFlow<Boolean> = _needsUpdate.asStateFlow()
 
     private val _isServerReachable = MutableStateFlow(false)
-    val isServerReachable: StateFlow<Boolean> = _isServerReachable.asStateFlow()
 
-    fun getServerStatus() {
+
+    fun getServerStatus(){
         viewModelScope.launch {
             try {
                 _serverState.value = ServerState.Loading

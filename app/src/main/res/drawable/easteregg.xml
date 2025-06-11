@@ -5,7 +5,7 @@
         android:width="100dp"
         android:height="100dp"
         android:gravity="center">
-        <bitmap android:src="@drawable/joel"
+        <bitmap android:src="@drawable/app_logo"
             tools:ignore="PrivateResource" />
     </item>
 </layer-list>

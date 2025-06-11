@@ -7,7 +7,6 @@ import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
-import com.bluebridge.bluebridgeapp.viewmodels.WellPickerViewModel.WellFilters
 
 open class WellEvents {
     data class SaveWell(val wellId: Int) : WellEvents()
@@ -21,12 +20,12 @@ open class WellEvents {
     data class EspIdEntered(val espId: String) : WellEvents()
 }
 
-open class WellPickerEvent {
-    data class Refresh(val context: Context, val snackbarHostState: SnackbarHostState) : WellPickerEvent()
-    data class UpdateSearchQuery(val query: String) : WellPickerEvent()
-    data class UpdateWaterTypeFilter(val waterType: String?) : WellPickerEvent()
-    data class UpdateStatusFilter(val status: String?) : WellPickerEvent()
-    object ResetFilters : WellPickerEvent()
+open class BrowseWellsEvent {
+    data class Refresh(val context: Context, val snackbarHostState: SnackbarHostState) : BrowseWellsEvent()
+    data class UpdateSearchQuery(val query: String) : BrowseWellsEvent()
+    data class UpdateWaterTypeFilter(val waterType: String?) : BrowseWellsEvent()
+    data class UpdateStatusFilter(val status: String?) : BrowseWellsEvent()
+    object ResetFilters : BrowseWellsEvent()
 }
 
 open class UserEvent {

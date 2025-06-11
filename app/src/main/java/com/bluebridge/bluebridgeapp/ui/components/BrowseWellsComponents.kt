@@ -170,71 +170,7 @@ fun MapView(
     }
 }
 
-@Composable
-fun EnhancedWellCard(
-    well: WellData,
-    onClick: () -> Unit,
-    onNavigateClick: () -> Unit
-) {
-    // Calculate water level percentage safely outside composable
-    val waterLevelInfo = if (well.wellWaterLevel.toString().isNotBlank() && well.wellCapacity.isNotBlank()) {
-        calculateWaterLevelInfo(well.wellWaterLevel, well.wellCapacity)
-    } else null
 
-    Card(
-        Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onClick() }
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(well.wellName, style = MaterialTheme.typography.titleMedium)
-                StatusIndicator(well.wellStatus)
-            }
-
-            Text(text = "Latitude: ${well.wellLocation.latitude}\n Longitude: ${well.wellLocation.longitude}" , style = MaterialTheme.typography.bodySmall)
-
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Type: ${well.wellWaterType}", style = MaterialTheme.typography.bodySmall)
-
-                if (well.wellCapacity.isNotBlank()) {
-                    Text("Capacity: ${well.wellCapacity}L", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            // Water level indicator using pre-calculated values
-            waterLevelInfo?.let { (progress, percentage) ->
-                LinearProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    color = when {
-                        percentage > 70 -> Color.Green
-                        percentage > 30 -> Color.Yellow
-                        else -> Color.Red
-                    }
-                )
-                Text("Water Level: $percentage%", style = MaterialTheme.typography.bodySmall)
-            }
-
-            // Navigate button
-            Button(
-                onClick = onNavigateClick,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Navigate")
-            }
-        }
-    }
-}
 
 @Composable
 fun EnhancedWellDetailsDialog(
@@ -317,7 +253,7 @@ fun EnhancedWellDetailsDialog(
 }
 
 // Helper functions to safely calculate water level information outside composables
-private fun calculateWaterLevelInfo(waterLevelStr: String, capacityStr: String): Pair<Float, Int>? {
+fun calculateWaterLevelInfo(waterLevelStr: String, capacityStr: String): Pair<Float, Int>? {
     return try {
         val waterLevel = waterLevelStr.toFloatOrNull() ?: return null
         val capacity = capacityStr.toFloatOrNull() ?: return null
