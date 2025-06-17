@@ -11,8 +11,6 @@ class ServerRepositoryImpl(
     private var _isServerReachable = true
     override val isServerReachable: Boolean get() = _isServerReachable
 
-
-
     /*This function's only purpose is to check if the server is reachable. not get the data */
     override suspend fun getServerStatus(): Result<ServerStatusData> {
         return try {

@@ -4,7 +4,9 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
-import androidx.compose.material3.SnackbarHostState
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
+
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.repository.WellRepositoryImpl
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
@@ -41,13 +43,13 @@ fun checkInternetConnection(context: Context): Boolean {
  */
 suspend fun fetchWellDetailsFromServer(
     espId: String,
-    snackbarHostState: SnackbarHostState,
     context: Context
 ): WellData? = withContext(Dispatchers.IO) {
     try {
         if (!checkInternetConnection(context)) {
             withContext(Dispatchers.Main) {
-                snackbarHostState.showSnackbar("No internet connection")
+                AppEventChannel.sendEvent(AppEvent.ShowError("No internet connection"))
+
             }
             Log.d("fetchWellDetails", "No internet connection")
             return@withContext null
@@ -63,13 +65,14 @@ suspend fun fetchWellDetailsFromServer(
         wellData
     } catch (e: TimeoutCancellationException) {
         withContext(Dispatchers.Main) {
-            snackbarHostState.showSnackbar("Connection timeout")
+            AppEventChannel.sendEvent(AppEvent.ShowError("Connection timeout"))
         }
         Log.e("fetchWellDetails", "Timeout: ${e.message}")
         null
     } catch (e: Exception) {
         withContext(Dispatchers.Main) {
-            snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Unknown error"}")
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.localizedMessage ?: "Unknown error"}"))
+
         }
         Log.e("fetchWellDetails", "Error: ${e.message}", e)
         null
@@ -81,7 +84,6 @@ suspend fun fetchWellDetailsFromServer(
  */
 suspend fun retrieveDataFromServer(
     id: Int = 0,
-    snackbarHostState: SnackbarHostState,
     wellRepositoryImpl: WellRepositoryImpl,
     context: Context
 ): Boolean {
@@ -89,7 +91,7 @@ suspend fun retrieveDataFromServer(
         try {
             if (!checkInternetConnection(context)) {
                 withContext(Dispatchers.Main) {
-                    snackbarHostState.showSnackbar("No internet connection")
+                    AppEventChannel.sendEvent(AppEvent.ShowError("No internet connection"))
                 }
                 Log.d("InternetConnection", "No internet connection")
                 return@withContext false
@@ -99,7 +101,7 @@ suspend fun retrieveDataFromServer(
             val currentList = wellRepositoryImpl.wellListFlow.first()
             val matchingWell = currentList.find { it.id == id } ?: run {
                 withContext(Dispatchers.Main) {
-                    snackbarHostState.showSnackbar("Well with ID $id not found")
+                    AppEventChannel.sendEvent(AppEvent.ShowError("Well with ID $id not found"))
                 }
                 return@withContext false
             }
@@ -108,7 +110,7 @@ suspend fun retrieveDataFromServer(
             val espId = matchingWell.espId
             Log.d("DataFetch", "Fetching data for ESP ID: $espId")
             
-            val newData = fetchWellDetailsFromServer(espId, snackbarHostState, context) ?: return@withContext false
+            val newData = fetchWellDetailsFromServer(espId, context) ?: return@withContext false
 
             // 3. Update only the timestamp and the id
             val updatedWell = newData
@@ -124,7 +126,7 @@ suspend fun retrieveDataFromServer(
             true
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Unknown error"}")
+                AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.localizedMessage ?: "Unknown error"}"))
             }
             false
         }
@@ -159,7 +161,6 @@ suspend fun refreshSingleWell(
         val success = withTimeoutOrNull(5_000) {
             retrieveDataFromServer(
                 id = wellId,
-                snackbarHostState = SnackbarHostState(),
                 wellRepositoryImpl = wellRepositoryImpl,
                 context = context
             )

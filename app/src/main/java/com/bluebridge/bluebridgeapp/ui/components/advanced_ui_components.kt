@@ -5,8 +5,6 @@ package com.bluebridge.bluebridgeapp.ui.components
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -107,7 +105,7 @@ fun PasswordField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        label = { Text( "$label *")    },
         singleLine = true,
         visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(
@@ -149,6 +147,50 @@ fun PasswordField(
         }
     }
 }
+
+
+@Composable
+fun NameField(value: String, onValueChange: (String) -> Unit, label: String) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+    )
+}
+
+@Composable
+fun EmailField(value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Email *") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
+        )
+    )
+}
+
+@Composable
+fun PhoneField(value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.all { c -> c.isDigit() || c == '+' }) onValueChange(it) },
+        label = { Text("Phone number") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Phone,
+            imeAction = ImeAction.Next
+        )
+    )
+}
+
 
 @SuppressLint("ClickableViewAccessibility")
 @Composable
@@ -267,7 +309,8 @@ fun MiniMap(
 fun Bitmap.toDrawable(resources: android.content.res.Resources): android.graphics.drawable.Drawable {
     return android.graphics.drawable.BitmapDrawable(resources, this)
 }
-// Helper composable functions needed for WellField
+
+
 @Composable
 fun TextComponent(text: String, fontSize: androidx.compose.ui.unit.TextUnit) {
     Text(

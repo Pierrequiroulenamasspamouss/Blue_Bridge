@@ -22,9 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -43,6 +40,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
@@ -56,17 +55,17 @@ import kotlinx.serialization.InternalSerializationApi
 @Composable
 fun LoginScreen(
     navController: NavController,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
 ) {
-//    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+
     val userState by userViewModel.state
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
+
 
     // Handle user state changes
     LaunchedEffect(userState) {
@@ -78,6 +77,7 @@ fun LoginScreen(
             }
             is UiState.Error -> {
                 isLoading = false
+/* NOT USED FOR NOW. TODO : use them by fixing the errorMessage that is returned
                 val errorMessage = when ((userState as UiState.Error).message) {
                     "Invalid email or password" -> "The email or password you entered is incorrect. Please check your credentials and try again."
                     "Account not found" -> "No account found with this email address. Please check your email or sign up for a new account."
@@ -97,12 +97,9 @@ fun LoginScreen(
                     "Rate limited" -> "Too many login attempts. Please wait a few minutes before trying again."
                     else -> "An unexpected error occurred. Please try again or contact support if the problem persists."
                 }
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = errorMessage,
-                        duration = SnackbarDuration.Long
-                    )
-                }
+                AppEventChannel.sendEvent(AppEvent.ShowError(errorMessage))
+
+ */
             }
             else -> {}
         }
@@ -119,7 +116,6 @@ fun LoginScreen(
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -167,10 +163,22 @@ fun LoginScreen(
             // Login button
             Button(
                 onClick = {
+                    if (email.isBlank() || password.isBlank()) {
+                        coroutineScope.launch {
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Please enter both email and password"))
+                        }
+                            return@Button
+                    }
+
                     isLoading = true
                     coroutineScope.launch {
-                        val request = LoginRequest(email = email, password = encryptPassword(password))
-                        userViewModel.login(request)
+                        try {
+                            val request = LoginRequest(email = email, password = encryptPassword(password))
+                            userViewModel.login(request)
+                        } catch (e: Exception) {
+                            isLoading = false
+                            AppEventChannel.sendEvent(AppEvent.ShowError("An error occurred during login"))
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -197,7 +205,11 @@ fun LoginScreen(
             OutlinedButton(
                 onClick = {
                     coroutineScope.launch {
-                        userViewModel.loginAsGuest()
+                        try {
+                            userViewModel.loginAsGuest()
+                        } catch (e: Exception) {
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Failed to login as guest : $e"))
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

@@ -21,7 +21,6 @@ interface ServerRepository {
 }
 
 interface UserRepository {
-    suspend fun getThemePreference(): Int
     suspend fun saveThemePreference(theme: Int)
     suspend fun getRole(): String
     suspend fun getRoleValue(): Int
@@ -37,7 +36,6 @@ interface UserRepository {
     suspend fun isLoggedIn(): Boolean
     suspend fun saveUserData(userData: UserData)
     suspend fun logout()
-    suspend fun updateThemePreference(theme: Int)
     suspend fun getTheme(): Int
     suspend fun updateProfileOnServer(userData: UserData): Boolean
     suspend fun updateWaterNeedsOnServer(waterNeeds: List<WaterNeed>): Boolean

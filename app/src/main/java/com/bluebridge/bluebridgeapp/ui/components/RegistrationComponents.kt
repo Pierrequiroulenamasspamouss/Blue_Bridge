@@ -39,7 +39,7 @@ fun WaterNeedsSection(
     onTypeChange: (String) -> Unit,
     desc: String,
     onDescChange: (String) -> Unit,
-    priority: Int,
+    priority: Int?,
     onPriorityChange: (Int) -> Unit,
     customType: String,
     onCustomTypeChange: (String) -> Unit
@@ -66,14 +66,16 @@ fun WaterNeedsSection(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                WaterUsageTypeSelector(
-                    currentWaterNeedType = type,
-                    onWaterNeedTypeChange = onTypeChange,
-                    currentPriority = priority,
-                    onPriorityChange = onPriorityChange,
-                    customType = customType,
-                    onCustomTypeChange = onCustomTypeChange
-                )
+                if (priority != null) {
+                    WaterUsageTypeSelector(
+                        currentWaterNeedType = type,
+                        onWaterNeedTypeChange = onTypeChange,
+                        currentPriority = priority,
+                        onPriorityChange = onPriorityChange,
+                        customType = customType,
+                        onCustomTypeChange = onCustomTypeChange
+                    )
+                }
 
                 OutlinedTextField(
                     value = desc,
@@ -96,12 +98,14 @@ fun WaterNeedsSection(
                                 else -> priority
                             }
 
-                            val newNeed = WaterNeed(
-                                amount = amountValue,
-                                usageType = if (type == "Other") customType else type,
-                                description = desc,
-                                priority = finalPriority
-                            )
+                            val newNeed = finalPriority?.let {
+                                WaterNeed(
+                                    amount = amountValue,
+                                    usageType = if (type == "Other") customType else type,
+                                    description = desc,
+                                    priority = it
+                                )
+                            }
 
                             onAmountChange("")
                             onTypeChange("")

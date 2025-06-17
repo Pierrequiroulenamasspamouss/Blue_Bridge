@@ -16,9 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,10 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
@@ -42,10 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
+import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteConfirmationDialog
+import com.bluebridge.bluebridgeapp.ui.Dialogs.WaterNeedDialog
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
-import com.bluebridge.bluebridgeapp.ui.components.WaterNeedDialog
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -57,17 +55,18 @@ fun EditWaterNeedsScreen(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Initialize WaterNeedsManager
+
+    // Initialize WaterNeedsManager with event handler
     val waterManager = remember {
         WaterNeedsManager(
             coroutineScope = coroutineScope,
-            snackbarHostState = snackbarHostState,
             userViewModel = userViewModel,
-            navController = navController
+            navController = navController,
         )
     }
+
+
 
     // Load initial data
     LaunchedEffect(Unit) {
@@ -82,9 +81,8 @@ fun EditWaterNeedsScreen(
                 }
             }
         } catch (e: Exception) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Error loading water needs: ${e.message}")
-            }
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error loading water needs: ${e.message}"))
+
         } finally {
             waterManager.isLoading = false
         }
@@ -100,7 +98,7 @@ fun EditWaterNeedsScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+
     ) { innerPadding ->
         Box(modifier = Modifier
             .fillMaxSize()
@@ -146,7 +144,7 @@ fun EditWaterNeedsScreen(
                 WaterNeedDialog(
                     title = "Add Water Need",
                     state = waterManager,
-                    onConfirm = { waterManager.addWaterNeed() },
+                    onConfirm = { coroutineScope.launch { waterManager.addWaterNeed() }  },
                     onDismiss = { waterManager.showAddDialog = false }
                 )
             }
@@ -155,14 +153,14 @@ fun EditWaterNeedsScreen(
                 WaterNeedDialog(
                     title = "Edit Water Need",
                     state = waterManager,
-                    onConfirm = { waterManager.updateWaterNeed(waterManager.editingNeedIndex) },
+                    onConfirm = { coroutineScope.launch {waterManager.updateWaterNeed(waterManager.editingNeedIndex) }},
                     onDismiss = { waterManager.showEditDialog = false }
                 )
             }
 
             if (waterManager.showDeleteConfirmDialog) {
                 DeleteConfirmationDialog(
-                    onConfirm = { waterManager.confirmDelete() },
+                    onConfirm = { coroutineScope.launch {waterManager.confirmDelete()} },
                     onDismiss = { waterManager.showDeleteConfirmDialog = false }
                 )
             }
@@ -259,27 +257,3 @@ private fun ActionButtons(
     }
 }
 
-@Composable
-private fun DeleteConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Delete Water Need") },
-        text = { Text("Are you sure you want to delete this water need?") },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)
-            ) {
-                Text("Delete")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}

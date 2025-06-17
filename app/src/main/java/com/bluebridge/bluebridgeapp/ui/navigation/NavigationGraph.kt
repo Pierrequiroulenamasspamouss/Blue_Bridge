@@ -13,7 +13,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.bluebridge.bluebridgeapp.data.model.UserData
-import com.bluebridge.bluebridgeapp.network.SmsApi
 import com.bluebridge.bluebridgeapp.ui.screens.AdMobScreen
 import com.bluebridge.bluebridgeapp.ui.screens.BrowseWellsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.CompassScreen
@@ -388,10 +387,7 @@ fun NavigationGraph(
             } else {
 
                 UrgentSmsScreen(
-                    navController = navController,
                     smsViewModel = smsViewModel,
-                    userViewModel = userViewModel,
-                    smsApi = SmsApi(context),
                     modifier = modifier
                 )
             }

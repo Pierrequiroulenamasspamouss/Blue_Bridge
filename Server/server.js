@@ -7,8 +7,8 @@
 // ======================
 // Configuration Constants
 // ======================
-const appLatestVersion = '0.1.2';
-const serverVersion = '1.0.1';
+const appLatestVersion = '0.1.3';
+const serverVersion = '1.0.2';
 const isDev = process.env.NODE_ENV === 'development' || true;
 const PORT = process.env.PORT || 80;
 const httpsPort = process.env.HTTPS_PORT || 443;
@@ -41,6 +41,8 @@ const models = require('./models');
 // Route Imports
 // ===============
 const routes = require('./routes');
+const { listenerCount } = require('process');
+const { log } = require('console');
 
 // =================
 // Helper Functions
@@ -107,6 +109,8 @@ app.use((req, res, next) => {
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'assets', 'favicon.ico')));
 app.get('/', (req, res) => res.redirect('/home'));
 app.get('/home', (req, res) => res.send(readHtmlFile('welcomePage')));
+app.get('/about', (req, res) => res.send(readHtmlFile('about')));
+app.get('/services', (req, res) => res.send(readHtmlFile('services')));
 app.get('/send-notifications', (req, res) => res.send(readHtmlFile('send-notifications')));
 app.get('/support', (req, res) => res.send(readHtmlFile('support')));
 
@@ -185,8 +189,8 @@ app.get('/tree', (req, res) => {
                         <th>Method</th>
                         <th>Path</th>
                     </tr>`;
-        
-                    
+    
+                
         for (const { method, path } of grouped[section]) {
             const link = method === 'GET' ? `<a href="${path}" target="_blank">${path}</a>` : path;
             routesContent += `
@@ -265,6 +269,8 @@ async function startServer() {
     }
 }
 
+
+
 // ===================
 // Process Handlers
 // ===================
@@ -279,3 +285,4 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start the server
 startServer();
+

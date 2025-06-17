@@ -36,13 +36,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,9 +75,8 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val userState by userViewModel.state
-    var currentUserRole by remember { mutableStateOf(0) }
+    var currentUserRole by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
@@ -87,11 +85,9 @@ fun HomeScreen(
     var isOnline by remember { mutableStateOf(isNetworkAvailable(context)) }
 
     // Define user roles
-    val unregisteredRole = 0
     val guestRole = 1
     val userRole = 2
     val wellOwnerRole = 3
-    val adminRole = 4
     //Get the role's value for easy permissions
     LaunchedEffect(Unit) {
         currentUserRole = userViewModel.repository.getRoleValue()
@@ -109,9 +105,7 @@ fun HomeScreen(
     } else null
 
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

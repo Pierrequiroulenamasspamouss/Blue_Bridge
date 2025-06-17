@@ -7,20 +7,16 @@ import android.preference.PreferenceManager
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +36,7 @@ import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
 import com.bluebridge.bluebridgeapp.data.model.hasValidCoordinates
+import com.bluebridge.bluebridgeapp.ui.Dialogs.WellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
@@ -171,38 +168,28 @@ fun MapScreen(
 
     // Well details dialog
     selectedWell?.let { well ->
-        AlertDialog(
-            onDismissRequest = { selectedWell = null },
-            title = { Text(well.wellName) },
-            text = {
-                Column {
-                    Text("Status: ${well.wellStatus}")
-                    if (well.wellWaterLevel.isNotBlank()) Text("Water Level: ${well.wellWaterLevel}L")
-                    if (well.wellCapacity.isNotBlank()) Text("Capacity: ${well.wellCapacity}L")
-                    if (well.wellWaterType.isNotBlank()) Text("Water Type: ${well.wellWaterType}")
-                }
+        WellDetailsDialog(
+            well = well,
+            onDismiss = { selectedWell = null },
+            onNavigateToDetails = {
+                navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                selectedWell = null
             },
-            confirmButton = {
-                Button(onClick = {
-                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
-                    selectedWell = null
-                }) { Text("Details") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    well.getLatitude().let { lat ->
-                        well.getLongitude().let { lon ->
-                            navController.navigate(
-                                "${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=${well.wellName}"
-                            )
-                        }
+            onNavigateToDirections = {
+                well.getLatitude().let { lat ->
+                    well.getLongitude().let { lon ->
+                        navController.navigate(
+                            "${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=${well.wellName}"
+                        )
                     }
-                    selectedWell = null
-                }) { Text("Directions") }
+                }
+                selectedWell = null
             }
         )
     }
 }
+
+
 
 // Helper extension function
 private fun UiState<List<WellData>>.dataOrEmpty(): List<WellData> {

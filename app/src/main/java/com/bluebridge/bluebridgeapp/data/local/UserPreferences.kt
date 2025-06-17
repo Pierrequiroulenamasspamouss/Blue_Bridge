@@ -176,11 +176,6 @@ class UserPreferences(context: Context) {
     fun saveThemePreference(theme: Int) {
         prefs.edit().putInt("theme_preference", theme).apply()
     }
-    suspend fun updateThemePreference(theme: Int) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.THEME] = theme
-        }
-    }
 
     suspend fun setUserWaterNeeds(waterNeeds: String) {
         dataStore.edit { preferences ->
@@ -199,19 +194,7 @@ class UserPreferences(context: Context) {
             }
         }
     }
-    
-    // Guest mode methods
-    suspend fun setGuestMode(isGuest: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.IS_GUEST] = isGuest
-            
-            if (!isGuest) {
-                // Clear the guest flag when logging out of guest mode
-                preferences.remove(PreferencesKeys.IS_GUEST)
-            }
-        }
-    }
-    
+
     // Push notification methods
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->

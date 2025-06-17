@@ -12,28 +12,26 @@ import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,16 +40,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.ui.components.EmailField
 import com.bluebridge.bluebridgeapp.ui.components.MiniMap
+import com.bluebridge.bluebridgeapp.ui.components.NameField
 import com.bluebridge.bluebridgeapp.ui.components.PasswordField
+import com.bluebridge.bluebridgeapp.ui.components.PhoneField
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedsSection
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
@@ -60,9 +62,9 @@ import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -74,8 +76,7 @@ fun RegisterScreen(
     userViewModel: UserViewModel
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     // Form state
     var email by remember { mutableStateOf("") }
@@ -91,12 +92,6 @@ fun RegisterScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     // Water needs state
-    var showWaterNeeds by remember { mutableStateOf(false) }
-    var waterNeedAmount by remember { mutableStateOf("") }
-    var waterNeedType by remember { mutableStateOf("") }
-    var waterNeedDesc by remember { mutableStateOf("") }
-    var waterNeedPriority by remember { mutableIntStateOf(6) }
-    var customWaterType by remember { mutableStateOf("") }
     val waterNeeds = remember { mutableStateListOf<WaterNeed>() }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
@@ -112,12 +107,8 @@ fun RegisterScreen(
             }
             is UiState.Error -> {
                 isLoading = false
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = (userState as UiState.Error).message,
-                        duration = SnackbarDuration.Long
-                    )
-                }
+
+                AppEventChannel.sendEvent(AppEvent.ShowError((userState as UiState.Error).message))
             }
             is UiState.Loading -> isLoading = true
             else -> isLoading = false
@@ -134,15 +125,26 @@ fun RegisterScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    val imeInsets = WindowInsets.ime.asPaddingValues()
+    val navigationBarsInsets = WindowInsets.navigationBars.asPaddingValues()
+
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    top = 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = with(LocalDensity.current) {
+                        maxOf(
+                            imeInsets.calculateBottomPadding(),
+                            navigationBarsInsets.calculateBottomPadding()
+                        ) + 16.dp
+                    }
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text("Create Account", style = MaterialTheme.typography.headlineMedium)
@@ -161,7 +163,7 @@ fun RegisterScreen(
             PasswordField(
                 confirmPassword, { confirmPassword = it }, "Confirm Password",
                 isVisible = isConfirmPasswordVisible,
-                onVisibilityChange = { isPasswordVisible = !isPasswordVisible }
+                onVisibilityChange = { isConfirmPasswordVisible = !isConfirmPasswordVisible }
             )
 
             NameField(firstName, { firstName = it }, "First Name")
@@ -176,7 +178,6 @@ fun RegisterScreen(
             Text("Your Location", style = MaterialTheme.typography.titleSmall)
             MiniMap(
                 currentLocation = currentLocation,
-                selectedLocation = selectedLocation,
                 onLocationSelected = { selectedLocation = it },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -184,22 +185,27 @@ fun RegisterScreen(
             )
 
             // Water needs
+            var showWaterNeeds = false
+            var waterNeedAmount: String? = null
+            var waterNeedType: String? = null
+            var waterNeedDesc: String? = null
+            var waterNeedPriority: Int? = null
+            var customWaterType: String? = null
             WaterNeedsSection(
                 showWaterNeeds = showWaterNeeds,
                 onToggle = { showWaterNeeds = !showWaterNeeds },
                 waterNeeds = waterNeeds,
-                amount = waterNeedAmount,
+                amount = waterNeedAmount.toString(),
                 onAmountChange = { waterNeedAmount = it },
-                type = waterNeedType,
+                type = waterNeedType.toString(),
                 onTypeChange = { waterNeedType = it },
-                desc = waterNeedDesc,
+                desc = waterNeedDesc.toString(),
                 onDescChange = { waterNeedDesc = it },
                 priority = waterNeedPriority,
                 onPriorityChange = { waterNeedPriority = it },
-                customType = customWaterType,
+                customType = customWaterType.toString(),
                 onCustomTypeChange = { customWaterType = it }
             )
-
             // Well owner toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -216,9 +222,12 @@ fun RegisterScreen(
             // Register button
             Button(
                 onClick = {
+
                     if (!validateForm(email, password, confirmPassword, firstName, lastName)) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Please fill all required fields")
+                        coroutineScope.launch {
+                            Log.e("RegisterScreen", "validateForm: email=$email, password=$password, confirmPassword=$confirmPassword, firstName=$firstName, lastName=$lastName")
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Please fill all required fields: "))
+                            Log.e("Registration", "Validation failed")
                         }
                         return@Button
                     }
@@ -260,47 +269,7 @@ private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium)
 }
 
-@Composable
-private fun NameField(value: String, onValueChange: (String) -> Unit, label: String) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-    )
-}
 
-@Composable
-private fun EmailField(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text("Email *") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Next
-        )
-    )
-}
-
-@Composable
-private fun PhoneField(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { if (it.all { c -> c.isDigit() || c == '+' }) onValueChange(it) },
-        label = { Text("Phone") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Phone,
-            imeAction = ImeAction.Next
-        )
-    )
-}
 
 private fun validateForm(
     email: String,

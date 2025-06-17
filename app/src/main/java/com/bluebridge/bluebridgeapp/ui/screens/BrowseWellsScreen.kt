@@ -29,8 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -46,14 +45,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
+import com.bluebridge.bluebridgeapp.ui.Dialogs.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
-import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.components.FiltersSection
 import com.bluebridge.bluebridgeapp.ui.components.MapView
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
@@ -71,7 +72,6 @@ fun BrowseWellsScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Pagination state
     var currentPage by remember { mutableIntStateOf(1) }
@@ -106,7 +106,6 @@ fun BrowseWellsScreen(
             minWaterLevel = minWaterLevel,
             maxWaterLevel = maxWaterLevel,
             context = context,
-            snackbarHostState = snackbarHostState,
             onSuccess = { newWells, hasMore ->
                 wells = newWells
                 hasMorePages = hasMore
@@ -129,7 +128,6 @@ fun BrowseWellsScreen(
                     minWaterLevel = minWaterLevel,
                     maxWaterLevel = maxWaterLevel,
                     context = context,
-                    snackbarHostState = snackbarHostState,
                     onSuccess = { newWells, hasMore ->
                         wells = wells + newWells
                         hasMorePages = hasMore
@@ -154,7 +152,6 @@ fun BrowseWellsScreen(
                 minWaterLevel = minWaterLevel,
                 maxWaterLevel = maxWaterLevel,
                 context = context,
-                snackbarHostState = snackbarHostState,
                 onSuccess = { newWells, hasMore ->
                     wells = newWells
                     hasMorePages = hasMore
@@ -203,7 +200,6 @@ fun BrowseWellsScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             // Search bar
@@ -253,13 +249,7 @@ fun BrowseWellsScreen(
                             espId = well.espId // Handle potential nulls
                         )
                     }.toList(), // Make sure it's a List<ShortenedWellData>
-                    userLocation = userLocation,
-                    onWellClicked = { well ->
-                        selectedWell = wells.find { it.id == 1 } //TODO: use the next number for the ID of the already saved wells on the app
-                    },
-                    onNavigateToWell = { lat, lon, name ->
-                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$name")
-                    }
+                    userLocation = userLocation
                 )
             } else {
                 // List view
@@ -339,7 +329,6 @@ private suspend fun loadWells(
     minWaterLevel: Int?,
     maxWaterLevel: Int?,
     context: Context,
-    snackbarHostState: SnackbarHostState,
     onSuccess: (List<WellData>, Boolean) -> Unit
 ) {
     try {
@@ -360,13 +349,13 @@ private suspend fun loadWells(
                 Log.d("BrowseWellsScreen", "Wells loaded successfully")
                 onSuccess(wellsResponse.data, 10 > page * pageSize)
             } else {
-                snackbarHostState.showSnackbar("No wells found")
+                AppEventChannel.sendEvent(AppEvent.ShowError("No wells found"))
             }
         } else {
-            snackbarHostState.showSnackbar("Failed to load wells")
+            AppEventChannel.sendEvent(AppEvent.ShowError("Failed to load wells"))
         }
     } catch (e: Exception) {
         Log.e("BrowseWellsScreen", "Error loading wells", e)
-        snackbarHostState.showSnackbar("Error: ${e.message}")
+        AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.message}"))
     }
 }

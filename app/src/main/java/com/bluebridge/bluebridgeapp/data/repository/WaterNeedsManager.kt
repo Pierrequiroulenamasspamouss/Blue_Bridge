@@ -1,24 +1,26 @@
 package com.bluebridge.bluebridgeapp.data.repository
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel.sendEvent
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-
 class WaterNeedsManager(
     private val coroutineScope: CoroutineScope,
-    private val snackbarHostState: SnackbarHostState,
     private val userViewModel: UserViewModel,
-    private val navController: NavController
+    private val navController: NavController,
 ) {
+    // Event channel for sending messages to UI
+
+
     // UI State
     var isLoading by mutableStateOf(false)
     var showAddDialog by mutableStateOf(false)
@@ -39,29 +41,31 @@ class WaterNeedsManager(
     val waterNeeds = mutableStateListOf<WaterNeed>()
 
     // CRUD Operations
-    fun addWaterNeed() {
+    suspend fun addWaterNeed() {
         val amount = newAmount.toIntOrNull() ?: 0
         when {
-            amount <= 0 -> showError("Please enter a valid amount")
-            newUsageType.isBlank() -> showError("Please select a usage type")
+            amount <= 0 -> sendEvent(AppEvent.ShowError("Please enter a valid amount"))
+            newUsageType.isBlank() -> sendEvent(AppEvent.ShowError("Please select a usage type"))
             else -> {
                 waterNeeds.add(createWaterNeed(amount))
                 resetForm()
                 showAddDialog = false
+                sendEvent(AppEvent.ShowSuccess("Water need added successfully"))
             }
         }
     }
 
-    fun updateWaterNeed(index: Int) {
+    suspend fun updateWaterNeed(index: Int) {
         val amount = newAmount.toIntOrNull() ?: 0
         when {
-            amount <= 0 -> showError("Please enter a valid amount")
-            newUsageType.isBlank() -> showError("Please select a usage type")
+            amount <= 0 -> sendEvent(AppEvent.ShowError("Please enter a valid amount"))
+            newUsageType.isBlank() -> sendEvent(AppEvent.ShowError("Please select a usage type"))
             else -> {
                 waterNeeds[index] = createWaterNeed(amount)
                 resetForm()
                 editingNeedIndex = -1
                 showEditDialog = false
+                sendEvent(AppEvent.ShowSuccess("Water need updated successfully"))
             }
         }
     }
@@ -71,9 +75,10 @@ class WaterNeedsManager(
         showDeleteConfirmDialog = true
     }
 
-    fun confirmDelete() {
+    suspend fun confirmDelete() {
         waterNeeds.removeAt(deletingNeedIndex)
         showDeleteConfirmDialog = false
+        sendEvent(AppEvent.ShowSuccess("Water need deleted successfully"))
     }
 
     fun saveAll() {
@@ -81,10 +86,10 @@ class WaterNeedsManager(
         coroutineScope.launch {
             try {
                 userViewModel.updateWaterNeeds(waterNeeds.toList())
-                showSuccess("Water needs updated successfully")
+                sendEvent(AppEvent.ShowSuccess("Water needs updated successfully"))
                 navController.popBackStack()
             } catch (e: Exception) {
-                showError("Error: ${e.message}")
+                sendEvent(AppEvent.ShowError("Error saving water needs: ${e.message}"))
             } finally {
                 isLoading = false
             }
@@ -126,11 +131,5 @@ class WaterNeedsManager(
         customType = ""
     }
 
-    private fun showError(message: String) {
-        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-    }
 
-    private fun showSuccess(message: String) {
-        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-    }
 }

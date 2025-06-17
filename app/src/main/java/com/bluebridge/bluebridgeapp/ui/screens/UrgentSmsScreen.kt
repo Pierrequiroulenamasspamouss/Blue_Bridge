@@ -23,8 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,18 +30,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavHostController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.network.Location
-import com.bluebridge.bluebridgeapp.network.SmsApi
 import com.bluebridge.bluebridgeapp.viewmodels.ActionState
 import com.bluebridge.bluebridgeapp.viewmodels.SmsViewModel
-import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
@@ -51,16 +47,11 @@ import com.google.android.gms.location.Priority
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UrgentSmsScreen(
-    smsApi: SmsApi,
     modifier: Modifier = Modifier,
-    navController: NavHostController,
-    userViewModel: UserViewModel,
     smsViewModel: SmsViewModel
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var currentLocation by remember { mutableStateOf<Location?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val actionState by smsViewModel.actionState
     var showPermissionDialog by remember { mutableStateOf(false) }
 
@@ -126,14 +117,14 @@ fun UrgentSmsScreen(
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                AppEventChannel.sendEvent(AppEvent.ShowError((actionState as ActionState.Success).message))
             }
             is ActionState.Error -> {
                 val error = (actionState as ActionState.Error).error
                 if (error.contains("SEND_SMS")) {
                     smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
                 } else {
-                    snackbarHostState.showSnackbar(error)
+                    AppEventChannel.sendEvent(AppEvent.ShowError(error))
                 }
             }
             else -> {}
@@ -230,10 +221,6 @@ fun UrgentSmsScreen(
         )
     }
 
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.padding(16.dp)
-    )
 }
 
 @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])

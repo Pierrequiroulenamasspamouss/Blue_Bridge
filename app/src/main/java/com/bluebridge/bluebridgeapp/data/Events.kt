@@ -1,12 +1,13 @@
 package com.bluebridge.bluebridgeapp.data
 
-import android.content.Context
-import androidx.compose.material3.SnackbarHostState
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.data.repository.AppEventHandler
+import com.bluebridge.bluebridgeapp.viewmodels.BrowseWellsViewModel.WellFilters
+import kotlinx.coroutines.channels.Channel
 
 open class WellEvents {
     data class SaveWell(val wellId: Int) : WellEvents()
@@ -20,23 +21,25 @@ open class WellEvents {
     data class EspIdEntered(val espId: String) : WellEvents()
 }
 
-open class BrowseWellsEvent {
-    data class Refresh(val context: Context, val snackbarHostState: SnackbarHostState) : BrowseWellsEvent()
+sealed class BrowseWellsEvent {
+    object Load : BrowseWellsEvent()
+    object Refresh : BrowseWellsEvent()
+    data class ApplyFilters(val filters: WellFilters) : BrowseWellsEvent()
     data class UpdateSearchQuery(val query: String) : BrowseWellsEvent()
     data class UpdateWaterTypeFilter(val waterType: String?) : BrowseWellsEvent()
     data class UpdateStatusFilter(val status: String?) : BrowseWellsEvent()
     object ResetFilters : BrowseWellsEvent()
+    object RefreshFilteredWells : BrowseWellsEvent()
 }
 
+
 open class UserEvent {
-    data class UpdateTheme(val theme: Int) : UserEvent()
     data class LoadUser(val userId: String) : UserEvent()
     data class Login(val request: LoginRequest) : UserEvent()
     data class Register(val request: RegisterRequest) : UserEvent()
     data class UpdateProfile(val userData: UserData) : UserEvent()
     data class UpdateLocation(val location: Location) : UserEvent()
     data class UpdateWaterNeeds(val waterNeeds: List<WaterNeed>) : UserEvent()
-    data class UpdateThemePreference(val themePreference: Int) : UserEvent()
     data class UpdateNotificationsEnabled(val enabled: Boolean) : UserEvent()
     object Logout : UserEvent()
     object LoginAsGuest : UserEvent()
@@ -48,4 +51,26 @@ open class NearbyUserEvent {
     data class UpdateRadius(val radius: Double): NearbyUserEvent()
     data class ApplyFilters(val filters: Map<String, String>): NearbyUserEvent()
     object ResetFilters: NearbyUserEvent()
+}
+sealed class AppEvent {
+    data class ShowSuccess(val message: String): AppEvent()
+    data class ShowError(val message: String): AppEvent()
+    data class ShowInfo(val message: String): AppEvent()
+    data class LogError(val message: String): AppEvent()
+    data class LogInfo(val message: String): AppEvent()
+    data class LogSuccess(val message: String): AppEvent()
+}
+
+object AppEventChannel {
+    private val _events = Channel<AppEvent>(Channel.BUFFERED)
+    private lateinit var eventHandler: AppEventHandler
+
+    fun initialize(handler: AppEventHandler) {
+        this.eventHandler = handler
+    }
+
+    suspend fun sendEvent(event: AppEvent) {
+        _events.send(event)
+        eventHandler.handleEvent(event)
+    }
 }

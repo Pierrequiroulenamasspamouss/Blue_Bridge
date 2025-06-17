@@ -50,6 +50,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
@@ -143,22 +145,24 @@ fun SettingsScreen(
                     title = "Role",
                     subtitle = role,
                     onClick = {
+
                         easterCount++
                         if (easterCount >= 6) {
                             coroutineScope.launch {
-                                when (easterCount) {
+                                val message = when (easterCount) {
                                     6 -> "Easter egg mode activated! Click 5 more times..."
                                     7 -> "Keep going... 4 more clicks!"
                                     8 -> "Almost there... 3 more clicks!"
                                     9 -> "So close... 2 more clicks!"
                                     10 -> "One more click!"
                                     11 -> {
+                                        // Navigate to easter egg screen on the 11th click
                                         navController.navigate(Routes.EASTER_EGG_SCREEN)
                                         "Congratulations! You've unlocked the secret game!"
                                     }
                                     else -> "Easter egg activated: ${easterCount - 5}"
                                 }
-                                // Afficher un toast ou un snackbar avec le message
+                                AppEventChannel.sendEvent(AppEvent.ShowInfo(message))
                             }
                         }
                     }
@@ -427,8 +431,9 @@ fun SettingsScreen(
                                     userData?.email ?: "",
                                     encryptPassword(passwordForDeletion)
                                 )
+                                // TODO ( Show the success or failure of the account deletion + keep this screen if deletion unsuccessful )
+                                userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.Logout) //Logging out the user if deletion is successful
                                 showDeleteAccountConfirmationDialog = false
-                                passwordForDeletion = ""
                                 navController.navigate(Routes.HOME_SCREEN) {
                                     popUpTo(0) { inclusive = true }
                                 }

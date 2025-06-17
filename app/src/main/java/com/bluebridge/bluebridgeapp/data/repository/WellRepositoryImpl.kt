@@ -1,8 +1,8 @@
 package com.bluebridge.bluebridgeapp.data.repository
-// TODO : this wellRepositoryImpl is TOTALLY out of date. please update it properly using the current implementation
 import android.content.Context
 import android.util.Log
-import androidx.compose.material3.SnackbarHostState
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
@@ -225,7 +225,6 @@ class WellRepositoryImpl(
         minWaterLevel: Int?,
         maxWaterLevel: Int?,
         context: Context,
-        snackbarHostState: SnackbarHostState,
         onSuccess: (List<WellData>, Boolean) -> Unit
     ) {
         try {
@@ -246,14 +245,17 @@ class WellRepositoryImpl(
                     Log.d("BrowseWellsScreen", "Wells loaded successfully")
                     onSuccess(wellsResponse.data, 10 > page * pageSize)
                 } else {
-                    snackbarHostState.showSnackbar("No wells found")
+                    AppEventChannel.sendEvent(AppEvent.ShowError("No wells found"))
+
                 }
             } else {
-                snackbarHostState.showSnackbar("Failed to load wells")
+                AppEventChannel.sendEvent(AppEvent.ShowError("Failed to load wells"))
+
             }
         } catch (e: Exception) {
             Log.e("BrowseWellsScreen", "Error loading wells", e)
-            snackbarHostState.showSnackbar("Error: ${e.message}")
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.message}"))
+
         }
     }
 }

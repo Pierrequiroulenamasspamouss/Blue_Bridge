@@ -23,9 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.UserData
@@ -66,7 +65,6 @@ fun ProfileScreen(
     val currentTime = sdf.format(Date())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     var currentLocation by remember { mutableStateOf<Location?>(null) }
     // State for user data
     val userState = userViewModel.state.value
@@ -132,7 +130,6 @@ fun ProfileScreen(
     // Guest user view
     if (!isLoggedIn) {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = { TopBar(topBarMessage = "Profile") }
         ) { paddingValues ->
             Column(
@@ -179,7 +176,6 @@ fun ProfileScreen(
 
     // Logged in user view
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { TopBar(topBarMessage = "Edit Profile") }
     ) { paddingValues ->
         Column(
@@ -298,13 +294,11 @@ fun ProfileScreen(
                             )
 
                             userViewModel.handleEvent(UserEvent.UpdateProfile(updatedUserData))
-                            snackbarHostState.showSnackbar(
-                                "Profile updated successfully",
-                                duration = SnackbarDuration.Short
-                            )
+
                             navController.popBackStack()
                         } catch (e: Exception) {
-                            snackbarHostState.showSnackbar("Failed to update profile: ${e.message}")
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Failed to update profile: ${e.message}"))
+
                         }
                     }
                 },

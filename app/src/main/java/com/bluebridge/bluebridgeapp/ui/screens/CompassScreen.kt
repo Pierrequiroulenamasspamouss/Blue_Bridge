@@ -26,8 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,6 +45,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.R
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
@@ -78,7 +78,6 @@ fun CompassScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     
     // State
     var showPermissionDialog by remember { mutableStateOf(false) }
@@ -357,8 +356,9 @@ fun CompassScreen(
                                 nearestWells = findNearestWells(currentLocation!!, wellViewModel)
                                 showNearestWellsDialog = true
                             } else {
+
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Unable to find nearby wells. Please try again.")
+                                    AppEventChannel.sendEvent(AppEvent.ShowError("Unable to find nearby wells. Please try again."))
                                 }
                             }
                         },
@@ -376,10 +376,6 @@ fun CompassScreen(
             }
         }
         
-        // Snackbar host stays at the bottom
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+
     }
 } 

@@ -20,7 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
@@ -39,9 +39,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.WellEvents
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.WellData
@@ -87,7 +86,6 @@ fun WellConfigScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
     var locationInput by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
@@ -125,12 +123,8 @@ fun WellConfigScreen(
     // Show error messages in snackbar
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = it,
-                    duration = SnackbarDuration.Short
-                )
-            }
+            AppEventChannel.sendEvent(AppEvent.ShowError(it))
+
         }
     }
 
@@ -163,7 +157,7 @@ fun WellConfigScreen(
                 title = { Text(if (wellId == -1) "Add New Well" else "Edit Well") },
                 navigationIcon = {
                     IconButton(onClick = { onBackPressed() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -171,8 +165,7 @@ fun WellConfigScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        }
     ) { padding ->
         if (isLoading) {
             Box(
@@ -294,18 +287,17 @@ fun WellConfigScreen(
                                                 )
                                             } else {
                                                 scope.launch {
-                                                    snackbarHostState.showSnackbar("Unable to get current location")
+                                                    AppEventChannel.sendEvent(AppEvent.ShowError("Unable to get current location"))
                                                 }
                                             }
                                         }.addOnFailureListener {
                                             scope.launch {
-                                                snackbarHostState.showSnackbar("Failed to get location: ${it.localizedMessage}")
+                                                AppEventChannel.sendEvent(AppEvent.ShowError("Failed to get location: ${it.localizedMessage}"))
                                             }
                                         }
                                     } else {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Location permission needed")
-                                        }
+                                        AppEventChannel.sendEvent(AppEvent.ShowError("Location permission needed"))
+
                                         (context as? Activity)?.requestPermissions(
                                             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                                             1002
@@ -427,7 +419,7 @@ fun WellConfigScreen(
                                     if (isUnique) {
                                         wellViewModel.handleEvent(WellEvents.EspIdEntered(newEspId))
                                     } else {
-                                        snackbarHostState.showSnackbar("ESP ID already in use")
+                                        AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use"))
                                     }
                                 }
                             }
@@ -452,7 +444,7 @@ fun WellConfigScreen(
                             try {
                                 val isUnique = wellViewModel.repository.isEspIdUnique(wellData.espId)
                                 if (!isUnique && wellId == -1) {
-                                    snackbarHostState.showSnackbar("ESP ID already in use by another well")
+                                    AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use by another well"))
                                     isSaving = false
                                     return@launch
                                 }
@@ -469,27 +461,24 @@ fun WellConfigScreen(
                                         // Also save locally
                                         wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
                                         lastSavedData = wellData
-                                        snackbarHostState.showSnackbar("Well saved successfully!")
+                                        AppEventChannel.sendEvent(AppEvent.ShowError("Well saved successfully!"))
                                         navigateBack = true
                                     } else {
                                         // If server save fails, at least save locally
                                         wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
                                         lastSavedData = wellData
-                                        snackbarHostState.showSnackbar(
-                                            "Could not save to server but saved locally",
-                                            duration = SnackbarDuration.Long
-                                        )
+                                        AppEventChannel.sendEvent(AppEvent.ShowError("Could not save to server but saved locally"))
                                         navigateBack = true
                                     }
                                 } else {
                                     // No valid user credentials, just save locally
                                     wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
                                     lastSavedData = wellData
-                                    snackbarHostState.showSnackbar("Well saved locally")
+                                    AppEventChannel.sendEvent(AppEvent.ShowError("Well saved locally"))
                                     navigateBack = true
                                 }
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Error saving well: ${e.message}")
+                                AppEventChannel.sendEvent(AppEvent.ShowError("Error saving well: ${e.message}"))
                             } finally {
                                 isSaving = false
                             }

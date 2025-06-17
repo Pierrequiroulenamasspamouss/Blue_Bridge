@@ -44,7 +44,7 @@ class UserViewModel(
         viewModelScope.launch {
             try {
                 // Load theme from SharedPreferences (not from user data)
-                val savedTheme = repository.getThemePreference() // You'll need to implement this
+                val savedTheme = repository.getTheme()
                 _currentTheme.value = savedTheme
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Failed to load theme preference", e)
@@ -94,9 +94,6 @@ class UserViewModel(
                 updateWaterNeeds(event.waterNeeds)
             }
 
-            is UserEvent.UpdateThemePreference -> {
-                updateThemePreference(event.themePreference)
-            }
 
             is UserEvent.UpdateNotificationsEnabled -> {
                 setNotificationsEnabled(event.enabled)
@@ -112,7 +109,6 @@ class UserViewModel(
         }
     }
 
-    private fun updateThemePreference(i: Int) {}
 
     private fun updateLocation(location: Location) {
         viewModelScope.launch {
@@ -511,7 +507,3 @@ class UserViewModel(
     }
 
 }
-
-
-
-

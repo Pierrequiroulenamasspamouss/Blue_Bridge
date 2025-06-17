@@ -24,7 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
+
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
@@ -61,7 +63,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
 
     val actionState = wellViewModel.actionState.value
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
+
     val coroutineScope = rememberCoroutineScope()
 
     // Dialog state for well deletion confirmation
@@ -100,12 +102,13 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
         when (actionState) {
             is ActionState.Success -> {
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar(actionState.message)
+                    AppEventChannel.sendEvent(AppEvent.ShowError(actionState.message))
+
                 }
             }
             is ActionState.Error -> {
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar(actionState.error)
+                    AppEventChannel.sendEvent(AppEvent.ShowError(actionState.error))
                 }
             }
             else -> { /* Do nothing */ }

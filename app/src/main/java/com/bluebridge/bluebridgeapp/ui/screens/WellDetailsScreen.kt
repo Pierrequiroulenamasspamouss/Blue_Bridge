@@ -27,21 +27,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
@@ -68,7 +67,6 @@ fun WellDetailsScreen(
     val userData = if (userState is UiState.Success) {
         (userState as UiState.Success<UserData>).data
     } else null
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val wellState = wellViewModel.currentWellState.value
@@ -104,7 +102,6 @@ fun WellDetailsScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (isLoading) {
             Box(
@@ -298,12 +295,12 @@ fun WellDetailsScreen(
                                             navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
                                         } else {
                                             scope.launch {
-                                                snackbarHostState.showSnackbar("Invalid coordinates for this well")
+                                                AppEventChannel.sendEvent(AppEvent.ShowError("Invalid coordinates for this well"))
                                             }
                                         }
                                     } else {
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("No valid coordinates for this well")
+                                            AppEventChannel.sendEvent(AppEvent.ShowError("No valid coordinates for this well"))
                                         }
                                     }
                                 },
@@ -325,12 +322,12 @@ fun WellDetailsScreen(
                                             navController.navigate("${Routes.MAP_SCREEN}?targetLat=$lat&targetLon=$lon")
                                         } else {
                                             scope.launch {
-                                                snackbarHostState.showSnackbar("Invalid coordinates for this well")
+                                                AppEventChannel.sendEvent(AppEvent.ShowError("Invalid coordinates for this well"))
                                             }
                                         }
                                     } else {
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("No valid coordinates for this well")
+                                            AppEventChannel.sendEvent(AppEvent.ShowError("No valid coordinates for this well"))
                                         }
                                     }
                                 },
