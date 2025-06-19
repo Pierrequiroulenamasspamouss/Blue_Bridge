@@ -67,17 +67,6 @@ fi
 echo -e "${YELLOW}Initializing databases...${NC}"
 node scripts/init-db.js
 
-# Create .env file if it doesn't exist
-if [ ! -f ".env" ]; then
-    echo -e "${YELLOW}Creating .env file...${NC}"
-    cat > .env << EOL
-NODE_ENV=development
-HTTP_PORT=3000
-HTTPS_PORT=3443
-JWT_SECRET=$(openssl rand -base64 32)
-EOL
-fi
-
 # Set up DNS updater
 echo -e "${YELLOW}Setting up DNS updater...${NC}"
 chmod +x scripts/dns-setup.sh
@@ -89,17 +78,41 @@ sudo tee /etc/systemd/system/bluebridge.service << EOL
 Description=BlueBridge Server
 After=network.target
 
-[Service]
+[Service] # LSB compliant header for init.d script
 Type=simple
 User=$USER
-WorkingDirectory=$(pwd)
-ExecStart=/usr/bin/npm run start
+WorkingDirectory=/opt/bluebridge
+ExecStart=/usr/bin/node /opt/bluebridge/server.js
 Restart=on-failure
 Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
 EOL
+
+# Create init.d script for broader compatibility (e.g., sudo service)
+echo -e "${YELLOW}Creating init.d script...${NC}"
+sudo tee /etc/init.d/bluebridge << EOL
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          bluebridge
+# Required-Start:    \$remote_fs \$syslog
+# Required-Stop:     \$remote_fs \$syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start BlueBridge server at boot time
+# Description:       Enable service provided by BlueBridge.
+### END INIT INFO
+
+case "\$1" in
+  start)   systemctl start bluebridge ;;
+  stop)    systemctl stop bluebridge ;;
+  restart) systemctl restart bluebridge ;;
+  status)  systemctl status bluebridge ;;
+  *) echo "Usage: \$0 {start|stop|restart|status}" ; exit 1 ;;
+esac
+EOL
+sudo chmod +x /etc/init.d/bluebridge
 
 # Enable and start service
 echo -e "${YELLOW}Enabling and starting service...${NC}"
@@ -113,3 +126,5 @@ echo -e "HTTP: http://localhost:3000"
 echo -e "HTTPS: https://localhost:3443"
 echo -e "${YELLOW}To check the service status:${NC}"
 echo -e "sudo systemctl status bluebridge"
+echo -e "or"
+echo -e "sudo service bluebridge status"

@@ -9,6 +9,12 @@ adb shell am start -a android.intent.action.SENDTO -d sms:+32491142936 --es sms_
 (to use with a phone connected to the server) 
 
 
+HOW TO UPDATE THE SERVER EASILY:
+- Run sudo ./update_latest.sh
+
+- Try chmod +x update_latest.sh if there is a permissions issue. 
+
+
 # BlueBridge - Community Water Well Monitoring
 
 BlueBridge is an Android application designed to help communities in Africa monitor and manage their water wells efficiently. The app facilitates communication between community members, tracks water consumption, and provides real-time information about nearby wells and users.

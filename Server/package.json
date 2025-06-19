@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seed-db.js",
     "clean": "rm -f data/database.sqlite && npm run seed",
-    "setup": "npm install && npm run seed",
+    "setup": "npm install && npm install git && npm run seed",
     "generate-certs": "node scripts/generate-certificates.js"
   },
   "dependencies": {
