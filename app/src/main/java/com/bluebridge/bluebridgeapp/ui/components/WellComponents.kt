@@ -44,13 +44,13 @@ fun WellCard(
     showLastUpdate: Boolean = false,
     onEdit: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
-    onViewDetails: () -> Unit = {},
+    onNavigate: () -> Unit = {},
     onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onViewDetails() },
+            .clickable { onNavigate() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -167,7 +167,7 @@ fun WellCard(
                     contentDescription = "Details"
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Details")
+                Text("GO")
             }
         }
     }
@@ -177,8 +177,7 @@ fun WellCard(
 fun EnhancedWellCard(
     well: WellData,
     onClick: () -> Unit,
-    onNavigateClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onNavigateClick: () -> Unit
 ) {
     // Calculate water level percentage safely outside composable
     val waterLevelInfo = if (well.wellWaterLevel.toString().isNotBlank() && well.wellCapacity.isNotBlank()) {
@@ -234,7 +233,7 @@ fun EnhancedWellCard(
                 onClick = onNavigateClick,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text("Navigate")
+                Text("Navigate there")
             }
         }
     }

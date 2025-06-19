@@ -24,7 +24,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,13 +42,16 @@ import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
-import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
+import com.bluebridge.bluebridgeapp.data.model.getLatitude
+import com.bluebridge.bluebridgeapp.data.model.getLongitude
+import com.bluebridge.bluebridgeapp.ui.components.WellCard
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.ActionState
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -131,7 +133,7 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                 text = "My Wells",
                 style = MaterialTheme.typography.headlineMedium
             )
-
+            Spacer(modifier = Modifier.width(16.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -219,6 +221,29 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                     ) {
                         items(wellsList.size) { index ->
                             val well = wellsList[index]
+                            WellCard(
+                                well = well,
+                                isWellOwner = isWellOwner.value,
+                                showAdminActions = isAdmin.value || tempAdminMode.value,
+                                showLastRefresh = true,
+                                showLastUpdate = true,
+                                onEdit = {
+                                    navController.navigate("${Routes.WELL_CONFIG_SCREEN}/${well.id}")
+                                },
+                                onItemClick = {
+                                    val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
+                                    val lat = well.getLatitude()
+                                    val lon = well.getLongitude()
+                                    if (lat != null && lon != null) {
+                                    navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
+                                    }
+                                },
+                                onNavigate = {
+                                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                                },
+                                onDeleteClick = { wellToDelete = well },
+                            )
+                            /*
                             EnhancedWellCard(
                                 well = well,
                                 onClick = {
@@ -234,6 +259,8 @@ fun MonitorScreen(wellViewModel: WellViewModel, userViewModel: UserViewModel, na
                                 },
                                 onDeleteClick = { wellToDelete = well }
                             )
+
+                             */
                         }
                     }
                 }

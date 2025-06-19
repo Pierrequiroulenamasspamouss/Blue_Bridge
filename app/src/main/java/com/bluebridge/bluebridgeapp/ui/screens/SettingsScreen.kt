@@ -6,10 +6,8 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
@@ -22,14 +20,8 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,22 +37,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
+import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteAccountDialog
+import com.bluebridge.bluebridgeapp.ui.Dialogs.FinalDeleteAccountConfirmationDialog
+import com.bluebridge.bluebridgeapp.ui.Dialogs.LogoutConfirmationDialog
+import com.bluebridge.bluebridgeapp.ui.Dialogs.ThemeSelectionDialog
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
-import com.bluebridge.bluebridgeapp.ui.components.ThemeOption
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
+
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -145,7 +139,6 @@ fun SettingsScreen(
                     title = "Role",
                     subtitle = role,
                     onClick = {
-
                         easterCount++
                         if (easterCount >= 6) {
                             coroutineScope.launch {
@@ -277,180 +270,59 @@ fun SettingsScreen(
         }
 
         // Theme Selection Dialog
-        val themes = listOf(
-            "System Default" to 0,
-            "Light" to 1,
-            "Dark" to 2,
-            "Green" to 3,
-            "Pink" to 4,
-            "Red" to 5,
-            "Purple" to 6,
-            "Yellow" to 7,
-            "Tan" to 8,
-            "Orange" to 9,
-            "Cyan" to 10
+        ThemeSelectionDialog(
+            showDialog = showThemeDialog,
+            currentThemePreference = currentThemePreference,
+            userViewModel = userViewModel,
+            onDismiss = { showThemeDialog = false }
         )
-
-        if (showThemeDialog) {
-            AlertDialog(
-                onDismissRequest = { showThemeDialog = false },
-                title = { Text("Select Theme") },
-                text = {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState())
-                    ) {
-                        themes.forEach { (themeName, themeValue) ->
-                            ThemeOption(
-                                title = themeName,
-                                isSelected = currentThemePreference == themeValue,
-                                onClick = {
-                                    userViewModel.updateTheme(themeValue)
-                                    showThemeDialog = false
-
-                                }
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showThemeDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
 
         // Logout Confirmation Dialog
         if (showLogoutDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog = false },
-                title = { Text("Confirm Logout") },
-                text = { Text("Are you sure you want to sign out?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.Logout)
-                                navController.navigate(Routes.LOGIN_SCREEN) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
-                        }
-                    ) {
-                        Text("Logout", color = MaterialTheme.colorScheme.error)
+            LogoutConfirmationDialog(
+                onDismiss = { showLogoutDialog = false },
+                onConfirm = {
+                    coroutineScope.launch {
+                    userViewModel.handleEvent(UserEvent.Logout)
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancel")
-                    }
+                    navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
                 }
             )
         }
 
         // Delete Account Dialog
-        if (showDeleteAccountDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showDeleteAccountDialog = false
-                    passwordForDeletion = ""
-                },
-                title = { Text("Delete Account") },
-                text = {
-                    Column {
-                        Text(
-                            "To delete your account, please enter your password to confirm. This action is permanent and cannot be undone.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        var passwordVisible by remember { mutableStateOf(false) }
-                        OutlinedTextField(
-                            value = passwordForDeletion,
-                            onValueChange = { passwordForDeletion = it },
-                            label = { Text("Password") },
-                            singleLine = true,
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (passwordForDeletion.isNotEmpty()) {
-                                showDeleteAccountDialog = false
-                                showDeleteAccountConfirmationDialog = true
-                            }
-                        }
-                    ) {
-                        Text("Continue", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteAccountDialog = false
-                            passwordForDeletion = ""
-                        }
-                    ) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
+        DeleteAccountDialog(
+            showDialog = showDeleteAccountDialog,
+            onDismiss = {
+                showDeleteAccountDialog = false
+                passwordForDeletion = ""
+            },
+            onConfirm = { password ->
+                passwordForDeletion = password
+                showDeleteAccountDialog = false
+                showDeleteAccountConfirmationDialog = true
+            }
+        )
 
         // Final Delete Account Confirmation Dialog
         if (showDeleteAccountConfirmationDialog) {
-            AlertDialog(
-                onDismissRequest = {
+            FinalDeleteAccountConfirmationDialog(
+                onDismiss = {
                     showDeleteAccountConfirmationDialog = false
                     passwordForDeletion = ""
                 },
-                title = { Text("Confirm Delete Account") },
-                text = {
-                    Text(
-                        "WARNING: This will permanently delete your account and all associated data. This action cannot be undone. Are you absolutely sure?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                userViewModel.deleteAccount(
-                                    userData?.email ?: "",
-                                    encryptPassword(passwordForDeletion)
-                                )
-                                // TODO ( Show the success or failure of the account deletion + keep this screen if deletion unsuccessful )
-                                userViewModel.handleEvent(com.bluebridge.bluebridgeapp.data.UserEvent.Logout) //Logging out the user if deletion is successful
-                                showDeleteAccountConfirmationDialog = false
-                                navController.navigate(Routes.HOME_SCREEN) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
+                onConfirm = {
+                    coroutineScope.launch {
+                        userViewModel.deleteAccount(
+                            userData?.email ?: "",
+                            encryptPassword(passwordForDeletion)
+                        )
+                        // TODO ( Show the success or failure of the account deletion + keep this screen if deletion unsuccessful )
+                        userViewModel.handleEvent(UserEvent.Logout) //Logging out the user if deletion is successful
+                        showDeleteAccountConfirmationDialog = false
+                        navController.navigate(Routes.HOME_SCREEN) {
+                            popUpTo(0) { inclusive = true }
                         }
-                    ) {
-                        Text("Delete Account", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteAccountConfirmationDialog = false
-                            passwordForDeletion = ""
-                        }
-                    ) {
-                        Text("Cancel")
                     }
                 }
             )

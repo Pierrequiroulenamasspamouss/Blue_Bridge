@@ -1,169 +1,97 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models');
-const { User, DeviceToken } = db; // Import your models
-const { sendNotification } = require('../services/firebaseService');
-const { validateToken } = require('../middleware/auth');
+const { User, DeviceToken } = db;
+const { sendPushNotification, sendMulticastPushNotification } = require('../services/firebaseService');
 
-// Register device token
-router.post('/register', validateToken, async (req, res) => {
+router.post('/send', async (req, res) => {
     try {
-        const { email, token, deviceToken } = req.body;
+        const { title, message, targetEmails = [] } = req.body;
 
-        if (!email || !token || !deviceToken) {
+        // Validate required fields
+        if (!title || !message) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Missing required fields'
+                message: 'Title and message are required fields'
             });
         }
 
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
+        // Validate targetEmails is an array
+        if (!Array.isArray(targetEmails)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'targetEmails must be an array'
+            });
+        }
+
+        // Find users
+        const whereClause = targetEmails.length > 0
+            ? { email: targetEmails }
+            : {};
+
+        const users = await User.findAll({ where: whereClause });
+
+        if (!users || users.length === 0) {
             return res.status(404).json({
                 status: 'error',
-                message: 'User not found'
+                message: 'No matching users found'
             });
         }
 
-        const [deviceTokenRecord, created] = await DeviceToken.findOrCreate({
-            where: { userId: user.userId },
-            defaults: {
-                tokenId: require('uuid').v4(),
-                token: deviceToken,
-                deviceType: 'android',
-                lastUsed: new Date(),
+        // Get active device tokens
+        const deviceTokens = await DeviceToken.findAll({
+            where: {
+                userId: users.map(user => user.userId),
                 isActive: true
-            }
+            },
+            attributes: ['token']
         });
 
-        if (!created) {
-            deviceTokenRecord.token = deviceToken;
-            deviceTokenRecord.lastUsed = new Date();
-            deviceTokenRecord.isActive = true;
-            await deviceTokenRecord.save();
-        }
-
-        res.json({
-            status: 'success',
-            message: 'Device token registered successfully'
-        });
-    } catch (error) {
-        console.error('Error registering device token:', error);
-        res.status(500).json({
-            status: 'error',
-            message: 'Error registering device token: ' + error.message
-        });
-    }
-});
-
-// Get all notifications for a user
-router.get('/:userId', validateToken, async (req, res) => {
-    try {
-        const user = await User.findOne({ where: { userId: req.params.userId } });
-        if (!user) {
+        if (!deviceTokens || deviceTokens.length === 0) {
             return res.status(404).json({
                 status: 'error',
-                message: 'User not found'
+                message: 'No active device tokens found for these users'
             });
         }
 
-        const deviceToken = await DeviceToken.findOne({
-            where: { userId: req.params.userId }
-        });
+        // Extract just the token strings
+        const tokens = deviceTokens.map(dt => dt.token);
 
-        if (!deviceToken) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Device token not found'
-            });
+        // Send notifications using your Firebase service
+        let result;
+        if (tokens.length === 1) {
+            // Single device
+            result = await sendPushNotification(tokens[0], title, message);
+        } else {
+            // Multiple devices
+            result = await sendMulticastPushNotification(tokens, title, message);
         }
 
-        res.json({
+        // Prepare response
+        const response = {
             status: 'success',
+            message: 'Notifications processed',
             data: {
-                deviceToken: deviceToken.token,
-                notificationsEnabled: true
+                usersTargeted: users.length,
+                devicesTargeted: tokens.length
             }
-        });
+        };
+
+        // Add multicast results if available
+        if (result.successCount !== undefined) {
+            response.data.successCount = result.successCount;
+            response.data.failureCount = result.failureCount;
+        }
+
+        res.json(response);
+
     } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Notification route error:', error);
         res.status(500).json({
             status: 'error',
-            message: 'Internal server error'
+            message: 'Failed to send notifications',
+            error: error.message
         });
-    }
-});
-
-// Send notification to a user
-router.post('/send', validateToken, async (req, res) => {
-    try {
-        const { userId, title, body, data } = req.body;
-
-        const user = await User.findOne({ where: { userId } });
-        if (!user) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'User not found'
-            });
-        }
-
-        const deviceToken = await DeviceToken.findOne({
-            where: { userId }
-        });
-
-        if (!deviceToken) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Device token not found'
-            });
-        }
-
-        await sendNotification(deviceToken.token, {
-            title,
-            body,
-            data
-        });
-
-        res.json({
-            status: 'success',
-            message: 'Notification sent successfully'
-        });
-    } catch (error) {
-        console.error('Error sending notification:', error);
-        res.status(500).json({
-            status: 'error',
-            message: 'Internal server error'
-        });
-    }
-});
-
-// Update device token
-router.put('/token', async (req, res) => {
-    try {
-        const { userId, token } = req.body;
-
-        const user = await User.findOne({ where: { userId } });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        const [deviceToken, created] = await DeviceToken.findOrCreate({
-            where: { userId },
-            defaults: { token }
-        });
-
-        if (!created) {
-            deviceToken.token = token;
-            await deviceToken.save();
-        }
-
-        res.json({
-            status: 'success',
-            message: 'Device token updated successfully'
-        });
-    } catch (error) {
-        console.error('Error updating device token:', error);
-        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

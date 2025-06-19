@@ -52,6 +52,8 @@ import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.getLatitude
+import com.bluebridge.bluebridgeapp.data.model.getLongitude
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.ui.Dialogs.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
@@ -60,6 +62,7 @@ import com.bluebridge.bluebridgeapp.ui.components.MapView
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
+import java.net.URLEncoder
 
 @OptIn(InternalSerializationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -279,9 +282,14 @@ fun BrowseWellsScreen(
                                     selectedWell = well
                                 },
                                 onNavigateClick = {
-                                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                                    val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
+                                    val lat = well.getLatitude()
+                                    val lon = well.getLongitude()
+                                    if (lat != null && lon != null) {
+                                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
+                                    }
                                 }
-                            ) {}
+                            )
                         }
 
                         if (hasMorePages) {
@@ -306,7 +314,14 @@ fun BrowseWellsScreen(
             EnhancedWellDetailsDialog(
                 well = well,
                 onDismiss = { selectedWell = null },
-                onNavigate = { navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}") },
+                onNavigate = {
+                    val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
+                    val lat = well.getLatitude()
+                    val lon = well.getLongitude()
+                    if (lat != null && lon != null) {
+                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
+                    }
+                },
                 onAdd = {
                     // Launch a coroutine to handle the suspend function
                     coroutineScope.launch {  // or viewModelScope if in a ViewModel
