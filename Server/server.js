@@ -130,8 +130,12 @@ app.get('/status', (req, res) => {
 
 // APK download route
 app.get('/download', (req, res) => {
+    const apkDir = path.join(__dirname, 'APK');
+    const files = fs.readdirSync(apkDir);
+    const apkFile = files.find(file => file.endsWith('.apk'));
+
     res.download(
-        path.join(__dirname, 'APK', 'BlueBridge.apk'),
+        path.join(apkDir, apkFile),
         `BlueBridge_v${appLatestVersion}.apk`
     );
 });
