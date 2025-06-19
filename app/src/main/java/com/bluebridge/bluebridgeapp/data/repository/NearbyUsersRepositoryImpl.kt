@@ -34,7 +34,7 @@ class NearbyUsersRepositoryImpl(
         currentRadius = radius
 
         val userEmail = userRepo.getUserEmail() ?: return@withContext Result.failure(Exception("User not logged in"))
-        val token = userRepo.getLoginToken() ?: return@withContext Result.failure(Exception("Authentication token required"))
+        val token = userRepo.getLoginToken() ?: return@withContext Result.failure(Exception("Authentication loginToken required"))
 
         runCatching {
             val request = NearbyUsersRequest(

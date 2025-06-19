@@ -70,8 +70,8 @@ class WeatherViewModel(
                 Log.e("WeatherViewModel", "Error fetching weather: ${e.message}", e)
                 _weatherState.value = UiState.Error("Failed to load weather data: ${e.message}")
                 Log.d("WeatherViewModel", e.message, e)
-                if (e.message == "Invalid token") {
-                    Log.e("WeatherViewModel", "Invalid token, logging out")
+                if (e.message == "Invalid loginToken") {
+                    Log.e("WeatherViewModel", "Invalid loginToken, logging out")
                     userRepository.logout()
                 }
 
@@ -102,9 +102,9 @@ class WeatherViewModel(
 
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                if (errorBody.contains("Invalid token")) {
+                if (errorBody.contains("Invalid loginToken")) {
                     userRepository.logout()
-                    Log.e("WeatherViewModel", "Invalid token, logging out")
+                    Log.e("WeatherViewModel", "Invalid loginToken, logging out")
                 }
                 throw Exception("API call failed: $errorBody")
 

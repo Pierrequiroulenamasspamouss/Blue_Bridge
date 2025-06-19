@@ -204,11 +204,11 @@ webpush.setVapidDetails(
 3. Verify that the notification is received on the device
 
 ```bash
-# Test token registration
+# Test loginToken registration
 curl -X POST https://your-server.com/api/notifications/register \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer USER_AUTH_TOKEN" \
-  -d '{"email": "test@example.com", "token": "TEST_FCM_TOKEN"}'
+  -d '{"email": "test@example.com", "loginToken": "TEST_FCM_TOKEN"}'
 
 # Send test notification (server-side script)
 sendNotificationToUser('test@example.com', 'Test Notification', 'This is a test message');

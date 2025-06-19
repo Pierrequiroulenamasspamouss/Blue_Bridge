@@ -39,14 +39,14 @@ interface ServerApi {
     suspend fun createWell(
         @Body wellData: WellData,
         @Query("email") email: String,
-        @Query("token") token: String
+        @Query("loginToken") token: String
     ): Response<BasicResponse>
 
     @DELETE("/api/wells/{espId}")
     suspend fun deleteWell(
         @Path("espId") espId: String,
         @Query("email") email: String,
-        @Query("token") token: String
+        @Query("loginToken") token: String
     ): Response<BasicResponse>
 
     @POST("/api/auth/login")

@@ -103,7 +103,7 @@ Both endpoints expect a payload like:
 ```json
 {
   "email": "user@example.com",
-  "token": "firebase-token-here",
-  "authToken": "user-auth-token-here"
+  "token": "firebase-loginToken-here",
+  "authToken": "user-auth-loginToken-here"
 }
 ``` 

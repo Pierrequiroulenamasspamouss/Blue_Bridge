@@ -266,14 +266,14 @@ class UserRepositoryImpl(
         try {
             val request = NotificationTokenRequest(
                 userId = userId,
-                token = authToken,
+                loginToken = authToken,
                 deviceToken = fcmToken
             )
 
             val response = api.registerNotificationToken(request)
             return@withContext response.isSuccessful && response.body()?.status == "success"
         } catch (e: Exception) {
-            Log.e("UserRepository", "Error registering notification token", e)
+            Log.e("UserRepository", "Error registering notification loginToken", e)
             return@withContext false
         }
     }
@@ -286,14 +286,14 @@ class UserRepositoryImpl(
         try {
             val request = NotificationTokenRequest(
                 userId = userId,
-                token = authToken,
+                loginToken = authToken,
                 deviceToken = fcmToken
             )
 
             val response = api.unregisterNotificationToken(request)
             return@withContext response.isSuccessful && response.body()?.status == "success"
         } catch (e: Exception) {
-            Log.e("UserRepository", "Error unregistering notification token", e)
+            Log.e("UserRepository", "Error unregistering notification loginToken", e)
             return@withContext false
         }
     }

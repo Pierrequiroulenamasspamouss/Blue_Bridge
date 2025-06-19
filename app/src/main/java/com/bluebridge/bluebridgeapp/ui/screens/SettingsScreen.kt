@@ -164,7 +164,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Register to notifications",
-                    subtitle = "Send your firebase push notification token to the server",
+                    subtitle = "Send your firebase push notification loginToken to the server",
                     onClick = {
                         userViewModel.registerForNotifications()
                     }

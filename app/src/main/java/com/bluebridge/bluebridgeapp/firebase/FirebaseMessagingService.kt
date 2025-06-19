@@ -43,33 +43,33 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        Log.d(TAG, "Refreshed token: $token")
+        Log.d(TAG, "Refreshed loginToken: $token")
         
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Save the token to preferences
+                // Save the loginToken to preferences
                 userRepository.saveNotificationToken(token)
                 
-                // Check if the user is logged in (has email and auth token)
+                // Check if the user is logged in (has email and auth loginToken)
                 val email = userRepository.getUserEmail()
                 val authToken = userRepository.getLoginToken()
                 
                 if (email != null && authToken != null) {
-                    // User is logged in, register the token with the server
-                    Log.d(TAG, "Sending refreshed token to server for $email")
+                    // User is logged in, register the loginToken with the server
+                    Log.d(TAG, "Sending refreshed loginToken to server for $email")
                     val success = userRepository.registerNotificationToken(email, authToken, token)
                     
                     if (success) {
-                        Log.d(TAG, "Successfully registered refreshed token with server")
+                        Log.d(TAG, "Successfully registered refreshed loginToken with server")
                     } else {
-                        Log.e(TAG, "Failed to register refreshed token with server for $email")
+                        Log.e(TAG, "Failed to register refreshed loginToken with server for $email")
                     }
                 } else {
-                    // User is not logged in, token will be registered on next login
-                    Log.d(TAG, "User not logged in, token will be registered on next login")
+                    // User is not logged in, loginToken will be registered on next login
+                    Log.d(TAG, "User not logged in, loginToken will be registered on next login")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error saving refreshed token: ${e.message}", e)
+                Log.e(TAG, "Error saving refreshed loginToken: ${e.message}", e)
             }
         }
     }

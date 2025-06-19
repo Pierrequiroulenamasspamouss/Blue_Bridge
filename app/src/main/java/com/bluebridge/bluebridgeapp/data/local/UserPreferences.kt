@@ -155,7 +155,7 @@ class UserPreferences(context: Context) {
             // Store water needs as JSON string
             preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(userData.waterNeeds)
 
-            // Store login token
+            // Store login loginToken
             userData.loginToken?.let { token ->
                 preferences[PreferencesKeys.LOGIN_TOKEN] = token
             }

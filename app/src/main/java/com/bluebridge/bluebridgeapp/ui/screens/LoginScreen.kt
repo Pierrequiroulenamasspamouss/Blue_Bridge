@@ -93,7 +93,7 @@ fun LoginScreen(
                     "Account disabled" -> "This account has been disabled. Please contact support for assistance."
                     "Too many attempts" -> "Too many login attempts. Please try again later or reset your password."
                     "Maintenance mode" -> "The system is currently under maintenance. Please try again later."
-                    "Invalid token" -> "Your login session is invalid. Please log in again."
+                    "Invalid loginToken" -> "Your login session is invalid. Please log in again."
                     "Rate limited" -> "Too many login attempts. Please wait a few minutes before trying again."
                     else -> "An unexpected error occurred. Please try again or contact support if the problem persists."
                 }

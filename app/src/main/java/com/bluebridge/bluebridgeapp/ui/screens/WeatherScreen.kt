@@ -159,7 +159,7 @@ fun WeatherScreen(
                             Text("Retry")
                         }
 
-                        if (weatherState.message.contains("Invalid token")) {
+                        if (weatherState.message.contains("Invalid loginToken")) {
                             LaunchedEffect(Unit) {
                                 showInvalidTokenDialog = true
                                 userViewModel.logout()

@@ -6,23 +6,31 @@ const { sendPushNotification, sendMulticastPushNotification } = require('../serv
 
 // Register device token
 router.post('/register', async (req, res) => {
-  const { email, token } = req.body;
+  const { userId, loginToken, deviceToken } = req.body;
 
   try {
-    // Find user by email to get userId
-    const user = await User.findOne({ where: { email } });
+    // Verify user exists and loginToken is valid
+    const user = await User.findOne({
+      where: {
+        userId,
+        loginToken
+      }
+    });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid user credentials'
       });
     }
 
     // Store token in database
     await DeviceToken.findOrCreate({
-      where: { userId: user.userId, token },
-      defaults: { isActive: true }
+      where: { userId, token: deviceToken },
+      defaults: {
+        isActive: true,
+        userId
+      }
     });
 
     res.json({
@@ -41,22 +49,30 @@ router.post('/register', async (req, res) => {
 
 // Unregister device token
 router.post('/unregister', async (req, res) => {
-  const { email, token } = req.body;
+  const { userId, loginToken, deviceToken } = req.body;
 
   try {
-    // Find user by email to get userId
-    const user = await User.findOne({ where: { email } });
+    // Verify user exists and loginToken is valid
+    const user = await User.findOne({
+      where: {
+        userId,
+        loginToken
+      }
+    });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid user credentials'
       });
     }
 
     // Remove token from database
     await DeviceToken.destroy({
-      where: { userId: user.userId, token }
+      where: {
+        userId,
+        token: deviceToken
+      }
     });
 
     res.json({
@@ -76,7 +92,7 @@ router.post('/unregister', async (req, res) => {
 // Send notification
 router.post('/send', async (req, res) => {
   try {
-    const { title, message, targetEmails = [] } = req.body;
+    const { title, message, targetUserIds = [] } = req.body;
 
     // Validate required fields
     if (!title || !message) {
@@ -86,20 +102,28 @@ router.post('/send', async (req, res) => {
       });
     }
 
-    // Validate targetEmails is an array
-    if (!Array.isArray(targetEmails)) {
+    // Validate targetUserIds is an array
+    if (!Array.isArray(targetUserIds)) {
       return res.status(400).json({
         status: 'error',
-        message: 'targetEmails must be an array'
+        message: 'targetUserIds must be an array'
       });
     }
 
     // Find users
-    const whereClause = targetEmails.length > 0
-      ? { email: targetEmails }
+    const whereClause = targetUserIds.length > 0
+      ? { userId: targetUserIds }
       : {};
 
-    const users = await User.findAll({ where: whereClause });
+    const users = await User.findAll({
+      where: whereClause,
+      include: [{
+        model: DeviceToken,
+        as: 'deviceTokens',
+        where: { isActive: true },
+        required: false
+      }]
+    });
 
     if (!users || users.length === 0) {
       return res.status(404).json({
@@ -108,24 +132,17 @@ router.post('/send', async (req, res) => {
       });
     }
 
-    // Get active device tokens
-    const deviceTokens = await DeviceToken.findAll({
-      where: {
-        userId: users.map(user => user.userId),
-        isActive: true
-      },
-      attributes: ['token']
-    });
+    // Extract all active device tokens
+    const tokens = users.flatMap(user =>
+      user.deviceTokens.map(token => token.token)
+    ).filter(Boolean);
 
-    if (!deviceTokens || deviceTokens.length === 0) {
+    if (tokens.length === 0) {
       return res.status(404).json({
         status: 'error',
         message: 'No active device tokens found for these users'
       });
     }
-
-    // Extract just the token strings
-    const tokens = deviceTokens.map(dt => dt.token);
 
     // Send notifications using your Firebase service
     let result;

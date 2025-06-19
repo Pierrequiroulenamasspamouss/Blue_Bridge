@@ -126,12 +126,12 @@ data class DeleteAccountResponse(
 )
 
 /**
- * Request model for registering or unregistering a notification token
+ * Request model for registering or unregistering a notification loginToken
  */
 @Serializable
 data class NotificationTokenRequest(
     val userId: String,
-    val token: String,
+    val loginToken: String,
     val deviceToken: String
 )
 

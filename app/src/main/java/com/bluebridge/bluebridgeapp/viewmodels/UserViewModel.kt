@@ -154,8 +154,8 @@ class UserViewModel(
                     Log.d("UserViewModel", "Registration successful for: ${request.email}")
                     loadUser()
                     //navController.navigate(Routes.LOGIN_SCREEN)//TODO: pop the user to the homescreen
-                    // Always register FCM token after successful registration regardless of notification preferences
-                    // This ensures the token is always up-to-date on the server
+                    // Always register FCM loginToken after successful registration regardless of notification preferences
+                    // This ensures the loginToken is always up-to-date on the server
                     registerForNotifications()
                 } else {
                     Log.e("UserViewModel", "Registration failed for: ${request.email}")
@@ -192,7 +192,7 @@ class UserViewModel(
                 if (success) {
                     Log.d("UserViewModel", "Login successful for: ${request.email}")
                     loadUser()
-                    // Register FCM token after successful login
+                    // Register FCM loginToken after successful login
                     registerForNotifications()
                 } else {
                     Log.e("UserViewModel", "Login failed for: ${request.email}")
@@ -267,7 +267,7 @@ class UserViewModel(
             try {
                 Log.d("UserViewModel", "Attempting to delete account for: $email")
 
-                // Get the user's token
+                // Get the user's loginToken
                 val token = repository.getLoginToken() ?: ""
 
                 // Create delete request
@@ -388,30 +388,30 @@ class UserViewModel(
                     return@launch
                 }
 
-                // Get the current FCM token
+                // Get the current FCM loginToken
                 val token = getFirebaseToken()
                 if (token.isNullOrEmpty()) {
-                    Log.e("UserViewModel", "Failed to get Firebase token")
+                    Log.e("UserViewModel", "Failed to get Firebase loginToken")
                     return@launch
                 }
 
-                Log.d("UserViewModel", "Got Firebase token: $token")
+                Log.d("UserViewModel", "Got Firebase loginToken: $token")
 
-                // Save the token in preferences
+                // Save the loginToken in preferences
                 repository.saveNotificationToken(token)
 
-                // Send the token to the server
+                // Send the loginToken to the server
                 val email = repository.getUserEmail()
                 val authToken = repository.getLoginToken()
                 val userId = repository.getUserId()
                 if (email != null && authToken != null) {
-                    Log.d("UserViewModel", "Sending token to server for user $userId")
+                    Log.d("UserViewModel", "Sending loginToken to server for user $userId")
                     val success = repository.registerNotificationToken(userId, authToken, token)
 
                     if (success) {
-                        Log.d("UserViewModel", "Successfully registered notification token")
+                        Log.d("UserViewModel", "Successfully registered notification loginToken")
                     } else {
-                        Log.e("UserViewModel", "Failed to register notification token with server")
+                        Log.e("UserViewModel", "Failed to register notification loginToken with server")
                     }
                 }
             } catch (e: Exception) {
@@ -428,7 +428,7 @@ class UserViewModel(
             try {
                 val token = repository.getNotificationToken()
                 if (token.isNullOrEmpty()) {
-                    Log.e("UserViewModel", "No notification token to unregister")
+                    Log.e("UserViewModel", "No notification loginToken to unregister")
                     return@launch
                 }
 
@@ -437,20 +437,20 @@ class UserViewModel(
                 val authToken = repository.getLoginToken()
 
                 if (email != null && authToken != null) {
-                    Log.d("UserViewModel", "Unregistering token from server for $email")
+                    Log.d("UserViewModel", "Unregistering loginToken from server for $email")
                     val success = repository.unregisterNotificationToken(email, authToken, token)
 
                     if (success) {
-                        Log.d("UserViewModel", "Successfully unregistered notification token")
+                        Log.d("UserViewModel", "Successfully unregistered notification loginToken")
                     } else {
                         Log.e(
                             "UserViewModel",
-                            "Failed to unregister notification token with server"
+                            "Failed to unregister notification loginToken with server"
                         )
                     }
                 }
 
-                // Clear the token from preferences
+                // Clear the loginToken from preferences
                 repository.clearNotificationToken()
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Error unregistering from notifications: ${e.message}", e)
@@ -459,13 +459,13 @@ class UserViewModel(
     }
 
     /**
-     * Get the Firebase Cloud Messaging token
+     * Get the Firebase Cloud Messaging loginToken
      */
     private suspend fun getFirebaseToken(): String? {
         return try {
             FirebaseMessaging.getInstance().token.await()
         } catch (e: Exception) {
-            Log.e("UserViewModel", "Error getting Firebase token: ${e.message}", e)
+            Log.e("UserViewModel", "Error getting Firebase loginToken: ${e.message}", e)
             null
         }
     }
