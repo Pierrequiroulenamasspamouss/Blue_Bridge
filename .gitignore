@@ -22,6 +22,9 @@ app/google-services.json
 /Server/.env
 /Server/APK/
 /Server/scripts/firebase-service-account.json
+/Server/data/deviceTokens.sqlite
+/Server/data/users.sqlite
+/Server/data/wells.sqlite
 ssh_connection_commands.txt
 server.bat
 /Server/node_modules/

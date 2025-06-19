@@ -41,7 +41,7 @@ import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
-import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteConfirmationDialog
+import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteWaterNeedDialog
 import com.bluebridge.bluebridgeapp.ui.Dialogs.WaterNeedDialog
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -159,7 +159,7 @@ fun EditWaterNeedsScreen(
             }
 
             if (waterManager.showDeleteConfirmDialog) {
-                DeleteConfirmationDialog(
+                DeleteWaterNeedDialog(
                     onConfirm = { coroutineScope.launch {waterManager.confirmDelete()} },
                     onDismiss = { waterManager.showDeleteConfirmDialog = false }
                 )

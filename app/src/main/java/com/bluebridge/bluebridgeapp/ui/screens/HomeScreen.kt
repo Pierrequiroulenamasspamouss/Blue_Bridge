@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.ExploreOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.R
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.ui.Dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.components.FeatureCard
 import com.bluebridge.bluebridgeapp.ui.components.OfflineBanner
 import com.bluebridge.bluebridgeapp.ui.components.WelcomeHeader
@@ -315,36 +314,18 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Button(
-                                onClick = { showLogoutDialog = true },
+                                onClick = {
+                                    showLogoutDialog = true },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Logout")
                             }
 
                             if (showLogoutDialog) {
-                                AlertDialog(
-                                    onDismissRequest = { showLogoutDialog = false },
-                                    title = { Text("Confirm Logout") },
-                                    text = { Text("Are you sure you want to log out?") },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = {
-                                                showLogoutDialog = false
-                                                coroutineScope.launch {
-                                                    userViewModel.logout()
-                                                    navController.navigate(Routes.HOME_SCREEN) {
-                                                        popUpTo(Routes.HOME_SCREEN) { inclusive = true }
-                                                    }
-                                                }
-                                            }
-                                        ) {
-                                            Text("Logout")
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(onClick = { showLogoutDialog = false }) {
-                                            Text("Cancel")
-                                        }
+                                LogoutConfirmationDialog(
+                                    onConfirm = { userViewModel.logout()},
+                                    onDismiss = {
+                                        showLogoutDialog = false
                                     }
                                 )
                             }

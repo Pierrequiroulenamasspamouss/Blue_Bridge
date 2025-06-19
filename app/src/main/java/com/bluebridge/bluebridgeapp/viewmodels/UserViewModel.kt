@@ -378,7 +378,7 @@ class UserViewModel(
     /**
      * Register for push notifications with Firebase
      */
-    private fun registerForNotifications() {
+    fun registerForNotifications() {
         viewModelScope.launch {
             try {
                 val userData = repository.getUserData().first()

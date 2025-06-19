@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
@@ -44,7 +45,6 @@ import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteAccountDialog
-import com.bluebridge.bluebridgeapp.ui.Dialogs.FinalDeleteAccountConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.Dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.Dialogs.ThemeSelectionDialog
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
@@ -161,6 +161,14 @@ fun SettingsScreen(
                         }
                     }
                 )
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "Register to notifications",
+                    subtitle = "Send your firebase push notification token to the server",
+                    onClick = {
+                        userViewModel.registerForNotifications()
+                    }
+                )
             }
 
             // Appearance Section
@@ -222,6 +230,7 @@ fun SettingsScreen(
                         Text("Edit Water Needs")
                     }
                 }
+
             }
 
             // Support Section
@@ -239,6 +248,7 @@ fun SettingsScreen(
                     subtitle = "View app credits",
                     onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
                 )
+
             }
 
             // Account Actions Section
@@ -298,35 +308,15 @@ fun SettingsScreen(
                 showDeleteAccountDialog = false
                 passwordForDeletion = ""
             },
-            onConfirm = { password ->
-                passwordForDeletion = password
-                showDeleteAccountDialog = false
-                showDeleteAccountConfirmationDialog = true
+            onConfirmFinal = { password ->
+                coroutineScope.launch {
+                    val encrypted = encryptPassword(password)
+                    userViewModel.deleteAccount(userData?.email ?: "", encrypted)
+                    // TODO: Handle deletion result
+                    showDeleteAccountDialog = false
+                    navController.navigate(Routes.HOME_SCREEN)
+                }
             }
         )
-
-        // Final Delete Account Confirmation Dialog
-        if (showDeleteAccountConfirmationDialog) {
-            FinalDeleteAccountConfirmationDialog(
-                onDismiss = {
-                    showDeleteAccountConfirmationDialog = false
-                    passwordForDeletion = ""
-                },
-                onConfirm = {
-                    coroutineScope.launch {
-                        userViewModel.deleteAccount(
-                            userData?.email ?: "",
-                            encryptPassword(passwordForDeletion)
-                        )
-                        // TODO ( Show the success or failure of the account deletion + keep this screen if deletion unsuccessful )
-                        userViewModel.handleEvent(UserEvent.Logout) //Logging out the user if deletion is successful
-                        showDeleteAccountConfirmationDialog = false
-                        navController.navigate(Routes.HOME_SCREEN) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }
-            )
-        }
     }
 }

@@ -136,14 +136,14 @@ fun CreditsScreen() {
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "Version 1.1.5",
+                        text = "Thanks for using our app!",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "© 2025 BlueBridge Team. All rights reserved.",
+                        text = " ©2025 BlueBridge Team. All rights reserved. Open source student project.",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center
                     )
