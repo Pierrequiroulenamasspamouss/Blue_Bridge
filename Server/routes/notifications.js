@@ -33,6 +33,13 @@ router.post('/register', async (req, res) => {
       }
     });
 
+    // Send a welcome notification to the newly registered token
+    await sendPushNotification(
+      deviceToken,
+      'Welcome!',
+      'Your device has been successfully registered for notifications.'
+    );
+
     res.json({
       status: 'success',
       message: 'Token registered successfully'

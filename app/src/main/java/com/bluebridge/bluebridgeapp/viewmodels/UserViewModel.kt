@@ -388,11 +388,19 @@ class UserViewModel(
                     return@launch
                 }
 
-                // Get the current FCM loginToken
-                val token = getFirebaseToken()
+                // Check if a token already exists in preferences
+                var token = repository.getNotificationToken()
+
                 if (token.isNullOrEmpty()) {
-                    Log.e("UserViewModel", "Failed to get Firebase loginToken")
-                    return@launch
+                    // If not, get the current FCM token
+                    Log.d("UserViewModel", "No token in preferences, fetching from Firebase")
+                    token = getFirebaseToken()
+                    if (token.isNullOrEmpty()) {
+                        Log.e("UserViewModel", "Failed to get Firebase token")
+                        return@launch
+                    }
+                } else {
+                    Log.d("UserViewModel", "Using existing token from preferences: $token")
                 }
 
                 Log.d("UserViewModel", "Got Firebase loginToken: $token")
@@ -463,6 +471,7 @@ class UserViewModel(
      */
     private suspend fun getFirebaseToken(): String? {
         return try {
+            Log.d("UserViewModel", "Fetching Firebase loginToken...")
             FirebaseMessaging.getInstance().token.await()
         } catch (e: Exception) {
             Log.e("UserViewModel", "Error getting Firebase loginToken: ${e.message}", e)
