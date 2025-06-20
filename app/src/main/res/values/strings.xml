@@ -10,9 +10,11 @@
     <string name="DevelopmentServerUrl">http://192.168.0.204:3000/</string>
     <string name="ProductionServerUrl">https://192.168.0.204:3443/</string>
 
+
+    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
+    <string name="ProductionServerUrl">https://192.168.0.98/</string>
+
     LOCAL MACHINE:
-    <string name="DevelopmentServerUrl">http://192.168.0.98:3000/</string>
-    <string name="ProductionServerUrl">https://192.168.0.98:3443/</string>
 
     GOOGLE:
     <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000/</string>

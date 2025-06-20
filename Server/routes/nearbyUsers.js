@@ -3,85 +3,65 @@ const router = express.Router();
 const db = require('../models');
 const { User } = db;
 const { validateToken } = require('../middleware/auth');
+const { Op } = require('sequelize');
 
 /**
- * Get nearby users within a specified radius
- * @param {number} lat - Latitude
- * @param {number} lon - Longitude
- * @param {number} radius - Radius in kilometers
- * @param {string} excludeEmail - Email to exclude from results
- * @returns {Promise<Array>} - Array of nearby users
+ * Get nearby users within a specified radius using location JSON
  */
-const getNearbyUsers = async (lat, lon, radius, excludeEmail) => {
+const getNearbyUsers = async (centerLat, centerLon, radius, excludeEmail) => {
     try {
+        // First get all users with valid location data
         const users = await User.findAll({
             where: {
-                email: { [db.Sequelize.Op.ne]: excludeEmail },
-                latitude: { [db.Sequelize.Op.ne]: null },
-                longitude: { [db.Sequelize.Op.ne]: null },
-                [db.Sequelize.Op.and]: [
-                    db.Sequelize.literal(`
-                        (6371 * acos(
-                            cos(radians(${lat})) * 
-                            cos(radians(latitude)) * 
-                            cos(radians(longitude) - radians(${lon})) + 
-                            sin(radians(${lat})) * 
-                            sin(radians(latitude))
-                        )) <= ${radius}
-                    `)
-                ]
+                email: { [Op.ne]: excludeEmail },
+                location: { [Op.not]: null }
             },
             attributes: [
-                'userId',
-                'username',
-                'firstName',
-                'lastName',
-                'email',
-                'latitude',
-                'longitude',
-                'waterNeeds',
-                'lastActive'
-            ]
+                'userId', 'username', 'firstName', 'lastName',
+                'email', 'location', 'waterNeeds', //'lastActive' //TODO : fix the database to use the latest login at some point. there is a mismatch error of the type of this
+            ],
+            raw: true
         });
 
-        return users.map(user => ({
-            ...user.dataValues,
-            distance: calculateDistance(lat, lon, user.latitude, user.longitude)
-        }));
+        // Filter users within radius in memory
+        return users
+            .map(user => {
+                try {
+                    const location = JSON.parse(user.location);
+                    if (!location.latitude || !location.longitude) return null;
+
+                    // Simple distance calculation (approximation)
+                    const latDiff = location.latitude - centerLat;
+                    const lonDiff = location.longitude - centerLon;
+                    const distance = Math.sqrt(latDiff*latDiff + lonDiff*lonDiff) * 111; // Convert to km
+
+                    return {
+                        ...user,
+                        distance: distance,
+                        latitude: location.latitude,
+                        longitude: location.longitude
+                    };
+                } catch (e) {
+                    return null;
+                }
+            })
+            .filter(user => user && user.distance <= radius)
+            .sort((a, b) => a.distance - b.distance);
+
     } catch (error) {
         console.error('Error finding nearby users:', error);
         throw error;
     }
 };
 
-/**
- * Calculate distance between two points using Haversine formula
- */
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-};
-
-const toRad = (value) => {
-    return value * Math.PI / 180;
-};
-
-// Get nearby users
 router.post('/', validateToken, async (req, res) => {
     try {
-        const { latitude, longitude, radius = 50, userId, token } = req.body;
-        
-        if (!latitude || !longitude || !userId || !token) {
+        const { latitude, longitude, radius = 50 } = req.body;
+
+        if (!latitude || !longitude) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Missing required fields'
+                message: 'Missing required fields: latitude and longitude'
             });
         }
 
@@ -101,9 +81,9 @@ router.post('/', validateToken, async (req, res) => {
         console.error('Error getting nearby users:', error);
         res.status(500).json({
             status: 'error',
-            message: 'Error getting nearby users: ' + error.message
+            message: 'Error getting nearby users'
         });
     }
 });
 
-module.exports = router; 
+module.exports = router;

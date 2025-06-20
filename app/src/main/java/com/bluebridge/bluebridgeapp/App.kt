@@ -26,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
@@ -132,15 +133,20 @@ private fun rememberNetworkState(context: Context): State<Boolean> {
 @Composable
 private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
     val serverState by serverViewModel.serverState.collectAsState()
+    var showServerUnreachableDialog by remember { mutableStateOf(serverState is ServerState.Error) }
     val context = LocalContext.current
     val needsUpdate by serverViewModel.needsUpdate.collectAsState()
 
-    if (serverState is ServerState.Error) {
+    LaunchedEffect(serverState) {
+        showServerUnreachableDialog = serverState is ServerState.Error
+    }
+
+    if (showServerUnreachableDialog) {
         AlertDialog(
-            onDismissRequest = { /* Keep dialog open */ },
+            onDismissRequest = { showServerUnreachableDialog = false },
             title = { Text("Server Unreachable") },
             text = { Text("The server is currently unavailable. Please try again later.") },
-            confirmButton = { Button({}) { Text("OK") } }
+            confirmButton = { Button({ showServerUnreachableDialog = false }) { Text("OK") } }
         )
     }
 

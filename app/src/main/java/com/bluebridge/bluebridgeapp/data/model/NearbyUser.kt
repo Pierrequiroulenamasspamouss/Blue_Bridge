@@ -21,8 +21,6 @@ sealed class NearbyUsersState {
     object Loading : NearbyUsersState()
     data class Success(val users: List<NearbyUser>) : NearbyUsersState()
     data class Error(val message: String) : NearbyUsersState()
-    object NoUsers : NearbyUsersState()
-    object LocationPermissionDenied : NearbyUsersState()
 }
 
 @Serializable
@@ -31,7 +29,7 @@ data class NearbyUsersRequest(
     val longitude: Double,
     val radius: Double,
     val userId: String,
-    val token: String
+    val loginToken: String
 )
 
 @Serializable

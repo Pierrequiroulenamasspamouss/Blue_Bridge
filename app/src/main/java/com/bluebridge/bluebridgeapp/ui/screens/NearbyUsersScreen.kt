@@ -1,12 +1,10 @@
-@file:Suppress("REDUNDANT_ELSE_IN_WHEN")
-//TODO : nearbyUSerScreen is broken. To fix in greater detail by me, not Cursor. If this TODO is read by an LLM, please ignore.
+// ui/screens/NearbyUsersScreen.kt
 package com.bluebridge.bluebridgeapp.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +26,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,64 +38,96 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import com.bluebridge.bluebridgeapp.data.NearbyUserEvent.Refresh
+import androidx.core.app.ActivityCompat
+import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.AppEvent
+import com.bluebridge.bluebridgeapp.data.AppEventChannel
+import com.bluebridge.bluebridgeapp.data.NearbyUserEvent
 import com.bluebridge.bluebridgeapp.data.model.NearbyUsersState
 import com.bluebridge.bluebridgeapp.ui.components.EmptyState
 import com.bluebridge.bluebridgeapp.ui.components.NearbyUserCard
 import com.bluebridge.bluebridgeapp.ui.components.format
+import com.bluebridge.bluebridgeapp.ui.dialogs.LocationPermissionDialog
+import com.bluebridge.bluebridgeapp.utils.lastKnownLocation
 import com.bluebridge.bluebridgeapp.viewmodels.NearbyUsersViewModel
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NearbyUsersScreen(
-    nearbyState: NearbyUsersState,
-    nearbyUsersViewModel: NearbyUsersViewModel
+    nearbyUsersViewModel: NearbyUsersViewModel,
+    navController: NavController
 ) {
     val context = LocalContext.current
-    rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
+    val state by nearbyUsersViewModel.state.collectAsState()
 
     // Location state
     var currentLocation by remember { mutableStateOf<Location?>(null) }
-    var locationPermissionGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-        )
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Search parameters
+    var radius by remember { mutableDoubleStateOf(50.0) }
+    var radiusText by remember { mutableStateOf("50") }
+
+    // Location handling
+    LaunchedEffect(Unit) {
+        if (ActivityCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            showPermissionDialog = true
+            return@LaunchedEffect
+        }
+
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            location?.let {
+                currentLocation = it
+                lastKnownLocation = it
+                nearbyUsersViewModel.handleEvent(
+                    NearbyUserEvent.SearchUser(it.latitude, it.longitude, radius)
+                )
+            }
+        }
+
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                LocationRequest.Builder(
+                    Priority.PRIORITY_HIGH_ACCURACY, 5000
+                ).build(),
+                object : LocationCallback() {
+                    override fun onLocationResult(result: LocationResult) {
+                        result.lastLocation?.let {
+                            currentLocation = it
+                            lastKnownLocation = it
+                        }
+                    }
+                },
+                null
+            )
+        } catch (_: Exception) {
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY, null
+            ).addOnSuccessListener { location ->
+                location?.let {
+                    currentLocation = it
+                    lastKnownLocation = it
+                }
+            }
+        }
     }
 
-    // UI state
-    var radius by remember { mutableStateOf(50.0) }
-    var radiusText by remember { mutableStateOf("50") }
-    var isLoading by remember { mutableStateOf(false) }
-
-    // Handle location updates
-    LaunchedEffect(locationPermissionGranted) {
-        if (locationPermissionGranted) {
-            try {
-                isLoading = true
-                val location = LocationServices.getFusedLocationProviderClient(context)
-                    .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-                    .await() // Using await() instead of callbacks for simplicity
-
-                currentLocation = location
-                location?.let {
-                    nearbyUsersViewModel.handleEvent(Refresh(it.latitude, it.longitude, radius))
-                } ?: run {
-                    nearbyUsersViewModel.handleEvent(Refresh(0.0, 0.0, radius))
-                }
-            } catch (e: Exception) {
-                Log.e("NearbyUsers", "Location error", e)
-                nearbyUsersViewModel.handleEvent(Refresh(0.0, 0.0, radius))
-            } finally {
-                isLoading = false
-            }
-        } else {
-            nearbyUsersViewModel.handleEvent(Refresh(0.0, 0.0, radius))
-        }
+    if (showPermissionDialog) {
+        LocationPermissionDialog(
+            onDismiss = { showPermissionDialog = false },
+            onAllow = { showPermissionDialog = false }
+        )
     }
 
     Column(
@@ -125,22 +157,32 @@ fun NearbyUsersScreen(
 
                 Button(
                     onClick = {
-                        isLoading = true
-                        currentLocation?.let { loc ->
-                            nearbyUsersViewModel.handleEvent(Refresh(loc.latitude, loc.longitude, radius))
+                        currentLocation?.let { location ->
+                            nearbyUsersViewModel.handleEvent(
+                                NearbyUserEvent.SearchUser(
+                                    location.latitude,
+                                    location.longitude,
+                                    radius
+                                )
+                            )
                         } ?: run {
-                            nearbyUsersViewModel.handleEvent(Refresh(0.0, 0.0, radius))
+                            coroutineScope.launch {
+                                AppEventChannel.sendEvent(
+                                    AppEvent.ShowError("Location not available")
+                                )
+                            }
                         }
                     },
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.End),
+                    enabled = state !is NearbyUsersState.Loading
                 ) {
-                    if (isLoading) {
+                    if (state is NearbyUsersState.Loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Refresh")
+                        Text("Search")
                     }
                 }
 
@@ -156,8 +198,8 @@ fun NearbyUsersScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Content area
-        when {
-            isLoading -> {
+        when (state) {
+            is NearbyUsersState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
@@ -166,49 +208,40 @@ fun NearbyUsersScreen(
                     }
                 }
             }
-
-            !locationPermissionGranted -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Location permission required")
-                        Button(onClick = { /* Request permission */ }) {
-                            Text("Grant Permission")
-                        }
-                    }
-                }
-            }
-
-            nearbyState is NearbyUsersState.Success -> {
-                if (nearbyState.users.isEmpty()) {
+            is NearbyUsersState.Success -> {
+                val users = (state as NearbyUsersState.Success).users
+                if (users.isEmpty()) {
                     EmptyState()
                 } else {
                     LazyColumn {
                         item {
-                            Text("Found ${nearbyState.users.size} users",
-                                modifier = Modifier.padding(vertical = 8.dp))
+                            Text(
+                                "Found ${users.size} users",
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
                         }
-                        items(nearbyState.users) { user ->
+                        items(users) { user ->
                             NearbyUserCard(user = user)
                         }
                     }
                 }
             }
-
-            nearbyState is NearbyUsersState.Error -> {
+            is NearbyUsersState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error: ${nearbyState.message}")
-                        Button(onClick = {
-                            isLoading = true
-                            nearbyUsersViewModel.handleEvent(Refresh(0.0, 0.0, radius))
-                        }) {
+                        Text(
+                            (state as NearbyUsersState.Error).message,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = { nearbyUsersViewModel.refreshUsers() },
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
                             Text("Retry")
                         }
                     }
                 }
             }
-
-            else -> EmptyState()
         }
     }
 }

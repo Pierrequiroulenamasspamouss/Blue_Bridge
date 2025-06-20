@@ -109,19 +109,6 @@ class UserViewModel(
         }
     }
 
-    private var pendingRegistration: RegisterRequest? = null
-
-    fun setPendingRegistration(request: RegisterRequest) {
-        pendingRegistration = request
-    }
-
-    fun completePendingRegistration() {
-        pendingRegistration?.let { request ->
-            register(request)
-            pendingRegistration = null
-        }
-    }
-
     private fun updateLocation(location: Location) {
         viewModelScope.launch {
             repository.updateLocation(location)
@@ -395,19 +382,19 @@ class UserViewModel(
 
             try {
 
-                // Check if a token already exists in preferences
+                // Check if a loginToken already exists in preferences
                 var token = repository.getNotificationToken()
 
                 if (token.isNullOrEmpty()) {
-                    // If not, get the current FCM token
-                    Log.d("UserViewModel", "No token in preferences, fetching from Firebase")
+                    // If not, get the current FCM loginToken
+                    Log.d("UserViewModel", "No loginToken in preferences, fetching from Firebase")
                     token = getFirebaseToken()
                     if (token.isNullOrEmpty()) {
-                        Log.e("UserViewModel", "Failed to get Firebase token")
+                        Log.e("UserViewModel", "Failed to get Firebase loginToken")
                         return@launch
                     }
                 } else {
-                    Log.d("UserViewModel", "Using existing token from preferences: $token")
+                    Log.d("UserViewModel", "Using existing loginToken from preferences: $token")
                 }
 
                 Log.d("UserViewModel", "Got Firebase loginToken: $token")

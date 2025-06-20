@@ -5,12 +5,32 @@ from typing import Optional, List, Dict, Any, Union
 from dataclasses import dataclass
 from pathlib import Path
 
-@dataclass
 class DatabaseConfig:
     path: str
     schema: Dict[str, str]  # table_name -> create_table_sql
 
 class DatabaseManager:
+    def verify_schema():
+        conn = sqlite3.connect('users.sqlite')
+        cursor = conn.cursor()
+
+        # Check if table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        if not cursor.fetchone():
+            print("Users table doesn't exist!")
+            return
+
+        # Get all columns
+        cursor.execute("PRAGMA table_info(users)")
+        columns = cursor.fetchall()
+        print("Current columns in users table:")
+        for col in columns:
+            print(f"{col[1]} ({col[2]})")
+
+        conn.close()
+
+    if __name__ == "__main__":
+        verify_schema()
     def __init__(self):
         self.databases = {
             'users': DatabaseConfig(
@@ -27,7 +47,7 @@ class DatabaseManager:
                             role TEXT NOT NULL DEFAULT 'user',
                             location TEXT,
                             waterNeeds TEXT,
-                            lastActive TIMESTAMP,
+                            lastActive TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             registrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             notificationPreferences TEXT,
                             loginToken TEXT UNIQUE,
@@ -36,33 +56,8 @@ class DatabaseManager:
                             isWellOwner BOOLEAN DEFAULT 0,
                             themePreference INTEGER DEFAULT 0,
                             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    '''
-                }
-            ),
-            'wells': DatabaseConfig(
-                path='wells.sqlite',
-                schema={
-                    'wells': '''
-                        CREATE TABLE IF NOT EXISTS wells (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            description TEXT,
-                            location TEXT NOT NULL,
-                            latitude REAL NOT NULL,
-                            longitude REAL NOT NULL,
-                            water_level TEXT,
-                            water_quality TEXT,
-                            status TEXT,
-                            owner TEXT,
-                            contact_info TEXT,
-                            access_info TEXT,
-                            notes TEXT,
-                            last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            espId TEXT UNIQUE,
-                            wellWaterConsumption TEXT,
-                            wellWaterType TEXT
+                            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+                        
                         )
                     '''
                 }
@@ -88,12 +83,24 @@ class DatabaseManager:
     def _initialize_databases(self):
         """Initialize all databases and create tables if they don't exist."""
         for db_name, config in self.databases.items():
+            db_path = config.path
+            print(f"\nInitializing database: {db_path}")
+
+            # Delete existing database file to ensure clean slate
+            if Path(db_path).exists():
+                print(f"Removing existing database file: {db_path}")
+                Path(db_path).unlink()
+
             with self._get_connection(db_name) as conn:
                 cursor = conn.cursor()
                 for table_name, schema in config.schema.items():
-                    cursor.execute(schema)
+                    try:
+                        cursor.execute(schema)
+                        print(f"Created table {table_name} with schema:")
+                        print(schema)
+                    except sqlite3.Error as e:
+                        print(f"Error creating table {table_name}: {e}")
                 conn.commit()
-
     def _get_connection(self, db_name: str) -> sqlite3.Connection:
         """Get a connection to the specified database."""
         if db_name not in self.databases:

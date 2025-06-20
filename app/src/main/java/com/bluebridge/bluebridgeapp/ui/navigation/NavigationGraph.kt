@@ -243,7 +243,7 @@ fun NavigationGraph(
 
         // Nearby Users Screen
         composable(Routes.NEARBY_USERS_SCREEN) {
-            val nearbyState = nearbyUsersViewModel.uiState.value
+
             val userState = userViewModel.state.value
             val userData = (userState as? UiState.Success<UserData>)?.data
             
@@ -258,8 +258,8 @@ fun NavigationGraph(
                 LoadingScreen()
             } else {
                 NearbyUsersScreen(
-                    nearbyState = nearbyState,
-                    nearbyUsersViewModel = nearbyUsersViewModel
+                    nearbyUsersViewModel = nearbyUsersViewModel,
+                    navController = navController
                 )
             }
         }
