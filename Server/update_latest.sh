@@ -32,7 +32,7 @@ cp -r "$SOURCE_DIR"/* "$TARGET_DIR"
 rm -rf "$TMP_DIR"
 
 #Send a notification to all users that a new update has been deployed
-python3 /opt/bluebridge/Server/send_notification.py
+python3 /opt/bluebridge/Server/scripts/send_notification.py
 
 #Restart the server to apply the update
 service bluebridge restart
