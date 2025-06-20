@@ -62,7 +62,6 @@ import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 
@@ -93,7 +92,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         currentUserRole = userViewModel.repository.getRoleValue()
         // Simulate data loading delay
-        delay(50) // Simulate a 50ms delay //TODO : make this better , a hard coded delay is NOT good
+        // delay(50) // Simulate a 50ms delay //TODO : make this better , a hard coded delay is NOT good
         isLoading = false // Data loaded
     }
     // Check if user is logged in

@@ -291,6 +291,7 @@
                 emailsGroup.style.display = 'block';
             } else {
                 emailsGroup.style.display = 'none';
+                emailsInput.value = ''; // Clear the email input when switching to all
             }
         });
 
@@ -304,6 +305,7 @@
 
             const title = titleInput.value.trim();
             const message = messageInput.value.trim();
+            const targetType = targetTypeSelect.value;
             const emails = emailsInput.value.trim().split('\n')
                 .map(email => email.trim())
                 .filter(email => email.length > 0);
@@ -314,22 +316,35 @@
                 return;
             }
 
+            // Validate email list when specific users is selected
+            if (targetType === 'specific' && emails.length === 0) {
+                showResult('Please enter at least one email address when targeting specific users', true);
+                return;
+            }
+
             // Show loading state
             sendButton.disabled = true;
             loading.style.display = 'inline-block';
             resultDiv.style.display = 'none';
 
             try {
+                // Only include targetEmails in the request if we're targeting specific users
+                const requestBody = {
+                    title,
+                    message,
+                    targetType // Add targetType to the request
+                };
+
+                if (targetType === 'specific') {
+                    requestBody.targetEmails = emails;
+                }
+
                 const response = await fetch('/api/notifications/send', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        title,
-                        message,
-                        targetEmails: emails
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
@@ -344,7 +359,7 @@
                 addToHistory({
                     time: new Date(),
                     title,
-                    recipients: emails.length > 0 ?
+                    recipients: targetType === 'specific' ?
                         `${emails.length} specific users` : 'All users',
                     status: 'Sent'
                 });
@@ -356,7 +371,7 @@
                 addToHistory({
                     time: new Date(),
                     title,
-                    recipients: emails.length > 0 ?
+                    recipients: targetType === 'specific' ?
                         `${emails.length} specific users` : 'All users',
                     status: 'Failed'
                 });
