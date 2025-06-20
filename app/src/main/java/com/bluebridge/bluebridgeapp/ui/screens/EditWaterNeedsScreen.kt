@@ -41,8 +41,8 @@ import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
-import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteWaterNeedDialog
-import com.bluebridge.bluebridgeapp.ui.Dialogs.WaterNeedDialog
+import com.bluebridge.bluebridgeapp.ui.dialogs.DeleteWaterNeedDialog
+import com.bluebridge.bluebridgeapp.ui.dialogs.WaterNeedDialog
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.flow.first
@@ -139,7 +139,7 @@ fun EditWaterNeedsScreen(
                 }
             }
 
-            // Dialogs
+            // dialogs
             if (waterManager.showAddDialog) {
                 WaterNeedDialog(
                     title = "Add Water Need",

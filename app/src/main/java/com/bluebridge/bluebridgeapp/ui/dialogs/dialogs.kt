@@ -1,5 +1,11 @@
-package com.bluebridge.bluebridgeapp.ui.Dialogs
+package com.bluebridge.bluebridgeapp.ui.dialogs
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -120,7 +127,7 @@ fun WaterNeedDialog(
                     "${state.newAmountSlider.toInt()} liters",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = colorScheme.primary,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
@@ -164,7 +171,6 @@ fun WaterNeedDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
                     )
 
                     ExposedDropdownMenu(
@@ -246,11 +252,64 @@ fun WaterNeedDialog(
 }
 
 @Composable
+fun LocationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            onAllow()
+        } else {
+            // Optionally, show a message explaining why the permission is needed
+            // and provide an option to open app settings manually.
+            onDismiss()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Location Permission") },
+        text = { Text("BlueBridge needs location access for nearby water sources") },
+        confirmButton = {
+            Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) { Text("Allow") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
+    val context = LocalContext.current
+    val isPermissionGranted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            onAllow()
+        } else {
+            var showDialog = true
+            onDismiss()
+        }
+    }
+    if (!isPermissionGranted) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Notification Permission") },
+            text = { Text("Enable notifications for water source updates") },
+            confirmButton = {
+                Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("Allow") }
+            },
+            dismissButton = { TextButton(onClick = onDismiss) { Text("Later") } }
+        )
+    }
+}
+
+@Composable
 fun EnhancedWellDetailsDialog(
     well: WellData,
     onAdd: () -> Unit,
     onDismiss: () -> Unit,
-    onNavigate: () -> Unit
+    onMoreDetails: () -> Unit
 ) {
     val waterLevelProgress = if (well.wellWaterLevel.isNotBlank() && well.wellCapacity.isNotBlank()) {
         calculateWaterLevelProgress(well.wellWaterLevel, well.wellCapacity)
@@ -284,7 +343,7 @@ fun EnhancedWellDetailsDialog(
                     Text("Water Level: ${well.wellWaterLevel}L", style = MaterialTheme.typography.bodyMedium)
                     waterLevelProgress?.let {
                         LinearProgressIndicator(
-                            progress = it,
+                            progress = { it },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
@@ -303,7 +362,7 @@ fun EnhancedWellDetailsDialog(
         dismissButton = {
             Row {
                 TextButton(onClick = onDismiss) { Text("Cancel") }
-                TextButton(onClick = onNavigate) { Text("More details") }
+                TextButton(onClick = onMoreDetails) { Text("More details") }
             }
         }
     )
@@ -377,7 +436,7 @@ fun LogoutConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         title = "Confirm Logout",
         message = "Are you sure you want to sign out?",
         confirmText = "Logout",
-        confirmButtonColor = MaterialTheme.colorScheme.error,
+        confirmButtonColor = colorScheme.error,
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )
@@ -427,7 +486,7 @@ fun DeleteAccountDialog(
                     } else {
                         Text(
                             "⚠️ WARNING: This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you absolutely sure?",
-                            color = MaterialTheme.colorScheme.error,
+                            color = colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -435,7 +494,7 @@ fun DeleteAccountDialog(
             },
             confirmButton = {
                 val buttonText = if (confirmed) "Delete Account" else "Continue"
-                val buttonColor = if (confirmed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                val buttonColor = if (confirmed) colorScheme.error else colorScheme.primary
 
                 TextButton(
                     onClick = {

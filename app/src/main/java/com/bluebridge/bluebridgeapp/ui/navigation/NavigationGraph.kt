@@ -59,7 +59,7 @@ fun NavigationGraph(
         modifier = modifier
     ) {
         composable(Routes.FEATURE_NOT_IMPLEMENTED) {
-            FeatureNotImplementedScreen(navController = navController) { navController.popBackStack() }
+            FeatureNotImplementedScreen(navController = navController)
         }
         composable(Routes.EDIT_WATER_NEEDS_SCREEN) {
             val userState = userViewModel.state.value
@@ -216,7 +216,6 @@ fun NavigationGraph(
             // Handle new well case
             else if (wellIdParam == Routes.WELL_CONFIG_NEW) {
                 FeatureNotImplementedScreen(
-                    onBackClick = { navController.popBackStack() },
                     navController = navController
                 )
             }
@@ -374,7 +373,7 @@ fun NavigationGraph(
         // Urgent SMS Screen
         composable(Routes.URGENT_SMS_SCREEN) {
             val userState = userViewModel.state.value
-            val context = LocalContext.current
+            LocalContext.current
             val userData = (userState as? UiState.Success<UserData>)?.data
 
             if (userData == null || userData.role == "guest") {
@@ -397,6 +396,8 @@ fun NavigationGraph(
         composable(Routes.EASTER_EGG_SCREEN) {
             EasterEgg()
         }
+
+
     }
 
 }

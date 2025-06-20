@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.bluebridge.bluebridgeapp.ui.screens
 
 import android.annotation.SuppressLint
@@ -44,11 +46,12 @@ import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.UserData
-import com.bluebridge.bluebridgeapp.ui.Dialogs.DeleteAccountDialog
-import com.bluebridge.bluebridgeapp.ui.Dialogs.LogoutConfirmationDialog
-import com.bluebridge.bluebridgeapp.ui.Dialogs.ThemeSelectionDialog
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
+import com.bluebridge.bluebridgeapp.ui.dialogs.DeleteAccountDialog
+import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
+import com.bluebridge.bluebridgeapp.ui.dialogs.NotificationPermissionDialog
+import com.bluebridge.bluebridgeapp.ui.dialogs.ThemeSelectionDialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
@@ -68,13 +71,13 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
-    var showDeleteAccountConfirmationDialog by remember { mutableStateOf(false) }
     var passwordForDeletion by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val userData = (userState as? UiState.Success<UserData>)?.data
     var easterCount by remember { mutableIntStateOf(0) }
     var currentUserRole by remember { mutableIntStateOf(0) }
 
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
     // Get current theme preference directly from ViewModel's theme state
     val currentThemePreference by userViewModel.currentTheme.collectAsState()
 
@@ -164,9 +167,17 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Register to notifications",
-                    subtitle = "Send your firebase push notification loginToken to the server",
+                    subtitle = if (currentUserRole <= guestRole){ "Register with a proper E-mail address to recieve notifications"}else "Send your firebase push notification loginToken to the server",
                     onClick = {
-                        userViewModel.registerForNotifications()
+                        if (currentUserRole > guestRole) {
+                            showNotificationPermissionDialog = true
+
+                        }
+                        else {
+                            coroutineScope.launch {
+                                AppEventChannel.sendEvent(AppEvent.ShowInfo("You need to be registered to receive notifications"))
+                            }
+                        }
                     }
                 )
             }
@@ -248,6 +259,15 @@ fun SettingsScreen(
                     subtitle = "View app credits",
                     onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
                 )
+                /*
+                //EULA
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "End User License Agreement",
+                    subtitle = "What you agree to by using this app",
+                    onClick = { navController.navigate(Routes.EULA_SCREEN) }
+                )
+                 */
 
             }
 
@@ -319,4 +339,15 @@ fun SettingsScreen(
             }
         )
     }
+
+    if (showNotificationPermissionDialog) {
+        NotificationPermissionDialog(
+            onDismiss = { showNotificationPermissionDialog = false },
+            onAllow = {
+                userViewModel.registerForNotifications()
+                showNotificationPermissionDialog = false
+            }
+        )
+    }
+
 }

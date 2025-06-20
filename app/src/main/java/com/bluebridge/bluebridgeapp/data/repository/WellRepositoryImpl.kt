@@ -1,14 +1,10 @@
 package com.bluebridge.bluebridgeapp.data.repository
-import android.content.Context
 import android.util.Log
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.WellsResponse
-import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.network.ServerApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -216,46 +212,4 @@ class WellRepositoryImpl(
         return@withContext true
     }
 
-    suspend fun loadWells(
-        page: Int,
-        pageSize: Int,
-        searchQuery: String,
-        waterType: String?,
-        status: String?,
-        minWaterLevel: Int?,
-        maxWaterLevel: Int?,
-        context: Context,
-        onSuccess: (List<WellData>, Boolean) -> Unit
-    ) {
-        try {
-            val serverApi = RetrofitBuilder.getServerApi(context)
-            val response = serverApi.getWellsWithFilters(
-                page = page,
-                limit = pageSize,
-                wellName = searchQuery.takeIf { it.isNotBlank() },
-                wellStatus = status,
-                wellWaterType = waterType,
-                minWaterLevel = minWaterLevel,
-                maxWaterLevel = maxWaterLevel
-            )
-
-            if (response.isSuccessful) {
-                val wellsResponse = response.body()
-                if (wellsResponse != null) {
-                    Log.d("BrowseWellsScreen", "Wells loaded successfully")
-                    onSuccess(wellsResponse.data, 10 > page * pageSize)
-                } else {
-                    AppEventChannel.sendEvent(AppEvent.ShowError("No wells found"))
-
-                }
-            } else {
-                AppEventChannel.sendEvent(AppEvent.ShowError("Failed to load wells"))
-
-            }
-        } catch (e: Exception) {
-            Log.e("BrowseWellsScreen", "Error loading wells", e)
-            AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.message}"))
-
-        }
-    }
 }

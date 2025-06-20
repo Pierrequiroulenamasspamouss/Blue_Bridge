@@ -5,8 +5,6 @@ import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
-import com.bluebridge.bluebridgeapp.data.repository.AppEventHandler
-import com.bluebridge.bluebridgeapp.viewmodels.BrowseWellsViewModel.WellFilters
 import kotlinx.coroutines.channels.Channel
 
 open class WellEvents {
@@ -22,9 +20,6 @@ open class WellEvents {
 }
 
 sealed class BrowseWellsEvent {
-    object Load : BrowseWellsEvent()
-    object Refresh : BrowseWellsEvent()
-    data class ApplyFilters(val filters: WellFilters) : BrowseWellsEvent()
     data class UpdateSearchQuery(val query: String) : BrowseWellsEvent()
     data class UpdateWaterTypeFilter(val waterType: String?) : BrowseWellsEvent()
     data class UpdateStatusFilter(val status: String?) : BrowseWellsEvent()

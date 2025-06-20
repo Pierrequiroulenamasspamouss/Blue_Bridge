@@ -29,7 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -55,10 +54,10 @@ import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
-import com.bluebridge.bluebridgeapp.ui.Dialogs.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
 import com.bluebridge.bluebridgeapp.ui.components.FiltersSection
 import com.bluebridge.bluebridgeapp.ui.components.MapView
+import com.bluebridge.bluebridgeapp.ui.dialogs.EnhancedWellDetailsDialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
@@ -285,9 +284,9 @@ fun BrowseWellsScreen(
                                     val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
                                     val lat = well.getLatitude()
                                     val lon = well.getLongitude()
-                                    if (lat != null && lon != null) {
-                                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
-                                    }
+
+                                    navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
+
                                 }
                             )
                         }
@@ -314,13 +313,9 @@ fun BrowseWellsScreen(
             EnhancedWellDetailsDialog(
                 well = well,
                 onDismiss = { selectedWell = null },
-                onNavigate = {
-                    val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
-                    val lat = well.getLatitude()
-                    val lon = well.getLongitude()
-                    if (lat != null && lon != null) {
-                        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
-                    }
+                onMoreDetails = {
+                    navController.navigate(Routes.WELL_DETAILS_SCREEN) //TODO: make this request all the well's data for the full details screen
+
                 },
                 onAdd = {
                     // Launch a coroutine to handle the suspend function

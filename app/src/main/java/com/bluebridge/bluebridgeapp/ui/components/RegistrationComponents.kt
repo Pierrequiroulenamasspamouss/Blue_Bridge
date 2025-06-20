@@ -15,6 +15,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -89,7 +90,7 @@ fun WaterNeedsSection(
                     onClick = {
                         val amountValue = amount.toIntOrNull()
                         if (amountValue != null && amountValue > 0) {
-                            val finalPriority = when (type) {
+                            when (type) {
                                 "Absolute emergency" -> 0
                                 "Medical" -> 1
                                 "Drinking" -> 2
@@ -97,7 +98,7 @@ fun WaterNeedsSection(
                                 "Industry" -> 4
                                 else -> priority
                             }
-
+                            /*
                             val newNeed = finalPriority?.let {
                                 WaterNeed(
                                     amount = amountValue,
@@ -106,6 +107,8 @@ fun WaterNeedsSection(
                                     priority = it
                                 )
                             }
+
+                             */
 
                             onAmountChange("")
                             onTypeChange("")
@@ -170,7 +173,7 @@ fun WaterUsageTypeSelector(
                 onValueChange = {},
                 label = { Text("Usage Type") },
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }

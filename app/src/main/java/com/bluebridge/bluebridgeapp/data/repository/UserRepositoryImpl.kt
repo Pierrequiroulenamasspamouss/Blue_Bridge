@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 
 class UserRepositoryImpl(
@@ -30,8 +31,8 @@ class UserRepositoryImpl(
     // 1. Authentication Methods
     // ============================================================================================
 
-    override suspend fun register(request: RegisterRequest): Boolean = withContext(Dispatchers.IO) {
-        try {
+    override suspend fun register(request: RegisterRequest): String {
+        return try {
             val response = api.register(request)
 
             if (response.isSuccessful && response.body()?.status == "success") {
@@ -51,14 +52,28 @@ class UserRepositoryImpl(
 
                 Log.d("UserRepository", "Registration successful: $userData")
                 saveUserData(userData)
-                true
+                "true"
             } else {
-                Log.e("UserRepository", "Registration failed: ${response.body()?.message}")
-                false
+                // Try to parse error response
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    if (!errorBody.isNullOrEmpty()) {
+                        val json = JSONObject(errorBody)
+                        json.getString("message")
+                    } else {
+                        response.body()?.message ?: "Unknown error occurred"
+                    }
+                } catch (e: Exception) {
+                    "Registration failed: ${response.message()}"
+                }
+
+                Log.e("UserRepository", "Registration failed: $errorMessage")
+                errorMessage
             }
         } catch (e: Exception) {
-            Log.e("UserRepository", "Registration failed", e)
-            false
+            val errorMsg = "Registration failed: ${e.message}"
+            Log.e("UserRepository", errorMsg, e)
+            errorMsg
         }
     }
 
@@ -96,7 +111,7 @@ class UserRepositoryImpl(
         } catch (e: Exception) {
             Log.e("UserRepository", "Login failed with exception", e)
             false
-        } as Boolean
+        }
     }
 
     override suspend fun logout() {

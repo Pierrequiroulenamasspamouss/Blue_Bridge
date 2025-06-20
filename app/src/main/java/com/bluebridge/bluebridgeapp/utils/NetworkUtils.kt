@@ -6,7 +6,6 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
-
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.repository.WellRepositoryImpl
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
@@ -15,7 +14,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
 
 fun isNetworkAvailable(context: Context): Boolean {
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -136,6 +134,8 @@ suspend fun retrieveDataFromServer(
 /**
  * Refresh a single well by ID
  */
+
+/*
 suspend fun refreshSingleWell(
     wellId: Int,
     wellRepositoryImpl: WellRepositoryImpl,
@@ -172,3 +172,6 @@ suspend fun refreshSingleWell(
         false
     }
 }
+
+ */
+

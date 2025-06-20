@@ -1,6 +1,5 @@
 package com.bluebridge.bluebridgeapp.utils
 
-import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -61,14 +60,3 @@ fun findNearestWells(location: Location, wellViewModel: WellViewModel): List<Wel
         .map { it.first }
 }
 
-/**
- * Format time in minutes to a human-readable string
- */
-@SuppressLint("DefaultLocale")
-fun formatTime(minutes: Float): String {
-    return when {
-        minutes < 1 -> "less than a minute"
-        minutes < 60 -> "${minutes.toInt()} minutes"
-        else -> String.format("%.1f hours", minutes / 60)
-    }
-} 

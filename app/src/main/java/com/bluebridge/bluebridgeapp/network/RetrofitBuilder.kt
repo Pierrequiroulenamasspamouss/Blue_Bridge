@@ -31,7 +31,6 @@ import javax.net.ssl.X509TrustManager
  * Singleton object to create and provide a Retrofit instance
  */
 object RetrofitBuilder {
-    private const val TAG = "RetrofitBuilder"
     private var serverApi: ServerApi? = null
     private var devServerApi: ServerApi? = null
 

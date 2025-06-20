@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_name" translatable="false">Blue Bridge</string>
     <string name="app_dev" translatable="false">Pierre Sluse</string>
     <string name="app_designer" translatable="false">Joel Wandege</string>

@@ -88,7 +88,6 @@ fun ProfileScreen(
     val isLoggedIn = userData != null && userData.email.isNotBlank()
 
     // Add easter egg counter
-    var easterEggCount by remember { mutableStateOf(0) }
 
     // Handle back navigation
     BackHandler {

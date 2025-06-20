@@ -1,8 +1,6 @@
 package com.bluebridge.bluebridgeapp.ui.components
 
-import com.bluebridge.bluebridgeapp.data.model.UserData
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,9 +34,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WeatherData
-import java.util.Locale
 import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun EmptyWeatherState(onRefresh: () -> Unit) {
@@ -184,7 +183,7 @@ fun DayForecast(date: String, weatherItems: List<WeatherData>) {
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            text = weather.description.capitalize(Locale.getDefault()),
+                            text = weather.description.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                             style = MaterialTheme.typography.bodyLarge
                         )
 

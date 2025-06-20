@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -105,7 +105,7 @@ fun EasterEgg() {
         while (isPlaying && !gameOver) {
             delay(5000L) // 5 seconds
             if (!gameOver && isPlaying) {
-                foodType = FoodType.values().random()
+                foodType = FoodType.entries.toTypedArray().random()
             }
         }
     }
@@ -141,7 +141,8 @@ fun EasterEgg() {
                         }
 
                         food = generateFood(newSnake)
-                        foodType = if (Random.nextInt(10) < 7) FoodType.NORMAL else FoodType.values().random()
+                        foodType = if (Random.nextInt(10) < 7) FoodType.NORMAL else FoodType.entries.toTypedArray()
+                            .random()
                     } else {
                         newSnake.removeAt(newSnake.lastIndex)
                     }
@@ -385,7 +386,7 @@ fun EasterEgg() {
                                 )
                         ) {
                             Icon(
-                                Icons.Default.KeyboardArrowLeft,
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                                 contentDescription = "Left",
                                 modifier = Modifier.size(40.dp),
                                 tint = if (direction == Direction.LEFT)
@@ -410,7 +411,7 @@ fun EasterEgg() {
                                 )
                         ) {
                             Icon(
-                                Icons.Default.KeyboardArrowRight,
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "Right",
                                 modifier = Modifier.size(40.dp),
                                 tint = if (direction == Direction.RIGHT)

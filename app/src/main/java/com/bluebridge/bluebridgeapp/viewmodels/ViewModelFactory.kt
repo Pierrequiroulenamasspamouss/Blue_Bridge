@@ -51,7 +51,7 @@ class ViewModelFactory(
 
             modelClass.isAssignableFrom(WeatherViewModel::class.java) -> {
                 WeatherViewModel(
-                    weatherRepository = weatherRepository, userRepository = userRepository,
+                    userRepository = userRepository,
                     context = context,
                 ) as T
             }

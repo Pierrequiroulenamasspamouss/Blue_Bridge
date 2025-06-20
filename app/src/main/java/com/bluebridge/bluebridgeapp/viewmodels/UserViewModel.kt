@@ -109,6 +109,18 @@ class UserViewModel(
         }
     }
 
+    private var pendingRegistration: RegisterRequest? = null
+
+    fun setPendingRegistration(request: RegisterRequest) {
+        pendingRegistration = request
+    }
+
+    fun completePendingRegistration() {
+        pendingRegistration?.let { request ->
+            register(request)
+            pendingRegistration = null
+        }
+    }
 
     private fun updateLocation(location: Location) {
         viewModelScope.launch {
@@ -150,16 +162,16 @@ class UserViewModel(
                 Log.d("UserViewModel", "Attempting registration for: ${request.email}")
                 val success = repository.register(request)
 
-                if (success) {
+                if (success == "true") {
                     Log.d("UserViewModel", "Registration successful for: ${request.email}")
                     loadUser()
-                    //navController.navigate(Routes.LOGIN_SCREEN)//TODO: pop the user to the homescreen
                     // Always register FCM loginToken after successful registration regardless of notification preferences
                     // This ensures the loginToken is always up-to-date on the server
                     registerForNotifications()
                 } else {
+
                     Log.e("UserViewModel", "Registration failed for: ${request.email}")
-                    _state.value = UiState.Error("Registration failed. Please try again.")
+                    _state.value = UiState.Error(success)
                 }
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Registration error: ${e.message}", e)
@@ -380,13 +392,8 @@ class UserViewModel(
      */
     fun registerForNotifications() {
         viewModelScope.launch {
+
             try {
-                val userData = repository.getUserData().first()
-                // Skip for guest users
-                if (userData?.role == "guest") {
-                    Log.d("UserViewModel", "Skipping notification registration for guest user")
-                    return@launch
-                }
 
                 // Check if a token already exists in preferences
                 var token = repository.getNotificationToken()

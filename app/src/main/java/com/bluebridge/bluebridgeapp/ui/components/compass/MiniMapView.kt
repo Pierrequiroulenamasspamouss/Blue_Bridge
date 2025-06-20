@@ -2,6 +2,7 @@
 
 package com.bluebridge.bluebridgeapp.ui.components.compass
 
+import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Build
 import android.preference.PreferenceManager
@@ -10,10 +11,14 @@ import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -21,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,11 +58,11 @@ private const val MIN_ZOOM_LEVEL = 2.0 // Minimum zoom level allowed
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MiniMapView(
+private fun MiniMapView(
     userLocation: Location,
     targetLatitude: Double? = null,
     targetLongitude: Double? = null,
-    modifier: Modifier = Modifier,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     azimuth: Float = 0f  // Add compass bearing input
 ) {
     val context = LocalContext.current
@@ -73,19 +80,19 @@ fun MiniMapView(
     val isInitialSetup = remember { mutableStateOf(true) }
     
     // Remember current zoom level to maintain it when updating
-    val currentZoom = remember { mutableStateOf(userPreferredZoomLevel) }
+    val currentZoom = remember { mutableDoubleStateOf(userPreferredZoomLevel) }
     
     // Rotation state for the user marker (in degrees, 0 = North)
-    val rotation = remember { mutableStateOf(0f) }
+    val rotation = remember { mutableFloatStateOf(0f) }
     
     // Update rotation based on compass
     LaunchedEffect(azimuth) {
-        rotation.value = -azimuth // Negative because we want clockwise rotation
+        rotation.floatValue = -azimuth // Negative because we want clockwise rotation
         
         // Update user marker rotation if available
         try {
             userMarkerRef?.let { marker ->
-                marker.rotation = rotation.value
+                marker.rotation = rotation.floatValue
                 mapViewInstance?.invalidate()
             }
         } catch (e: Exception) {
@@ -101,9 +108,9 @@ fun MiniMapView(
             try {
                 // Store current zoom (if not initial setup)
                 if (!isInitialSetup.value) {
-                    currentZoom.value = mapView.zoomLevelDouble
-                    userPreferredZoomLevel = currentZoom.value // Store user's preferred zoom
-                    Log.d(TAG, "Stored current zoom level: ${currentZoom.value}")
+                    currentZoom.doubleValue = mapView.zoomLevelDouble
+                    userPreferredZoomLevel = currentZoom.doubleValue // Store user's preferred zoom
+                    Log.d(TAG, "Stored current zoom level: ${currentZoom.doubleValue}")
                 }
                 
                 // Always update user marker position
@@ -120,7 +127,7 @@ fun MiniMapView(
                         // No matter what, focus on user with user's preferred zoom
                         mapView.controller.setZoom(userPreferredZoomLevel)
                         mapView.controller.animateTo(userPoint)
-                        currentZoom.value = userPreferredZoomLevel
+                        currentZoom.doubleValue = userPreferredZoomLevel
                         Log.d(TAG, "Initial focus on user with zoom=$userPreferredZoomLevel")
                         
                         // Mark initial setup as complete
@@ -128,9 +135,9 @@ fun MiniMapView(
                         Log.d(TAG, "Initial setup completed")
                     } else {
                         // Just center on user when following, preserving zoom
-                        mapView.controller.setZoom(currentZoom.value)
+                        mapView.controller.setZoom(currentZoom.doubleValue)
                         mapView.controller.animateTo(userPoint)
-                        Log.d(TAG, "Following user - map centered, maintaining zoom at ${currentZoom.value}")
+                        Log.d(TAG, "Following user - map centered, maintaining zoom at ${currentZoom.doubleValue}")
                     }
                 } else {
                     Log.d(TAG, "Not following user - marker updated but map not centered")
@@ -239,19 +246,20 @@ fun MiniMapView(
                         }
                         
                         // Add listener to detect map interactions
-                        setOnTouchListener { _, event ->
+                        setOnTouchListener { v, event ->
                             when (event.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     // Log touch start
+                                    v.performClick()
                                     Log.d(TAG, "Map touch detected (ACTION_DOWN)")
                                 }
                                 MotionEvent.ACTION_MOVE -> {
                                     // User is dragging the map, disable following
                                     if (isFollowingUser) {
                                         isFollowingUser = false
-                                        currentZoom.value = zoomLevelDouble // Store zoom level when user takes control
-                                        userPreferredZoomLevel = currentZoom.value // Update preferred zoom
-                                        Log.d(TAG, "Map drag detected - disabling follow mode, stored zoom=${currentZoom.value}")
+                                        currentZoom.doubleValue = zoomLevelDouble // Store zoom level when user takes control
+                                        userPreferredZoomLevel = currentZoom.doubleValue // Update preferred zoom
+                                        Log.d(TAG, "Map drag detected - disabling follow mode, stored zoom=${currentZoom.doubleValue}")
                                     }
                                 }
                             }
@@ -272,7 +280,7 @@ fun MiniMapView(
                                     return true // Handled
                                 }
                                 
-                                currentZoom.value = event.zoomLevel
+                                currentZoom.doubleValue = event.zoomLevel
                                 userPreferredZoomLevel = event.zoomLevel // Store user's preferred zoom
                                 Log.d(TAG, "User changed zoom to ${event.zoomLevel}")
                                 return false
@@ -304,7 +312,7 @@ fun MiniMapView(
                 // Update the user marker direction based on compass bearing
                 try {
                     userMarkerRef?.let { marker ->
-                        marker.rotation = rotation.value
+                        marker.rotation = rotation.floatValue
                         mapView.invalidate()
                     }
                 } catch (e: Exception) {
@@ -322,7 +330,7 @@ fun MiniMapView(
                         val targetPoint = GeoPoint(targetLatitude, targetLongitude)
                         
                         // Use the current zoom level (user's preferred) but ensure minimum
-                        val zoomToUse = currentZoom.value.coerceAtLeast(MIN_ZOOM_LEVEL)
+                        val zoomToUse = currentZoom.doubleValue.coerceAtLeast(MIN_ZOOM_LEVEL)
                         mapView.controller.setZoom(zoomToUse)
                         mapView.controller.animateTo(targetPoint)
                         Log.d(TAG, "User clicked target button, focusing on target with zoom=$zoomToUse")
@@ -348,9 +356,9 @@ fun MiniMapView(
                     isFollowingUser = true
                     val userPoint = GeoPoint(userLocation.latitude, userLocation.longitude)
                     // Use the current zoom level (user's preferred)
-                    mapView.controller.setZoom(currentZoom.value)
+                    mapView.controller.setZoom(currentZoom.doubleValue)
                     mapView.controller.animateTo(userPoint)
-                    Log.d(TAG, "User clicked center button, focusing with zoom=${currentZoom.value}")
+                    Log.d(TAG, "User clicked center button, focusing with zoom=${currentZoom.doubleValue}")
                 }
             },
             modifier = Modifier
@@ -381,4 +389,29 @@ fun MiniMapView(
         }
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun MiniMapCard(
+    userLocation: Location,
+    targetLat: Double? = null,
+    targetLon: Double? = null,
+    azimuth: Float = 0f
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .height(200.dp),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        MiniMapView(
+            userLocation = userLocation,
+            targetLatitude = targetLat,
+            targetLongitude = targetLon,
+            azimuth = azimuth,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
 

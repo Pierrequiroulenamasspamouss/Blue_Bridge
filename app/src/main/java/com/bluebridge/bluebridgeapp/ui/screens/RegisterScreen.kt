@@ -55,6 +55,7 @@ import com.bluebridge.bluebridgeapp.ui.components.NameField
 import com.bluebridge.bluebridgeapp.ui.components.PasswordField
 import com.bluebridge.bluebridgeapp.ui.components.PhoneField
 import com.bluebridge.bluebridgeapp.ui.components.WaterNeedsSection
+import com.bluebridge.bluebridgeapp.ui.dialogs.ScrollableEULADialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.utils.getPasswordStrength
@@ -95,6 +96,8 @@ fun RegisterScreen(
     val waterNeeds = remember { mutableStateListOf<WaterNeed>() }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
+    var showEULADialog by remember { mutableStateOf(false) }
+    var pendingRegistrationRequest by remember { mutableStateOf<RegisterRequest?>(null) }
 
     // Handle registration state
     val userState by userViewModel.state
@@ -124,6 +127,7 @@ fun RegisterScreen(
             }
         }
     }
+
 
     val imeInsets = WindowInsets.ime.asPaddingValues()
     val navigationBarsInsets = WindowInsets.navigationBars.asPaddingValues()
@@ -222,17 +226,15 @@ fun RegisterScreen(
             // Register button
             Button(
                 onClick = {
-
                     if (!validateForm(email, password, confirmPassword, firstName, lastName)) {
                         coroutineScope.launch {
-                            Log.e("RegisterScreen", "validateForm: email=$email, password=$password, confirmPassword=$confirmPassword, firstName=$firstName, lastName=$lastName")
-                            AppEventChannel.sendEvent(AppEvent.ShowError("Please fill all required fields: "))
-                            Log.e("Registration", "Validation failed")
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Please fill all required fields"))
                         }
                         return@Button
                     }
 
-                    val request = RegisterRequest(
+                    // Store the registration request
+                    pendingRegistrationRequest = RegisterRequest(
                         email = email.trim(),
                         password = encryptPassword(password),
                         firstName = firstName.trim(),
@@ -244,13 +246,23 @@ fun RegisterScreen(
                         phoneNumber = phoneNumber.trim().takeIf { it.isNotBlank() }
                     )
 
-                    userViewModel.register(request)
+                    // Show EULA dialog
+                    showEULADialog = true
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
             ) {
                 if (isLoading) CircularProgressIndicator(Modifier.size(24.dp))
                 else Text("Sign Up")
+            }
+            if (showEULADialog && pendingRegistrationRequest != null) {
+                ScrollableEULADialog(
+                    onDismiss = { showEULADialog = false },
+                    onAccept = {
+                        userViewModel.register(pendingRegistrationRequest!!)
+                        showEULADialog = false
+                    }
+                )
             }
 
             TextButton(

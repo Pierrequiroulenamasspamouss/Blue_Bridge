@@ -11,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.WeatherData
 import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
-import com.bluebridge.bluebridgeapp.data.repository.WeatherRepository
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,7 +18,6 @@ import kotlinx.coroutines.withContext
 import com.bluebridge.bluebridgeapp.data.model.Location as LocationData
 
 class WeatherViewModel(
-    private val weatherRepository: WeatherRepository,
     private val userRepository: UserRepository,
     private val context: Context
 ) : ViewModel() {
@@ -60,7 +58,7 @@ class WeatherViewModel(
                 val token = userRepository.getLoginToken() ?: ""
 
                 val weatherData = fetchFromServer(
-                    location = LocationData(currentLocation.latitude, currentLocation.longitude,),
+                    location = LocationData(currentLocation.latitude, currentLocation.longitude),
                     userId = userRepository.getUserId(),
                     loginToken = token
                 )
@@ -118,13 +116,12 @@ class WeatherViewModel(
             // Check if the status is success
             val status = responseBody.status
             if (status != "success") {
-                val message = responseBody.message ?: "Unknown error"
+                val message = responseBody.message
                 throw Exception(message)
             }
 
             // Extract the weather data
             val weatherData = responseBody.data
-                ?: throw Exception("Invalid data format or 'data' field missing")
 
             val weatherList = mutableListOf<WeatherData>()
             weatherList.add(weatherData)

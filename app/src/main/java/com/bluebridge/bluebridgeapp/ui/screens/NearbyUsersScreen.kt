@@ -56,7 +56,7 @@ fun NearbyUsersScreen(
     nearbyUsersViewModel: NearbyUsersViewModel
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
 
     // Location state
     var currentLocation by remember { mutableStateOf<Location?>(null) }

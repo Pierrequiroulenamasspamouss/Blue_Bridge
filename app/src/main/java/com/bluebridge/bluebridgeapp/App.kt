@@ -1,13 +1,13 @@
 package com.bluebridge.bluebridgeapp
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,16 +26,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.ui.navigation.NavigationGraph
+import com.bluebridge.bluebridgeapp.ui.theme.getCyanColorScheme
 import com.bluebridge.bluebridgeapp.ui.theme.getGreenColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getOrangeColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getPinkColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getPurpleColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getRedColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getTanColorScheme
+import com.bluebridge.bluebridgeapp.ui.theme.getYellowColorScheme
 import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.NearbyUsersViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.ServerState
@@ -57,13 +63,24 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
     val serverViewModel: ServerViewModel = viewModel(factory = viewModelFactory)
 
     // Theme handling
+    val isSystemDark = isSystemInDarkTheme()
     val themePreference by userViewModel.currentTheme.collectAsState()
+    Log.d("BlueBridgeApp", "Theme preference: $themePreference")
     val colorScheme = when (themePreference) {
-        1 -> lightColorScheme()
-        2 -> darkColorScheme()
-        3 -> getGreenColorScheme(false)
-        else -> if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+        0 -> if (isSystemDark) darkColorScheme() else lightColorScheme() // System default
+        1 -> lightColorScheme() // Light
+        2 -> darkColorScheme() // Dark
+        3 -> getGreenColorScheme(isSystemDark) // Green
+        4 -> getPinkColorScheme(isSystemDark) // Pink
+        5 -> getRedColorScheme(isSystemDark) // Red
+        6 -> getPurpleColorScheme(isSystemDark) // Purple
+        7 -> getYellowColorScheme(isSystemDark) // Yellow
+        8 -> getTanColorScheme(isSystemDark) // Tan
+        9 -> getOrangeColorScheme(isSystemDark) // Orange
+        10 -> getCyanColorScheme(isSystemDark) // Cyan
+        else -> if (isSystemDark) darkColorScheme() else lightColorScheme() // Fallback
     }
+
 
     // Effects
     LaunchedEffect(Unit) {
@@ -85,7 +102,6 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
             smsViewModel = viewModel(factory = viewModelFactory)
         )
 
-        PermissionDialogs(userViewModel)
         ServerStatusDialogs(serverViewModel)
     }
 }
@@ -111,49 +127,12 @@ private fun rememberNetworkState(context: Context): State<Boolean> {
     return isOnline
 }
 
-@Composable
-private fun PermissionDialogs(userViewModel: UserViewModel) {
-    val context = LocalContext.current
-    var showLocationDialog by remember { mutableStateOf(false) }
-    var showNotificationDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        showLocationDialog = arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ).any { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            showNotificationDialog = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    if (showLocationDialog) {
-        AlertDialog(
-            onDismissRequest = { showLocationDialog = false },
-            title = { Text("Location Permission") },
-            text = { Text("BlueBridge needs location access for nearby water sources") },
-            confirmButton = { Button({ showLocationDialog = false }) { Text("Allow") } },
-            dismissButton = { TextButton({ showLocationDialog = false }) { Text("Later") } }
-        )
-    }
-
-    if (showNotificationDialog) {
-        AlertDialog(
-            onDismissRequest = { showNotificationDialog = false },
-            title = { Text("Notification Permission") },
-            text = { Text("Enable notifications for water source updates") },
-            confirmButton = { Button({ showNotificationDialog = false }) { Text("Allow") } },
-            dismissButton = { TextButton({ showNotificationDialog = false }) { Text("Later") } }
-        )
-    }
-}
 
 @Composable
 private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
     val serverState by serverViewModel.serverState.collectAsState()
+    val context = LocalContext.current
     val needsUpdate by serverViewModel.needsUpdate.collectAsState()
 
     if (serverState is ServerState.Error) {
@@ -170,7 +149,14 @@ private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
             onDismissRequest = { serverViewModel.resetUpdateState() },
             title = { Text("Update Available") },
             text = { Text("A new version is available. Would you like to update?") },
-            confirmButton = { Button({ serverViewModel.resetUpdateState() }) { Text("Update") } },
+            confirmButton = {
+                Button({
+                    val intent = Intent(Intent.ACTION_VIEW,
+                        "http://bluebridge.homeonthewater.com/home".toUri())
+                    context.startActivity(intent)
+                    serverViewModel.resetUpdateState()
+                }) { Text("Update") }
+            },
             dismissButton = { TextButton({ serverViewModel.resetUpdateState() }) { Text("Later") } }
         )
     }

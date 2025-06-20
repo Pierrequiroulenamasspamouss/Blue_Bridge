@@ -5,19 +5,11 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -26,8 +18,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,23 +33,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.R
 import com.bluebridge.bluebridgeapp.data.AppEvent
 import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
-import com.bluebridge.bluebridgeapp.ui.components.TopBar
 import com.bluebridge.bluebridgeapp.ui.components.compass.CompassView
 import com.bluebridge.bluebridgeapp.ui.components.compass.DistanceInfo
-import com.bluebridge.bluebridgeapp.ui.components.compass.MiniMapView
+import com.bluebridge.bluebridgeapp.ui.components.compass.MiniMapCard
 import com.bluebridge.bluebridgeapp.ui.components.compass.rememberCompassSensor
+import com.bluebridge.bluebridgeapp.ui.dialogs.LocationPermissionDialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.calculateDistance
 import com.bluebridge.bluebridgeapp.utils.findNearestWells
@@ -78,7 +70,7 @@ fun CompassScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     // State
     var showPermissionDialog by remember { mutableStateOf(false) }
     var showNearestWellsDialog by remember { mutableStateOf(false) }
@@ -86,296 +78,227 @@ fun CompassScreen(
     var currentLocation by remember { mutableStateOf(lastKnownLocation) }
     var distance by remember { mutableStateOf<Float?>(null) }
     var bearing by remember { mutableStateOf<Float?>(null) }
-
-    // Compass direction from sensor
     val azimuth by rememberCompassSensor(context)
 
-    // Decode location name
-    val decodedLocationName = remember(locationName) {
-        try {
-            locationName?.replace("+", " ")?.let { 
-                java.net.URLDecoder.decode(it, "UTF-8") 
-            }
-        } catch (_: Exception) {
-            locationName // Fallback to original name if decoding fails
-        }
+    // Load saved wells
+    LaunchedEffect(Unit) {
+        wellViewModel.getSavedWells()
     }
-    
+
     // Navigation mode
-    val isPointingNorth = decodedLocationName == "North"
-    
-    // Rotation values
+    val isPointingNorth = remember(locationName) {
+        locationName?.replace("+", " ")?.let {
+            try { java.net.URLDecoder.decode(it, "UTF-8") } catch (_: Exception) { it }
+        } == "North"
+    }
+
+    // Calculate rotation
     var currentRotation by remember { mutableFloatStateOf(0f) }
     var isInTargetZone by remember { mutableStateOf(false) }
-    
-    // Calculate distance and bearing
+
     LaunchedEffect(currentLocation, latitude, longitude) {
         if (currentLocation != null && latitude != null && longitude != null) {
             val results = FloatArray(2)
             Location.distanceBetween(
-                currentLocation!!.latitude,
-                currentLocation!!.longitude,
-                latitude, longitude,
-                results
+                currentLocation!!.latitude, currentLocation!!.longitude,
+                latitude, longitude, results
             )
             distance = results[0]
             bearing = results[1]
         }
     }
 
-    // Calculate rotation from bearing and azimuth
     LaunchedEffect(bearing, azimuth) {
-        if (bearing != null) {
-            currentRotation = bearing!! - azimuth
-            val normalizedRotation = (currentRotation + 360) % 360
-            isInTargetZone = normalizedRotation in 340f..360f || normalizedRotation in 0f..20f
+        bearing?.let {
+            currentRotation = it - azimuth
+            isInTargetZone = ((currentRotation + 360) % 360).let {
+                it in 340f..360f || it in 0f..20f
+            }
         }
     }
-    
-    // Get location
+
+    // Location handling
     LaunchedEffect(Unit) {
         if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED) {
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             showPermissionDialog = true
             return@LaunchedEffect
         }
-        
-        // Get current location immediately and then receive updates
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        
-        // First get last known location
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location ->
-                if (location != null) {
-                    currentLocation = location
-                    lastKnownLocation = location
-                }
+
+        LocationServices.getFusedLocationProviderClient(context).apply {
+            lastLocation.addOnSuccessListener { location ->
+                location?.let { currentLocation = it; lastKnownLocation = it }
             }
-        
-        // Then request location updates for more accuracy
-        try {
-            val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, 
-                5000 // Update every 5 seconds
-            ).build()
-            
-            val locationCallback = object : com.google.android.gms.location.LocationCallback() {
-                override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
-                    result.lastLocation?.let { newLocation ->
-                        currentLocation = newLocation
-                        lastKnownLocation = newLocation
-                    }
-                }
-            }
-            
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                null
-            )
-        } catch (_: Exception) {
-            // If we can't get updates, fall back to getCurrentLocation
-            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        currentLocation = location
-                        lastKnownLocation = location
+            try {
+                requestLocationUpdates(
+                    com.google.android.gms.location.LocationRequest.Builder(
+                        Priority.PRIORITY_HIGH_ACCURACY, 5000
+                    ).build(),
+                    object : com.google.android.gms.location.LocationCallback() {
+                        override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                            result.lastLocation?.let {
+                                currentLocation = it
+                                lastKnownLocation = it
+                            }
+                        }
+                    },
+                    null
+                )
+            } catch (_: Exception) {
+                getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                    .addOnSuccessListener { location ->
+                        location?.let {
+                            currentLocation = it
+                            lastKnownLocation = it
+                        }
                     }
             }
         }
     }
 
-    // Nearest wells dialog
-    if (showNearestWellsDialog && nearestWells.isNotEmpty()) {
-        AlertDialog(
-            onDismissRequest = { showNearestWellsDialog = false },
-            title = { Text("Nearest Wells") },
-            text = {
-                Column {
-                    nearestWells.forEach { well ->
-                        TextButton(
-                            onClick = {
-                                showNearestWellsDialog = false
-                                val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
-                                val lat = well.getLatitude()
-                                val lon = well.getLongitude()
-                                if (lat != null && lon != null) {
-                                navController.navigate(
-                                        "${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName"
-                                )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(well.wellName)
+    // Dialogs
+    if (showPermissionDialog) {
+        LocationPermissionDialog(
+            onDismiss = { showPermissionDialog = false },
+            onAllow = { showPermissionDialog = false }
+        )
+    }
+
+    if (showNearestWellsDialog) {
+        NearestWellsDialog(
+            wells = nearestWells,
+            currentLocation = currentLocation,
+            onDismiss = { showNearestWellsDialog = false },
+            onWellSelected = { well ->
+                showNearestWellsDialog = false
+                well.getLatitude()?.let { lat ->
+                    well.getLongitude()?.let { lon ->
+                        navController.navigate(
+                            "${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=${
+                                URLEncoder.encode(well.wellName, "UTF-8")
+                            }"
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    // Main UI
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (isPointingNorth) "Navigation" else "Navigate to ${locationName ?: "Target"}") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (!isPointingNorth) {
+                CompassView(
+                    currentRotation = currentRotation,
+                    isTargetMode = true,
+                    isInTargetZone = isInTargetZone,
+                    modifier = Modifier.size(200.dp)
+                )
+
+                currentLocation?.let { location ->
+                    MiniMapCard(
+                        userLocation = location,
+                        targetLat = latitude,
+                        targetLon = longitude,
+                        azimuth = azimuth
+                    )
+                }
+
+                distance?.let {
+                    DistanceInfo(
+                        distance = it,
+                        isInTargetZone = isInTargetZone
+                    )
+                }
+            } else {
+                currentLocation?.let { location ->
+                    MiniMapCard(
+                        userLocation = location,
+                        azimuth = azimuth
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        currentLocation?.let {
+                            nearestWells = findNearestWells(it, wellViewModel)
+                            showNearestWellsDialog = true
+                        } ?: scope.launch {
+                            AppEventChannel.sendEvent(
+                                AppEvent.ShowError("Location unavailable. Please try again.")
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                ) {
+                    Text("Find Nearest Wells")
+                }
+            }
+        }
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun NearestWellsDialog(
+    wells: List<WellData>,
+    currentLocation: Location?,
+    onDismiss: () -> Unit,
+    onWellSelected: (WellData) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nearest Wells") },
+        text = {
+            Column {
+                wells.forEach { well ->
+                    TextButton(
+                        onClick = { onWellSelected(well) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            Text(well.wellName)
+                            currentLocation?.let {
                                 Text(
-                                    "Distance: ${
-                                        formatDistance(
-                                            calculateDistance(
-                                                currentLocation,
-                                                well
-                                            )
-                                        )
-                                    }",
+                                    "Distance: ${formatDistance(calculateDistance(it, well))}",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showNearestWellsDialog = false }) {
-                    Text("Close")
-                }
             }
-        )
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-            // Custom Top bar with back button and logo
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = { navController.navigateUp() },
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(4.dp))
-                    
-                    TopBar(
-                        topBarMessage = if (isPointingNorth) "Navigation" else "Navigate to ${decodedLocationName ?: "Target"}",
-                        isIcon = true,
-                        iconId = R.drawable.app_logo
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            
-            // Compass view - ONLY show when navigating to a specific location
-            if (!isPointingNorth) {
-                item {
-                    CompassView(
-                        currentRotation = currentRotation,
-                        isTargetMode = true, // Always true here since we check isPointingNorth above
-                        isInTargetZone = isInTargetZone,
-                        modifier = Modifier
-                            .size(200.dp)
-                            .padding(vertical = 16.dp)
-                    )
-                }
-            }
-            
-            // If we're in navigate mode, show map and distance info
-            if (!isPointingNorth) {
-                // Map View
-                item {
-                    if (currentLocation != null && latitude != null && longitude != null) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(350.dp)
-                                    .padding(vertical = 4.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            ) {
-                                MiniMapView(
-                                    userLocation = currentLocation!!,
-                                    targetLatitude = latitude,
-                                    targetLongitude = longitude,
-                                    azimuth = azimuth,
-                                    modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
             }
         }
-
-                // Distance information
-                item {
-                    if (distance != null) {
-                        DistanceInfo(
-                            distance = distance!!,
-                            isInTargetZone = isInTargetZone,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        )
-                    }
-                }
-            } else {
-                // In North mode, show the "Find Nearest Wells" button
-                item {
-                    // Add map view in North mode too
-                    if (currentLocation != null) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(350.dp)
-                                    .padding(vertical = 4.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            ) {
-                                MiniMapView(
-                                    userLocation = currentLocation!!,
-                                    azimuth = azimuth,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    }
-                    
-                    Button(
-                    onClick = {
-                            if (currentLocation != null) {
-                                nearestWells = findNearestWells(currentLocation!!, wellViewModel)
-                                showNearestWellsDialog = true
-                            } else {
-
-                                scope.launch {
-                                    AppEventChannel.sendEvent(AppEvent.ShowError("Unable to find nearby wells. Please try again."))
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(70.dp)
-                            .padding(vertical = 8.dp, horizontal = 16.dp)
-                    ) {
-                        Text(
-                            "Find Nearest Wells",
-                            fontSize = 18.sp
-                        )
-                    }
-                }
-            }
-        }
-        
-
-    }
-} 
+    )
+}

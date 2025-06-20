@@ -24,4 +24,5 @@ object Routes {
     const val ADMOB_SCREEN = "admob_screen"
     const val WEATHER_SCREEN = "weather_screen"
     const val URGENT_SMS_SCREEN = "urgent_sms_screen"
+    const val EULA_SCREEN = "eula_screen"
 }

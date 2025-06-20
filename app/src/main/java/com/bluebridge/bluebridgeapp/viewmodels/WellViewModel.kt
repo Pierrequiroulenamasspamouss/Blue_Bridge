@@ -36,7 +36,7 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun loadWells() {
+    fun loadWells() { //TODO: fix this to request only the wells saved on the device and not load all the wells from the server
         viewModelScope.launch {
             try {
                 _wellsListState.value = UiState.Loading
@@ -72,7 +72,7 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
                     repository.saveWell(currentWell)
                     _currentWellState.value = UiState.Success(currentWell)
                 }
-                loadWells() // Refresh the list
+                getSavedWells() // Refresh the list
             } catch (e: Exception) {
                 _currentWellState.value = UiState.Error(e.message ?: "Failed to save well")
             }
@@ -143,7 +143,7 @@ class WellViewModel(val repository: WellRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 repository.swapWells(from, to)
-                loadWells() // Refresh the list
+                getSavedWells() // Refresh the list
             } catch (e: Exception) {
                 _wellsListState.value = UiState.Error(e.message ?: "Failed to swap wells")
             }

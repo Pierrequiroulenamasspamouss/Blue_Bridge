@@ -54,14 +54,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.R
 import com.bluebridge.bluebridgeapp.data.model.UserData
-import com.bluebridge.bluebridgeapp.ui.Dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.components.FeatureCard
 import com.bluebridge.bluebridgeapp.ui.components.OfflineBanner
 import com.bluebridge.bluebridgeapp.ui.components.WelcomeHeader
+import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 
@@ -77,6 +78,7 @@ fun HomeScreen(
     var currentUserRole by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) } // Added for loading state
 
     val scrollState = rememberScrollState()
 
@@ -90,6 +92,9 @@ fun HomeScreen(
     //Get the role's value for easy permissions
     LaunchedEffect(Unit) {
         currentUserRole = userViewModel.repository.getRoleValue()
+        // Simulate data loading delay
+        delay(50) // Simulate a 50ms delay //TODO : make this better , a hard coded delay is NOT good
+        isLoading = false // Data loaded
     }
     // Check if user is logged in
     val isLoggedIn = when (userState) {
@@ -103,6 +108,20 @@ fun HomeScreen(
         (userState as UiState.Success<UserData>).data
     } else null
 
+    // Show loading indicator while user data and theme are loading
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Welcome to BlueBridge")
+        }
+        return // Do not show the screen until loaded
+    }
+
+    if (userData == null && isLoggedIn) { // Still loading user data after login
+        // Potentially show a more specific loading state or skeleton UI
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -323,7 +342,10 @@ fun HomeScreen(
 
                             if (showLogoutDialog) {
                                 LogoutConfirmationDialog(
-                                    onConfirm = { userViewModel.logout()},
+                                    onConfirm = {
+                                        userViewModel.logout()
+                                        showLogoutDialog = false
+                                        navController.navigate(Routes.HOME_SCREEN)},
                                     onDismiss = {
                                         showLogoutDialog = false
                                     }

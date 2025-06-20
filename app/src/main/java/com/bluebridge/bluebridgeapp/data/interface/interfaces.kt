@@ -25,7 +25,7 @@ interface UserRepository {
     suspend fun getRole(): String
     suspend fun getRoleValue(): Int
     suspend fun getUserId(): String
-    suspend fun register(registerRequest: RegisterRequest): Boolean
+    suspend fun register(registerRequest: RegisterRequest): String
     suspend fun login(loginRequest: LoginRequest): Boolean
     suspend fun getUserData(): Flow<UserData?>
     suspend fun getUserEmail(): String?

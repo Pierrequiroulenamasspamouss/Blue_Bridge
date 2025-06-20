@@ -1,9 +1,7 @@
-
-package com.bluebridge.bluebridgeapp.data.repository
+package com.bluebridge.bluebridgeapp.data
 
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState
-import com.bluebridge.bluebridgeapp.data.AppEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -27,8 +25,6 @@ class AppEventHandler(
             // Clear previous snackbars to avoid overlap
             snackbarHostState.currentSnackbarData?.dismiss()
             snackbarHostState.showSnackbar(message)
-            //DEBUG
-            Log.d("AppEventHandler", "Snackbar shown: $message")
         }
     }
 

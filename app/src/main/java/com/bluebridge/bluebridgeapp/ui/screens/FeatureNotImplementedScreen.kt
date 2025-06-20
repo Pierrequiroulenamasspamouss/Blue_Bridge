@@ -18,7 +18,7 @@ import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.ui.navigation.Routes.HOME_SCREEN
 
 @Composable
-fun FeatureNotImplementedScreen(navController: NavController, onBackClick: () -> Boolean) {
+fun FeatureNotImplementedScreen(navController: NavController) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center,
