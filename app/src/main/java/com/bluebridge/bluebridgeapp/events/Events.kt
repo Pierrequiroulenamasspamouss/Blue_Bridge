@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.data
+package com.bluebridge.bluebridgeapp.events
 
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest

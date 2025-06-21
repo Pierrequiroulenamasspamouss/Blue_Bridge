@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.wellscreens
 
 import android.Manifest
 import android.app.Activity
@@ -60,11 +60,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
-import com.bluebridge.bluebridgeapp.data.WellEvents
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.events.WellEvents
 import com.bluebridge.bluebridgeapp.ui.components.WellField
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -455,7 +455,7 @@ fun WellConfigScreen(
                                 
                                 if (email != null && token != null) {
                                     // Create or update well via server API
-                                    val success = wellViewModel.saveWellToServer(wellData, email, token)
+                                    val success = wellViewModel.saveWellToServer(wellData)
                                     
                                     if (success) {
                                         // Also save locally

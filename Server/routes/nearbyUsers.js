@@ -14,34 +14,50 @@ const getNearbyUsers = async (centerLat, centerLon, radius, excludeEmail) => {
         const users = await User.findAll({
             where: {
                 email: { [Op.ne]: excludeEmail },
-                location: { [Op.not]: null }
+                location: { [Op.ne]: null } // Changed from [Op.not] to [Op.ne]
             },
             attributes: [
                 'userId', 'username', 'firstName', 'lastName',
-                'email', 'location', 'waterNeeds', //'lastActive' //TODO : fix the database to use the latest login at some point. there is a mismatch error of the type of this
+                'email', 'location', 'waterNeeds'
             ],
             raw: true
         });
 
-        // Filter users within radius in memory
+        // Filter users within radius using Haversine formula
         return users
             .map(user => {
                 try {
-                    const location = JSON.parse(user.location);
-                    if (!location.latitude || !location.longitude) return null;
+                    const location = typeof user.location === 'string'
+                        ? JSON.parse(user.location)
+                        : user.location;
 
-                    // Simple distance calculation (approximation)
-                    const latDiff = location.latitude - centerLat;
-                    const lonDiff = location.longitude - centerLon;
-                    const distance = Math.sqrt(latDiff*latDiff + lonDiff*lonDiff) * 111; // Convert to km
+                    if (!location || typeof location !== 'object' ||
+                        !location.latitude || !location.longitude) {
+                        return null;
+                    }
+
+                    // Convert degrees to radians
+                    const toRad = x => x * Math.PI / 180;
+
+                    // Haversine formula
+                    const R = 6371; // Earth radius in km
+                    const dLat = toRad(location.latitude - centerLat);
+                    const dLon = toRad(location.longitude - centerLon);
+                    const a =
+                        Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(toRad(centerLat)) * Math.cos(toRad(location.latitude)) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    const distance = R * c;
 
                     return {
                         ...user,
-                        distance: distance,
+                        distance: parseFloat(distance.toFixed(2)), // Round to 2 decimal places
                         latitude: location.latitude,
                         longitude: location.longitude
                     };
                 } catch (e) {
+                    console.error('Error processing user location:', e);
                     return null;
                 }
             })

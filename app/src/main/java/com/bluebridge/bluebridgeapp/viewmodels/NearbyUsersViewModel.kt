@@ -2,8 +2,8 @@ package com.bluebridge.bluebridgeapp.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bluebridge.bluebridgeapp.data.NearbyUserEvent
-import com.bluebridge.bluebridgeapp.data.`interface`.NearbyUsersRepository
+import com.bluebridge.bluebridgeapp.events.NearbyUserEvent
+import com.bluebridge.bluebridgeapp.data.interfaces.NearbyUsersRepository
 import com.bluebridge.bluebridgeapp.data.model.NearbyUsersState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

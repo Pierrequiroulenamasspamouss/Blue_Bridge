@@ -6,8 +6,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel.sendEvent
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel.sendEvent
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.CoroutineScope

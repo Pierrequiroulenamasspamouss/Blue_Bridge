@@ -3,7 +3,7 @@ package com.bluebridge.bluebridgeapp.viewmodels
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.bluebridge.bluebridgeapp.data.BrowseWellsEvent
+import com.bluebridge.bluebridgeapp.events.BrowseWellsEvent
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

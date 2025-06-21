@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.repository.WellRepositoryImpl
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -131,47 +131,5 @@ suspend fun retrieveDataFromServer(
     }
 }
 
-/**
- * Refresh a single well by ID
- */
 
-/*
-suspend fun refreshSingleWell(
-    wellId: Int,
-    wellRepositoryImpl: WellRepositoryImpl,
-    context: Context,
-): Boolean {
-    return try {
-        Log.d("RefreshDebug", "Starting refresh for well ID: $wellId")
-
-        // Get current well data
-        val currentWell = wellRepositoryImpl.getWell(wellId) ?: run {
-            Log.e("RefreshDebug", "Well not found")
-            return false
-        }
-
-        // Only refresh if ESP ID is available
-        if (currentWell.espId.isBlank()) {
-            Log.e("RefreshDebug", "No Esp ID. Cannot refresh")
-            return false
-        }
-
-        // Fetch fresh data with timeout
-        Log.d("RefreshDebug", "Fetching data from server_crt...")
-        val success = withTimeoutOrNull(5_000) {
-            retrieveDataFromServer(
-                id = wellId,
-                wellRepositoryImpl = wellRepositoryImpl,
-                context = context
-            )
-        } == true
-        Log.d("RefreshDebug", "Refresh ${if (success) "succeeded" else "failed"}")
-        success
-    } catch (e: Exception) {
-        Log.e("RefreshDebug", "Refresh error: ${e.message}", e)
-        false
-    }
-}
-
- */
 

@@ -5,10 +5,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.bluebridge.bluebridgeapp.data.`interface`.NearbyUsersRepository
-import com.bluebridge.bluebridgeapp.data.`interface`.ServerRepository
-import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
-import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.NearbyUsersRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.ServerRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.WellRepository
 import com.bluebridge.bluebridgeapp.data.repository.WeatherRepository
 import com.bluebridge.bluebridgeapp.network.SmsApi
 
@@ -42,7 +42,7 @@ class ViewModelFactory(
             }
 
             modelClass.isAssignableFrom(WellViewModel::class.java) -> {
-                WellViewModel(wellRepository) as T
+                WellViewModel(wellRepository ,context) as T
             }
 
             modelClass.isAssignableFrom(NearbyUsersViewModel::class.java) -> {

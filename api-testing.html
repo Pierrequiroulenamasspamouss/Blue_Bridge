@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueBridge API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .api-section {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .response {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: #333;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tabcontent {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .active {
+            display: block;
+        }
+        .array-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .remove-item {
+            background-color: #e74c3c;
+            margin-left: 10px;
+        }
+        .add-item {
+            background-color: #2ecc71;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BlueBridge API Tester</h1>
+    <p>Test all API endpoints for the BlueBridge server at bluebridge.homeonthewater.com</p>
+    
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'auth')">Authentication</button>
+        <button class="tablinks" onclick="openTab(event, 'wells')">Wells</button>
+        <button class="tablinks" onclick="openTab(event, 'users')">Users</button>
+        <button class="tablinks" onclick="openTab(event, 'notifications')">Notifications</button>
+        <button class="tablinks" onclick="openTab(event, 'misc')">Miscellaneous</button>
+    </div>
+
+    <!-- Authentication Tab -->
+    <div id="auth" class="tabcontent" style="display: block;">
+        <div class="api-section">
+            <h2>Server Status</h2>
+            <button onclick="testServerStatus()">Test Server Status</button>
+            <div class="response" id="serverStatusResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Get Server Certificate</h2>
+            <button onclick="testGetCertificate()">Get Certificate</button>
+            <div class="response" id="certificateResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Register</h2>
+            <div class="form-group">
+                <label for="registerEmail">Email:</label>
+                <input type="email" id="registerEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password:</label>
+                <input type="password" id="registerPassword" value="test1234">
+            </div>
+            <div class="form-group">
+                <label for="registerFirstName">First Name:</label>
+                <input type="text" id="registerFirstName" value="Test">
+            </div>
+            <div class="form-group">
+                <label for="registerLastName">Last Name:</label>
+                <input type="text" id="registerLastName" value="User">
+            </div>
+            <div class="form-group">
+                <label for="registerUsername">Username:</label>
+                <input type="text" id="registerUsername" value="testuser">
+            </div>
+            <div class="form-group">
+                <label for="registerLatitude">Latitude:</label>
+                <input type="number" id="registerLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="registerLongitude">Longitude:</label>
+                <input type="number" id="registerLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="registerPhone">Phone Number (optional):</label>
+                <input type="tel" id="registerPhone" value="+1234567890">
+            </div>
+            
+            <h3>Water Needs</h3>
+            <div id="registerWaterNeeds">
+                <div class="array-item">
+                    <div class="form-group">
+                        <label>Amount (liters):</label>
+                        <input type="number" class="waterNeedAmount" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Usage Type:</label>
+                        <input type="text" class="waterNeedUsageType" value="drinking">
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <input type="text" class="waterNeedDescription" value="For daily consumption">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority (1-10):</label>
+                        <input type="number" class="waterNeedPriority" value="5" min="1" max="10">
+                    </div>
+                    <button class="remove-item" onclick="removeWaterNeed(this)">Remove</button>
+                </div>
+            </div>
+            <button class="add-item" onclick="addWaterNeed('registerWaterNeeds')">Add Water Need</button>
+            
+            <button onclick="testRegister()">Test Register</button>
+            <div class="response" id="registerResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" value="test1234">
+            </div>
+            <button onclick="testLogin()">Test Login</button>
+            <div class="response" id="loginResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Delete Account</h2>
+            <div class="form-group">
+                <label for="deleteAccountEmail">Email:</label>
+                <input type="email" id="deleteAccountEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="deleteAccountPassword">Password:</label>
+                <input type="password" id="deleteAccountPassword" value="test1234">
+            </div>
+            <div class="form-group">
+                <label for="deleteAccountToken">Login Token:</label>
+                <input type="text" id="deleteAccountToken" value="">
+            </div>
+            <button onclick="testDeleteAccount()">Test Delete Account</button>
+            <div class="response" id="deleteAccountResponse"></div>
+        </div>
+    </div>
+
+    <!-- Wells Tab -->
+    <div id="wells" class="tabcontent">
+        <div class="api-section">
+            <h2>Get All Wells</h2>
+            <button onclick="testGetAllWells()">Get All Wells</button>
+            <div class="response" id="allWellsResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Get Wells with Filters</h2>
+            <div class="form-group">
+                <label for="wellsPage">Page:</label>
+                <input type="number" id="wellsPage" value="1">
+            </div>
+            <div class="form-group">
+                <label for="wellsLimit">Limit:</label>
+                <input type="number" id="wellsLimit" value="20">
+            </div>
+            <div class="form-group">
+                <label for="wellsName">Well Name:</label>
+                <input type="text" id="wellsName">
+            </div>
+            <div class="form-group">
+                <label for="wellsStatus">Well Status:</label>
+                <input type="text" id="wellsStatus">
+            </div>
+            <div class="form-group">
+                <label for="wellsWaterType">Well Water Type:</label>
+                <input type="text" id="wellsWaterType">
+            </div>
+            <div class="form-group">
+                <label for="wellsOwner">Well Owner:</label>
+                <input type="text" id="wellsOwner">
+            </div>
+            <div class="form-group">
+                <label for="wellsEspId">ESP ID:</label>
+                <input type="text" id="wellsEspId">
+            </div>
+            <div class="form-group">
+                <label for="wellsMinWaterLevel">Min Water Level:</label>
+                <input type="number" id="wellsMinWaterLevel">
+            </div>
+            <div class="form-group">
+                <label for="wellsMaxWaterLevel">Max Water Level:</label>
+                <input type="number" id="wellsMaxWaterLevel">
+            </div>
+            <button onclick="testGetWellsWithFilters()">Get Wells with Filters</button>
+            <div class="response" id="wellsWithFiltersResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Get Well Data by ID</h2>
+            <div class="form-group">
+                <label for="wellEspId">ESP ID:</label>
+                <input type="text" id="wellEspId" value="ESP123">
+            </div>
+            <button onclick="testGetWellDataById()">Get Well Data</button>
+            <div class="response" id="wellDataResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Create Well</h2>
+            <div class="form-group">
+                <label for="createWellEmail">Email:</label>
+                <input type="email" id="createWellEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="createWellToken">Login Token:</label>
+                <input type="text" id="createWellToken" value="">
+            </div>
+            <div class="form-group">
+                <label for="createWellEspId">ESP ID:</label>
+                <input type="text" id="createWellEspId" value="ESP123">
+            </div>
+            <div class="form-group">
+                <label for="createWellName">Well Name:</label>
+                <input type="text" id="createWellName" value="Test Well">
+            </div>
+            <div class="form-group">
+                <label for="createWellLatitude">Latitude:</label>
+                <input type="number" id="createWellLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="createWellLongitude">Longitude:</label>
+                <input type="number" id="createWellLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="createWellWaterType">Water Type:</label>
+                <input type="text" id="createWellWaterType" value="Fresh">
+            </div>
+            <div class="form-group">
+                <label for="createWellCapacity">Capacity:</label>
+                <input type="text" id="createWellCapacity" value="1000L">
+            </div>
+            <div class="form-group">
+                <label for="createWellWaterLevel">Water Level:</label>
+                <input type="text" id="createWellWaterLevel" value="500L">
+            </div>
+            <div class="form-group">
+                <label for="createWellStatus">Status:</label>
+                <input type="text" id="createWellStatus" value="Active">
+            </div>
+            <div class="form-group">
+                <label for="createWellOwner">Owner:</label>
+                <input type="text" id="createWellOwner" value="Test Owner">
+            </div>
+            <div class="form-group">
+                <label for="createWellConsumption">Consumption:</label>
+                <input type="text" id="createWellConsumption" value="50L/day">
+            </div>
+            <button onclick="testCreateWell()">Create Well</button>
+            <div class="response" id="createWellResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Delete Well</h2>
+            <div class="form-group">
+                <label for="deleteWellEmail">Email:</label>
+                <input type="email" id="deleteWellEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="deleteWellToken">Login Token:</label>
+                <input type="text" id="deleteWellToken" value="">
+            </div>
+            <div class="form-group">
+                <label for="deleteWellEspId">ESP ID:</label>
+                <input type="text" id="deleteWellEspId" value="ESP123">
+            </div>
+            <button onclick="testDeleteWell()">Delete Well</button>
+            <div class="response" id="deleteWellResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Get Well Stats</h2>
+            <button onclick="testGetWellStats()">Get Well Stats</button>
+            <div class="response" id="wellStatsResponse"></div>
+        </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div id="users" class="tabcontent">
+        <div class="api-section">
+            <h2>Get Nearby Users</h2>
+            <div class="form-group">
+                <label for="nearbyUsersLatitude">Latitude:</label>
+                <input type="number" id="nearbyUsersLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="nearbyUsersLongitude">Longitude:</label>
+                <input type="number" id="nearbyUsersLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="nearbyUsersRadius">Radius (km):</label>
+                <input type="number" id="nearbyUsersRadius" value="10" step="any">
+            </div>
+            <div class="form-group">
+                <label for="nearbyUsersUserId">User ID:</label>
+                <input type="text" id="nearbyUsersUserId" value="">
+            </div>
+            <div class="form-group">
+                <label for="nearbyUsersToken">Login Token:</label>
+                <input type="text" id="nearbyUsersToken" value="">
+            </div>
+            <button onclick="testGetNearbyUsers()">Get Nearby Users</button>
+            <div class="response" id="nearbyUsersResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Update Location</h2>
+            <div class="form-group">
+                <label for="updateLocationEmail">Email:</label>
+                <input type="email" id="updateLocationEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="updateLocationLatitude">Latitude:</label>
+                <input type="number" id="updateLocationLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="updateLocationLongitude">Longitude:</label>
+                <input type="number" id="updateLocationLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="updateLocationToken">Login Token:</label>
+                <input type="text" id="updateLocationToken" value="">
+            </div>
+            <button onclick="testUpdateLocation()">Update Location</button>
+            <div class="response" id="updateLocationResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Update Water Needs</h2>
+            <div class="form-group">
+                <label for="updateWaterNeedsEmail">Email:</label>
+                <input type="email" id="updateWaterNeedsEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="updateWaterNeedsToken">Login Token:</label>
+                <input type="text" id="updateWaterNeedsToken" value="">
+            </div>
+            
+            <h3>Water Needs</h3>
+            <div id="updateWaterNeeds">
+                <div class="array-item">
+                    <div class="form-group">
+                        <label>Amount (liters):</label>
+                        <input type="number" class="waterNeedAmount" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Usage Type:</label>
+                        <input type="text" class="waterNeedUsageType" value="drinking">
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <input type="text" class="waterNeedDescription" value="For daily consumption">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority (1-10):</label>
+                        <input type="number" class="waterNeedPriority" value="5" min="1" max="10">
+                    </div>
+                    <button class="remove-item" onclick="removeWaterNeed(this)">Remove</button>
+                </div>
+            </div>
+            <button class="add-item" onclick="addWaterNeed('updateWaterNeeds')">Add Water Need</button>
+            
+            <button onclick="testUpdateWaterNeeds()">Update Water Needs</button>
+            <div class="response" id="updateWaterNeedsResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Update Profile</h2>
+            <div class="form-group">
+                <label for="updateProfileEmail">Email:</label>
+                <input type="email" id="updateProfileEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileFirstName">First Name:</label>
+                <input type="text" id="updateProfileFirstName" value="Test">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileLastName">Last Name:</label>
+                <input type="text" id="updateProfileLastName" value="User">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileUsername">Username:</label>
+                <input type="text" id="updateProfileUsername" value="testuser">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileLatitude">Latitude:</label>
+                <input type="number" id="updateProfileLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileLongitude">Longitude:</label>
+                <input type="number" id="updateProfileLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="updateProfileToken">Login Token:</label>
+                <input type="text" id="updateProfileToken" value="">
+            </div>
+            <button onclick="testUpdateProfile()">Update Profile</button>
+            <div class="response" id="updateProfileResponse"></div>
+        </div>
+    </div>
+
+    <!-- Notifications Tab -->
+    <div id="notifications" class="tabcontent">
+        <div class="api-section">
+            <h2>Register Notification Token</h2>
+            <div class="form-group">
+                <label for="registerTokenUserId">User ID:</label>
+                <input type="text" id="registerTokenUserId" value="">
+            </div>
+            <div class="form-group">
+                <label for="registerTokenLoginToken">Login Token:</label>
+                <input type="text" id="registerTokenLoginToken" value="">
+            </div>
+            <div class="form-group">
+                <label for="registerTokenDeviceToken">Device Token:</label>
+                <input type="text" id="registerTokenDeviceToken" value="test-device-token">
+            </div>
+            <button onclick="testRegisterNotificationToken()">Register Token</button>
+            <div class="response" id="registerTokenResponse"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>Unregister Notification Token</h2>
+            <div class="form-group">
+                <label for="unregisterTokenUserId">User ID:</label>
+                <input type="text" id="unregisterTokenUserId" value="">
+            </div>
+            <div class="form-group">
+                <label for="unregisterTokenLoginToken">Login Token:</label>
+                <input type="text" id="unregisterTokenLoginToken" value="">
+            </div>
+            <div class="form-group">
+                <label for="unregisterTokenDeviceToken">Device Token:</label>
+                <input type="text" id="unregisterTokenDeviceToken" value="test-device-token">
+            </div>
+            <button onclick="testUnregisterNotificationToken()">Unregister Token</button>
+            <div class="response" id="unregisterTokenResponse"></div>
+        </div>
+    </div>
+
+    <!-- Miscellaneous Tab -->
+    <div id="misc" class="tabcontent">
+        <div class="api-section">
+            <h2>Get Weather</h2>
+            <div class="form-group">
+                <label for="weatherLatitude">Latitude:</label>
+                <input type="number" id="weatherLatitude" value="48.8566" step="any">
+            </div>
+            <div class="form-group">
+                <label for="weatherLongitude">Longitude:</label>
+                <input type="number" id="weatherLongitude" value="2.3522" step="any">
+            </div>
+            <div class="form-group">
+                <label for="weatherUserId">User ID:</label>
+                <input type="text" id="weatherUserId" value="">
+            </div>
+            <div class="form-group">
+                <label for="weatherToken">Login Token:</label>
+                <input type="text" id="weatherToken" value="">
+            </div>
+            <button onclick="testGetWeather()">Get Weather</button>
+            <div class="response" id="weatherResponse"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://192.168.0.98';
+        // const BASE_URL = 'http://bluebridge.homeonthewater.com';
+        // Tab functionality
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        // Helper functions for array inputs
+        function addWaterNeed(containerId) {
+            const container = document.getElementById(containerId);
+            const newItem = document.createElement('div');
+            newItem.className = 'array-item';
+            newItem.innerHTML = `
+                <div class="form-group">
+                    <label>Amount (liters):</label>
+                    <input type="number" class="waterNeedAmount" value="20">
+                </div>
+                <div class="form-group">
+                    <label>Usage Type:</label>
+                    <input type="text" class="waterNeedUsageType" value="drinking">
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <input type="text" class="waterNeedDescription" value="For daily consumption">
+                </div>
+                <div class="form-group">
+                    <label>Priority (1-10):</label>
+                    <input type="number" class="waterNeedPriority" value="5" min="1" max="10">
+                </div>
+                <button class="remove-item" onclick="removeWaterNeed(this)">Remove</button>
+            `;
+            container.appendChild(newItem);
+        }
+        
+        function removeWaterNeed(button) {
+            button.parentElement.remove();
+        }
+        
+        function getWaterNeeds(containerId) {
+            const container = document.getElementById(containerId);
+            const items = container.getElementsByClassName('array-item');
+            const waterNeeds = [];
+            
+            for (let item of items) {
+                waterNeeds.push({
+                    amount: parseInt(item.querySelector('.waterNeedAmount').value),
+                    usageType: item.querySelector('.waterNeedUsageType').value,
+                    description: item.querySelector('.waterNeedDescription').value,
+                    priority: parseInt(item.querySelector('.waterNeedPriority').value)
+                });
+            }
+            
+            return waterNeeds;
+        }
+        
+        // Generic API call function
+        async function callApi(endpoint, method, body = null, queryParams = {}) {
+            let url = BASE_URL + endpoint;
+            
+            // Add query parameters if any
+            if (Object.keys(queryParams).length > 0) {
+                const params = new URLSearchParams();
+                for (const [key, value] of Object.entries(queryParams)) {
+                    if (value !== null && value !== undefined) {
+                        params.append(key, value);
+                    }
+                }
+                url += '?' + params.toString();
+            }
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                return {
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    data: { error: error.message }
+                };
+            }
+        }
+        
+        // Display response in the UI
+        function displayResponse(elementId, response) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(response, null, 2);
+        }
+        
+        // API test functions
+        async function testServerStatus() {
+            const response = await callApi('/status', 'GET');
+            displayResponse('serverStatusResponse', response);
+        }
+        
+        async function testGetCertificate() {
+            const response = await callApi('/api/certificates', 'GET');
+            displayResponse('certificateResponse', response);
+        }
+        
+        async function testRegister() {
+            const waterNeeds = getWaterNeeds('registerWaterNeeds');
+            
+            const request = {
+                email: document.getElementById('registerEmail').value,
+                password: await hashPassword(document.getElementById('registerPassword').value),
+                firstName: document.getElementById('registerFirstName').value,
+                lastName: document.getElementById('registerLastName').value,
+                username: document.getElementById('registerUsername').value,
+                location: {
+                    latitude: parseFloat(document.getElementById('registerLatitude').value),
+                    longitude: parseFloat(document.getElementById('registerLongitude').value)
+                },
+                waterNeeds: waterNeeds,
+                phoneNumber: document.getElementById('registerPhone').value || null,
+                role: "user",
+                themePreference: 0
+            };
+            
+            const response = await callApi('/api/auth/register', 'POST', request);
+            displayResponse('registerResponse', response);
+            
+            // If successful, store the login token for other tests
+            if (response.status === 200 && response.data.loginToken) {
+                document.getElementById('deleteAccountToken').value = response.data.loginToken;
+                document.getElementById('createWellToken').value = response.data.loginToken;
+                document.getElementById('deleteWellToken').value = response.data.loginToken;
+                document.getElementById('nearbyUsersToken').value = response.data.loginToken;
+                document.getElementById('updateLocationToken').value = response.data.loginToken;
+                document.getElementById('updateWaterNeedsToken').value = response.data.loginToken;
+                document.getElementById('updateProfileToken').value = response.data.loginToken;
+                document.getElementById('registerTokenLoginToken').value = response.data.loginToken;
+                document.getElementById('unregisterTokenLoginToken').value = response.data.loginToken;
+                document.getElementById('weatherToken').value = response.data.loginToken;
+                
+                if (response.data.userData && response.data.userData.userId) {
+                    document.getElementById('nearbyUsersUserId').value = response.data.userData.userId;
+                    document.getElementById('registerTokenUserId').value = response.data.userData.userId;
+                    document.getElementById('unregisterTokenUserId').value = response.data.userData.userId;
+                    document.getElementById('weatherUserId').value = response.data.userData.userId;
+                }
+            }
+        }
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const base64Hash = btoa(String.fromCharCode(...hashArray));
+            return base64Hash;
+        }
+        async function testLogin() {
+            const request = {
+                email: document.getElementById('loginEmail').value,
+                password: await hashPassword(document.getElementById('loginPassword').value)
+            };
+
+            
+            const response = await callApi('/api/auth/login', 'POST', request);
+            displayResponse('loginResponse', response);
+            
+            // If successful, store the login token for other tests
+            if (response.status === 200 && response.data.loginToken) {
+                document.getElementById('deleteAccountToken').value = response.data.loginToken;
+                document.getElementById('createWellToken').value = response.data.loginToken;
+                document.getElementById('deleteWellToken').value = response.data.loginToken;
+                document.getElementById('nearbyUsersToken').value = response.data.loginToken;
+                document.getElementById('updateLocationToken').value = response.data.loginToken;
+                document.getElementById('updateWaterNeedsToken').value = response.data.loginToken;
+                document.getElementById('updateProfileToken').value = response.data.loginToken;
+                document.getElementById('registerTokenLoginToken').value = response.data.loginToken;
+                document.getElementById('unregisterTokenLoginToken').value = response.data.loginToken;
+                document.getElementById('weatherToken').value = response.data.loginToken;
+                
+                if (response.data.userId) {
+                    document.getElementById('nearbyUsersUserId').value = response.data.userId;
+                    document.getElementById('registerTokenUserId').value = response.data.userId;
+                    document.getElementById('unregisterTokenUserId').value = response.data.userId;
+                    document.getElementById('weatherUserId').value = response.data.userId;
+                }
+            }
+        }
+        
+        async function testDeleteAccount() {
+            const request = {
+                email: document.getElementById('deleteAccountEmail').value,
+                password: await hashPassword(document.getElementById('deleteAccountPassword').value),
+                token: document.getElementById('deleteAccountToken').value
+            };
+            
+            const response = await callApi('/api/auth/delete-account', 'POST', request);
+            displayResponse('deleteAccountResponse', response);
+        }
+        
+        async function testGetAllWells() {
+            const response = await callApi('/api/wells', 'GET');
+            displayResponse('allWellsResponse', response);
+        }
+        
+        async function testGetWellsWithFilters() {
+            const queryParams = {
+                page: document.getElementById('wellsPage').value,
+                limit: document.getElementById('wellsLimit').value,
+                wellName: document.getElementById('wellsName').value || null,
+                wellStatus: document.getElementById('wellsStatus').value || null,
+                wellWaterType: document.getElementById('wellsWaterType').value || null,
+                wellOwner: document.getElementById('wellsOwner').value || null,
+                espId: document.getElementById('wellsEspId').value || null,
+                minWaterLevel: document.getElementById('wellsMinWaterLevel').value || null,
+                maxWaterLevel: document.getElementById('wellsMaxWaterLevel').value || null
+            };
+            
+            const response = await callApi('/api/wells', 'GET', null, queryParams);
+            displayResponse('wellsWithFiltersResponse', response);
+        }
+        
+        async function testGetWellDataById() {
+            const espId = document.getElementById('wellEspId').value;
+            const response = await callApi(`/api/wells/${espId}/details`, 'GET');
+            displayResponse('wellDataResponse', response);
+        }
+        
+        async function testCreateWell() {
+            const wellData = {
+                espId: document.getElementById('createWellEspId').value,
+                wellName: document.getElementById('createWellName').value,
+                wellLocation: {
+                    latitude: parseFloat(document.getElementById('createWellLatitude').value),
+                    longitude: parseFloat(document.getElementById('createWellLongitude').value)
+                },
+                wellWaterType: document.getElementById('createWellWaterType').value,
+                wellCapacity: document.getElementById('createWellCapacity').value,
+                wellWaterLevel: document.getElementById('createWellWaterLevel').value,
+                wellStatus: document.getElementById('createWellStatus').value,
+                wellOwner: document.getElementById('createWellOwner').value,
+                wellWaterConsumption: document.getElementById('createWellConsumption').value,
+                waterQuality: {
+                    ph: 7.0,
+                    turbidity: 0.0,
+                    tds: 0
+                }
+            };
+            
+            const queryParams = {
+                email: document.getElementById('createWellEmail').value,
+                loginToken: document.getElementById('createWellToken').value
+            };
+            
+            const response = await callApi('/api/wells', 'POST', wellData, queryParams);
+            displayResponse('createWellResponse', response);
+        }
+        
+        async function testDeleteWell() {
+            const espId = document.getElementById('deleteWellEspId').value;
+            const queryParams = {
+                email: document.getElementById('deleteWellEmail').value,
+                loginToken: document.getElementById('deleteWellToken').value
+            };
+            
+            const response = await callApi(`/api/wells/${espId}`, 'DELETE', null, queryParams);
+            displayResponse('deleteWellResponse', response);
+        }
+        
+        async function testGetWellStats() {
+            const response = await callApi('/api/wellStats', 'GET');
+            displayResponse('wellStatsResponse', response);
+        }
+        
+        async function testGetNearbyUsers() {
+            const request = {
+                latitude: parseFloat(document.getElementById('nearbyUsersLatitude').value),
+                longitude: parseFloat(document.getElementById('nearbyUsersLongitude').value),
+                radius: parseFloat(document.getElementById('nearbyUsersRadius').value),
+                userId: document.getElementById('nearbyUsersUserId').value,
+                loginToken: document.getElementById('nearbyUsersToken').value
+            };
+            
+            const response = await callApi('/api/nearby-users', 'POST', request);
+            displayResponse('nearbyUsersResponse', response);
+        }
+        
+        async function testUpdateLocation() {
+            const request = {
+                email: document.getElementById('updateLocationEmail').value,
+                latitude: parseFloat(document.getElementById('updateLocationLatitude').value),
+                longitude: parseFloat(document.getElementById('updateLocationLongitude').value),
+                token: document.getElementById('updateLocationToken').value
+            };
+            
+            const response = await callApi('/api/update-location', 'POST', request);
+            displayResponse('updateLocationResponse', response);
+        }
+        
+        async function testUpdateWaterNeeds() {
+            const waterNeeds = getWaterNeeds('updateWaterNeeds');
+            
+            const request = {
+                email: document.getElementById('updateWaterNeedsEmail').value,
+                waterNeeds: waterNeeds,
+                token: document.getElementById('updateWaterNeedsToken').value
+            };
+            
+            const response = await callApi('/api/update-water-needs', 'POST', request);
+            displayResponse('updateWaterNeedsResponse', response);
+        }
+        
+        async function testUpdateProfile() {
+            const request = {
+                email: document.getElementById('updateProfileEmail').value,
+                firstName: document.getElementById('updateProfileFirstName').value,
+                lastName: document.getElementById('updateProfileLastName').value,
+                username: document.getElementById('updateProfileUsername').value,
+                location: {
+                    latitude: parseFloat(document.getElementById('updateProfileLatitude').value),
+                    longitude: parseFloat(document.getElementById('updateProfileLongitude').value)
+                },
+                token: document.getElementById('updateProfileToken').value
+            };
+            
+            const response = await callApi('/api/users/update-profile', 'POST', request);
+            displayResponse('updateProfileResponse', response);
+        }
+        
+        async function testRegisterNotificationToken() {
+            const request = {
+                userId: document.getElementById('registerTokenUserId').value,
+                loginToken: document.getElementById('registerTokenLoginToken').value,
+                deviceToken: document.getElementById('registerTokenDeviceToken').value
+            };
+            
+            const response = await callApi('/api/notifications/register', 'POST', request);
+            displayResponse('registerTokenResponse', response);
+        }
+        
+        async function testUnregisterNotificationToken() {
+            const request = {
+                userId: document.getElementById('unregisterTokenUserId').value,
+                loginToken: document.getElementById('unregisterTokenLoginToken').value,
+                deviceToken: document.getElementById('unregisterTokenDeviceToken').value
+            };
+            
+            const response = await callApi('/api/notifications/unregister', 'POST', request);
+            displayResponse('unregisterTokenResponse', response);
+        }
+        
+        async function testGetWeather() {
+            const request = {
+                location: {
+                    latitude: parseFloat(document.getElementById('weatherLatitude').value),
+                    longitude: parseFloat(document.getElementById('weatherLongitude').value)
+                },
+                userId: document.getElementById('weatherUserId').value,
+                loginToken: document.getElementById('weatherToken').value
+            };
+            
+            const response = await callApi('/api/weather', 'POST', request);
+            displayResponse('weatherResponse', response);
+        }
+    </script>
+
+</body>
+</html>

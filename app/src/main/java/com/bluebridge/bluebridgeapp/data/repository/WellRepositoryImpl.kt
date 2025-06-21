@@ -1,20 +1,22 @@
 package com.bluebridge.bluebridgeapp.data.repository
 import android.util.Log
-import com.bluebridge.bluebridgeapp.data.`interface`.WellRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.WellRepository
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.WellStatsResponse
 import com.bluebridge.bluebridgeapp.data.model.WellsResponse
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.network.ServerApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.io.Serializable
 
 class WellRepositoryImpl(
     private val api: ServerApi,
     private val preferences: WellPreferences,
+
 ) : WellRepository {
 
     override val wellListFlow: Flow<List<WellData>> = preferences.wellListFlow
@@ -23,28 +25,12 @@ class WellRepositoryImpl(
         preferences.getAllWells()
     }
 
-    override suspend fun getWells(): List<WellData> = withContext(Dispatchers.IO) {
-        try {
-            val response = api.getAllWells()
-            if (response.isSuccessful && response.body() != null) {
-                val wellsResponse = response.body()!!
-                return@withContext wellsResponse.data
-            } else {
-                Log.e("WellRepository", "Error fetching wells: ${response.errorBody()?.string()}")
-                return@withContext emptyList()
-            }
-        } catch (e: Exception) {
-            Log.e("WellRepository", "Error fetching wells: ${e.message}", e)
-            return@withContext emptyList()
-        }
-    }
 
     override suspend fun getWellById(id: Int): WellData? = withContext(Dispatchers.IO) {
-        try {
-            val allWells = getWells()
-            return@withContext allWells.find { it.id == id }
+        return@withContext try {
+            preferences.getWellById(id)
         } catch (e: Exception) {
-            Log.e("WellRepository", "Error fetching well by id: ${e.message}", e)
+            Log.e("WellRepository", "Error fetching well by id from preferences: ${e.message}", e)
             return@withContext null
         }
     }
@@ -121,25 +107,6 @@ class WellRepositoryImpl(
         }
     }
 
-    override suspend fun updateWell(well: WellData): Boolean = withContext(Dispatchers.IO) {
-        // Implement update logic (local or remote as needed)
-        try {
-            preferences.updateWell(well)
-            return@withContext true
-        } catch (e: Exception) {
-            Log.e("WellRepository", "Error updating well: ${e.message}", e)
-            return@withContext false
-        }
-    }
-
-    override suspend fun getWell(wellId: Int): WellData? = withContext(Dispatchers.IO) {
-        try {
-            return@withContext preferences.getWell(wellId)
-        } catch (e: Exception) {
-            Log.e("WellRepository", "Error getting well: ${e.message}", e)
-            return@withContext null
-        }
-    }
 
     override suspend fun deleteWell(espId: String): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -151,47 +118,20 @@ class WellRepositoryImpl(
         }
     }
 
-    override suspend fun getFavoriteWells(): Flow<List<ShortenedWellData>> = flow {
+
+    override suspend fun getStats(espId: String): WellStatsResponse? = withContext(Dispatchers.IO) {
         try {
-            emit(preferences.getFavoriteWells())
+            val response = api.getWellStats(espId)
+            if (response.isSuccessful) {
+                response.body() // This returns WellStatsResponse?
+            } else {
+                Log.e("WellRepository", "Error fetching well stats: ${response.errorBody()?.string()}")
+                null
+            }
         } catch (e: Exception) {
-            emit(emptyList())
+            Log.e("WellRepository", "Network error fetching well stats: ${e.message}", e)
+            null
         }
-    }
-
-    override suspend fun addFavoriteWell(well: ShortenedWellData) {
-        withContext(Dispatchers.IO) {
-            try {
-                val currentFavorites = preferences.getFavoriteWells().toMutableList()
-                if (!currentFavorites.any { it.espId == well.espId }) {
-                    currentFavorites.add(well)
-                    preferences.saveFavoriteWells(currentFavorites)
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    override suspend fun removeFavoriteWell(espId: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                val currentFavorites = preferences.getFavoriteWells().toMutableList()
-                currentFavorites.removeIf { it.espId == espId }
-                preferences.saveFavoriteWells(currentFavorites)
-            } catch (_: Exception) {}
-        }
-    }
-
-    override suspend fun isWellFavorite(espId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val favorites = preferences.getFavoriteWells()
-            return@withContext favorites.any { it.espId == espId }
-        } catch (_: Exception) {
-            return@withContext false
-        }
-    }
-
-    override suspend fun getStats(): Flow<List<Serializable>> = flow {
-        emit(emptyList()) // Implement as needed //TODO: make this grab the espId/stats
     }
 
     override suspend fun isEspIdUnique(espId: String): Boolean = withContext(Dispatchers.IO) {
@@ -199,17 +139,48 @@ class WellRepositoryImpl(
         return@withContext true
     }
 
-    override suspend fun swapWells(from: Int, to: Int) {
-        // Implement swap logic as needed
-    }
+    override suspend fun swapWells(from: Int, to: Int) = withContext(Dispatchers.IO) {
+        val wells = preferences.getAllWells().toMutableList()
+        val fromWellIndex = wells.indexOfFirst { it.id == from }
+        val toWellIndex = wells.indexOfFirst { it.id == to}
 
-    override suspend fun deleteWellAt(index: Int) {
-        // Implement delete at index as needed
+        if (fromWellIndex != -1 && toWellIndex != -1) {
+            val fromWell = wells[fromWellIndex]
+            val toWell = wells[toWellIndex]
+
+            // Swap espId
+            val tempWellId = fromWell.id
+            fromWell.id = toWell.id
+            toWell.id = tempWellId
+
+            // Save the modified wells
+            preferences.saveWell(fromWell)
+            preferences.saveWell(toWell)
+        }
     }
 
     override suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean = withContext(Dispatchers.IO) {
-        // Implement server save logic as needed
-        return@withContext true
+        try {
+            // Assuming your API has a method to save/update a well
+            api.editWell(wellData, email,token ) // The server will handle the creation if the well did not exist previously
+            return@withContext true
+        } catch (e: Exception) {
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error saving well to the server: ${e.message}"))
+            return@withContext false
+        }
     }
 
+    override suspend fun deleteWellFromServer(
+        espId: String,
+        email: String,
+        token: String
+    ): Boolean {
+        try {
+            api.deleteWell(espId, email, token)
+            return true
+        } catch (e: Exception) {
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error deleting well from the server: ${e.message}"))
+            return false
+        }
+    }
 }

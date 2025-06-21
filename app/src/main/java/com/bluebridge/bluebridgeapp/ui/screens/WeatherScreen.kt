@@ -38,7 +38,7 @@ import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.ui.components.EmptyWeatherState
 import com.bluebridge.bluebridgeapp.ui.components.WeatherContent
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes.LOGIN_SCREEN
+import com.bluebridge.bluebridgeapp.navigation.Routes.LOGIN_SCREEN
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WeatherViewModel

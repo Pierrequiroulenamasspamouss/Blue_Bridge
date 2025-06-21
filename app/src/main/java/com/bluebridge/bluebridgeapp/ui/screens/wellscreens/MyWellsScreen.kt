@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.wellscreens
 
 import android.content.Context
 import android.os.Build
@@ -46,14 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.ui.components.WellCard
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.ActionState
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -177,7 +177,6 @@ fun MonitorScreen(
                         EmptyWellsState(
                             isWellOwner = isWellOwner,
                             isAdmin = isAdmin,
-                            tempAdminMode = tempAdminMode,
                             navController = navController
                         )
                     } else {
@@ -195,7 +194,6 @@ fun MonitorScreen(
                     EmptyWellsState(
                         isWellOwner = isWellOwner,
                         isAdmin = isAdmin,
-                        tempAdminMode = tempAdminMode,
                         navController = navController
                     )
                 }
@@ -234,7 +232,6 @@ fun MonitorScreen(
 private fun EmptyWellsState(
     isWellOwner: Boolean,
     isAdmin: Boolean,
-    tempAdminMode: Boolean,
     navController: NavController
 ) {
     Column(
@@ -249,14 +246,14 @@ private fun EmptyWellsState(
             style = MaterialTheme.typography.bodyLarge
         )
 
-        if (isWellOwner || isAdmin || tempAdminMode) {
+        if (isWellOwner || isAdmin ) {
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = { navController.navigate("${Routes.WELL_CONFIG_SCREEN}/new") }
+                onClick = { navController.navigate(Routes.BROWSE_WELLS_SCREEN) }
             ) {
                 Icon(Icons.Default.Add, "Add Well", Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Add New Well")
+                Text("Browse existing Wells")
             }
         }
     }

@@ -1,9 +1,9 @@
 package com.bluebridge.bluebridgeapp.data.repository
 
 import android.util.Log
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
-import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
 import com.bluebridge.bluebridgeapp.data.local.UserPreferences
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
 import com.bluebridge.bluebridgeapp.data.model.LoginRequest

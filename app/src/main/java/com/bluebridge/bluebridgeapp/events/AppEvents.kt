@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.data
+package com.bluebridge.bluebridgeapp.events
 
 import android.util.Log
 import androidx.compose.material3.SnackbarHostState

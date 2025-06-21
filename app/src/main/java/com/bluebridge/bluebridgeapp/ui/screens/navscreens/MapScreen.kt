@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.navscreens
 
 import android.os.Build
 import android.preference.PreferenceManager
@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -37,7 +38,7 @@ import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
 import com.bluebridge.bluebridgeapp.data.model.hasValidCoordinates
 import com.bluebridge.bluebridgeapp.ui.dialogs.WellDetailsDialog
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
 import org.osmdroid.config.Configuration
@@ -149,7 +150,7 @@ fun MapScreen(
 
             // Focus button (floating action button)
             if (userLat != null && userLon != null) {
-                androidx.compose.material3.FloatingActionButton(
+                FloatingActionButton(
                     onClick = {
                         mapViewRef?.controller?.apply {
                             animateTo(GeoPoint(userLat, userLon))

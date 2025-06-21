@@ -14,6 +14,7 @@ import com.bluebridge.bluebridgeapp.data.model.UpdateWaterNeedsRequest
 import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
 import com.bluebridge.bluebridgeapp.data.model.WeatherResponse
 import com.bluebridge.bluebridgeapp.data.model.WellData
+import com.bluebridge.bluebridgeapp.data.model.WellStatsResponse
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -107,18 +108,17 @@ class FallbackServerApi(
             block(devApi)
         }
     }
-
+    override suspend fun editWell(wellData: WellData, email: String, token: String) = withFallback { it.editWell(wellData, email, token) }
     override suspend fun getServerStatus() = withFallback { it.getServerStatus() }
     override suspend fun getServerCertificate() = withFallback { it.getServerCertificate() }
     override suspend fun getWellDataById(espId: String) = withFallback { it.getWellDataById(espId) }
-    override suspend fun createWell(wellData: WellData, email: String, token: String) = withFallback { it.createWell(wellData, email, token) }
+    override suspend fun createWell(wellData: WellData, email: String, token: String) = withFallback { it.editWell(wellData, email, token) }
     override suspend fun deleteWell(espId: String, email: String, token: String) = withFallback { it.deleteWell(espId, email, token) }
     override suspend fun login(request: LoginRequest) = withFallback { it.login(request) }
     override suspend fun register(request: RegisterRequest) = withFallback { it.register(request) }
-    override suspend fun getAllWells() = withFallback { it.getAllWells() }
     override suspend fun getWellsWithFilters(page: Int, limit: Int, wellName: String?, wellStatus: String?, wellWaterType: String?, wellOwner: String?, espId: String?, minWaterLevel: Int?, maxWaterLevel: Int?) = 
         withFallback { it.getWellsWithFilters(page, limit, wellName, wellStatus, wellWaterType, wellOwner, espId, minWaterLevel, maxWaterLevel) }
-    override suspend fun getWellsStats() = withFallback { it.getWellsStats() }
+    override suspend fun getWellStats(espId: String): Response<WellStatsResponse> = withFallback { it.getWellStats(espId) }
     override suspend fun getNearbyUsers(request: NearbyUsersRequest) = withFallback { it.getNearbyUsers(request) }
     override suspend fun updateLocation(request: UpdateLocationRequest) = withFallback { it.updateLocation(request) }
     override suspend fun updateWaterNeeds(request: UpdateWaterNeedsRequest) = withFallback { it.updateWaterNeeds(request) }

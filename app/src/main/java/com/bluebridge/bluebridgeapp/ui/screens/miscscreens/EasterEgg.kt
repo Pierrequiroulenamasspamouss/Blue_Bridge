@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.miscscreens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

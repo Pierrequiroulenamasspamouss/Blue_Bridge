@@ -58,7 +58,7 @@ import com.bluebridge.bluebridgeapp.ui.components.FeatureCard
 import com.bluebridge.bluebridgeapp.ui.components.OfflineBanner
 import com.bluebridge.bluebridgeapp.ui.components.WelcomeHeader
 import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -92,7 +92,6 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         currentUserRole = userViewModel.repository.getRoleValue()
         // Simulate data loading delay
-        // delay(50) // Simulate a 50ms delay //TODO : make this better , a hard coded delay is NOT good
         isLoading = false // Data loaded
     }
     // Check if user is logged in
@@ -110,10 +109,10 @@ fun HomeScreen(
     // Show loading indicator while user data and theme are loading
     if (isLoading) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Welcome to BlueBridge")
+            // Text(text = "Welcome to BlueBridge") //a balnk screen is better than nothing
         }
         return // Do not show the screen until loaded
     }

@@ -33,8 +33,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.bluebridge.bluebridgeapp.data.UserEvent
-import com.bluebridge.bluebridgeapp.ui.navigation.NavigationGraph
+import com.bluebridge.bluebridgeapp.events.UserEvent
+import com.bluebridge.bluebridgeapp.navigation.NavigationGraph
 import com.bluebridge.bluebridgeapp.ui.theme.getCyanColorScheme
 import com.bluebridge.bluebridgeapp.ui.theme.getGreenColorScheme
 import com.bluebridge.bluebridgeapp.ui.theme.getOrangeColorScheme

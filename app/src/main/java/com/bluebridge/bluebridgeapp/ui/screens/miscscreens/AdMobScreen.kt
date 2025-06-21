@@ -1,6 +1,7 @@
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.miscscreens
 
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -145,7 +146,7 @@ fun AdMobScreen(navController: NavController) {
     // Show interstitial ad if loaded
     fun showInterstitialAd() {
         if (isAdLoaded && interstitialAd != null) {
-            interstitialAd?.show(context as androidx.activity.ComponentActivity)
+            interstitialAd?.show(context as ComponentActivity)
         } else {
             adLoadStatus = "Ad not ready yet. Loading..."
             loadInterstitialAd()

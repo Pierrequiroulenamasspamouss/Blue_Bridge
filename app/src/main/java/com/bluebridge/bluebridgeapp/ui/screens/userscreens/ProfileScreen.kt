@@ -1,4 +1,4 @@
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.userscreens
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -38,11 +38,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
-import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.events.UserEvent
 import com.bluebridge.bluebridgeapp.ui.components.MiniMap
 import com.bluebridge.bluebridgeapp.ui.components.TopBar
 import com.bluebridge.bluebridgeapp.viewmodels.UiState

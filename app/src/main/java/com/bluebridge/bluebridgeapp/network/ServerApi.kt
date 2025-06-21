@@ -42,6 +42,13 @@ interface ServerApi {
         @Query("loginToken") token: String
     ): Response<BasicResponse>
 
+    @POST("/api/wells/edit")
+    suspend fun editWell(
+        @Body wellData: WellData,
+        @Query("email") email: String,
+        @Query("loginToken") token: String
+    ): Response<BasicResponse>
+
     @DELETE("/api/wells/{espId}")
     suspend fun deleteWell(
         @Path("espId") espId: String,
@@ -59,8 +66,7 @@ interface ServerApi {
         @Body request: RegisterRequest
     ): Response<RegisterResponse>
 
-    @GET("/api/wells")
-    suspend fun getAllWells(): Response<WellsResponse>
+
 
     @GET("/api/wells")
     suspend fun getWellsWithFilters(
@@ -75,8 +81,10 @@ interface ServerApi {
         @Query("maxWaterLevel") maxWaterLevel: Int? = null
     ): Response<WellsResponse>
 
-    @GET("/api/wellStats")
-    suspend fun getWellsStats(): Response<WellStatsResponse>
+    @GET("/api/wells/{espId}/stats")
+    suspend fun getWellStats(
+        @Path("espId") espId: String
+    ) : Response<WellStatsResponse>
 
     @POST("/api/nearby-users")
     suspend fun getNearbyUsers(

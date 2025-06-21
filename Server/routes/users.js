@@ -36,6 +36,63 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+
+
+// Delete account
+// Add this to your auth routes (replace the existing delete endpoint)
+router.post('/delete-account', async (req, res) => {
+  try {
+    const { email, password, token } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email and password required'
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({
+      where: { email: email.toLowerCase().trim() }
+    });
+
+    // Verify password and token
+    if (!user || user.password !== password || user.loginToken !== token) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Perform deletion in transaction
+    const transaction = await User.sequelize.transaction();
+    try {
+      await DeviceToken.destroy({
+        where: { userId: user.userId },
+        transaction
+      });
+
+      await User.destroy({
+        where: { userId: user.userId },
+        transaction
+      });
+
+      await transaction.commit();
+
+      return res.json({
+        status: 'success',
+        message: 'Account permanently deleted'
+      });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  } catch (error) {
+    handleError(res, error, 'Account deletion failed');
+  }
+});
+
+
 // User Registration
 router.post('/register', async (req, res) => {
   try {

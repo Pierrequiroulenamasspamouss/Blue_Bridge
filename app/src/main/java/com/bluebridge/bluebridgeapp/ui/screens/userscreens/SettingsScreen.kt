@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.userscreens
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -42,17 +42,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
-import com.bluebridge.bluebridgeapp.data.UserEvent
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.events.UserEvent
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
 import com.bluebridge.bluebridgeapp.ui.dialogs.DeleteAccountDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.NotificationPermissionDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.ThemeSelectionDialog
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.encryptPassword
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel

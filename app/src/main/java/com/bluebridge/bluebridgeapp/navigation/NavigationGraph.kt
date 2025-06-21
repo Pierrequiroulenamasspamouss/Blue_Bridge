@@ -1,7 +1,8 @@
-package com.bluebridge.bluebridgeapp.ui.navigation
+package com.bluebridge.bluebridgeapp.navigation
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,26 +14,26 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.bluebridge.bluebridgeapp.data.model.UserData
-import com.bluebridge.bluebridgeapp.ui.screens.AdMobScreen
-import com.bluebridge.bluebridgeapp.ui.screens.BrowseWellsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.CompassScreen
-import com.bluebridge.bluebridgeapp.ui.screens.CreditsScreen
-import com.bluebridge.bluebridgeapp.ui.screens.EasterEgg
-import com.bluebridge.bluebridgeapp.ui.screens.EditWaterNeedsScreen
-import com.bluebridge.bluebridgeapp.ui.screens.FeatureNotImplementedScreen
 import com.bluebridge.bluebridgeapp.ui.screens.HomeScreen
-import com.bluebridge.bluebridgeapp.ui.screens.LoadingScreen
-import com.bluebridge.bluebridgeapp.ui.screens.LoginScreen
-import com.bluebridge.bluebridgeapp.ui.screens.MapScreen
-import com.bluebridge.bluebridgeapp.ui.screens.MonitorScreen
-import com.bluebridge.bluebridgeapp.ui.screens.NearbyUsersScreen
-import com.bluebridge.bluebridgeapp.ui.screens.ProfileScreen
-import com.bluebridge.bluebridgeapp.ui.screens.RegisterScreen
-import com.bluebridge.bluebridgeapp.ui.screens.SettingsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.UrgentSmsScreen
 import com.bluebridge.bluebridgeapp.ui.screens.WeatherScreen
-import com.bluebridge.bluebridgeapp.ui.screens.WellConfigScreen
-import com.bluebridge.bluebridgeapp.ui.screens.WellDetailsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.miscscreens.AdMobScreen
+import com.bluebridge.bluebridgeapp.ui.screens.miscscreens.CreditsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.miscscreens.EasterEgg
+import com.bluebridge.bluebridgeapp.ui.screens.miscscreens.FeatureNotImplementedScreen
+import com.bluebridge.bluebridgeapp.ui.screens.miscscreens.LoadingScreen
+import com.bluebridge.bluebridgeapp.ui.screens.navscreens.MapScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.EditWaterNeedsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.LoginScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.NearbyUsersScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.ProfileScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.RegisterScreen
+import com.bluebridge.bluebridgeapp.ui.screens.userscreens.SettingsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.wellscreens.BrowseWellsScreen
+import com.bluebridge.bluebridgeapp.ui.screens.wellscreens.MonitorScreen
+import com.bluebridge.bluebridgeapp.ui.screens.wellscreens.WellConfigScreen
+import com.bluebridge.bluebridgeapp.ui.screens.wellscreens.WellDetailsScreen
 import com.bluebridge.bluebridgeapp.viewmodels.NearbyUsersViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.SmsViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
@@ -184,7 +185,7 @@ fun NavigationGraph(
             val wellId = backStackEntry.arguments?.getInt("wellId") ?: 0
 
             wellViewModel.loadWell(wellId)
-
+            Log.d("WellDetailsScreen", "Navigating to details of well with wellId: $wellId")
             WellDetailsScreen(
                 navController = navController,
                 wellViewModel = wellViewModel,
@@ -258,8 +259,7 @@ fun NavigationGraph(
                 LoadingScreen()
             } else {
                 NearbyUsersScreen(
-                    nearbyUsersViewModel = nearbyUsersViewModel,
-                    navController = navController
+                    nearbyUsersViewModel = nearbyUsersViewModel
                 )
             }
         }

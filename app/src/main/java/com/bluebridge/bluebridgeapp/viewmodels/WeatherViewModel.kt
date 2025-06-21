@@ -8,7 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.WeatherData
 import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder

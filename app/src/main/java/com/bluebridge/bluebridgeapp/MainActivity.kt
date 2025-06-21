@@ -22,10 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.local.UserPreferences
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
-import com.bluebridge.bluebridgeapp.data.AppEventHandler
+import com.bluebridge.bluebridgeapp.events.AppEventHandler
 import com.bluebridge.bluebridgeapp.data.repository.NearbyUsersRepositoryImpl
 import com.bluebridge.bluebridgeapp.data.repository.ServerRepositoryImpl
 import com.bluebridge.bluebridgeapp.data.repository.UserRepositoryImpl

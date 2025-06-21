@@ -37,8 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
@@ -47,7 +47,7 @@ import com.bluebridge.bluebridgeapp.ui.components.compass.DistanceInfo
 import com.bluebridge.bluebridgeapp.ui.components.compass.MiniMapCard
 import com.bluebridge.bluebridgeapp.ui.components.compass.rememberCompassSensor
 import com.bluebridge.bluebridgeapp.ui.dialogs.LocationPermissionDialog
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.calculateDistance
 import com.bluebridge.bluebridgeapp.utils.findNearestWells
 import com.bluebridge.bluebridgeapp.utils.formatDistance

@@ -10,7 +10,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.bluebridge.bluebridgeapp.MainActivity
 import com.bluebridge.bluebridgeapp.R
-import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope

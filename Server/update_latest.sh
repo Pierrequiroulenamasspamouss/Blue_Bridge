@@ -31,8 +31,10 @@ cp -r "$SOURCE_DIR"/* "$TARGET_DIR"
 # Cleanup
 rm -rf "$TMP_DIR"
 
-#Send a notification to all users that a new update has been deployed
-python3 /opt/bluebridge/scripts/new_update_available.py
+# Send a notification to all users that a new update has been deployed if -prod is passed
+if [ "$1" == "-prod" ]; then
+    python3 /opt/bluebridge/scripts/new_update_available.py
+fi
 
 #Restart the server to apply the update
 service bluebridge restart

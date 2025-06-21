@@ -13,9 +13,6 @@ fun encryptPassword(password: String): String {
 }
 
 
-
-
-
 // Password strength logic reused for signup
 data class PasswordStrength(val strength: String, val color: Color, val message: String)
 fun getPasswordStrength(password: String): PasswordStrength {

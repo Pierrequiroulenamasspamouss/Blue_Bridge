@@ -138,7 +138,7 @@ data class NotificationTokenRequest(
 @Serializable
 data class WellStatsResponse(
     val status: String,
-    val stats: WellStats
+    val data: WellStats
 )
 
 @Serializable

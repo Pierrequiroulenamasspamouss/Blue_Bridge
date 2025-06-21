@@ -1,6 +1,6 @@
 package com.bluebridge.bluebridgeapp.data.repository
 
-import com.bluebridge.bluebridgeapp.data.`interface`.ServerRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.ServerRepository
 import com.bluebridge.bluebridgeapp.data.model.ServerStatusData
 import com.bluebridge.bluebridgeapp.network.ServerApi
 

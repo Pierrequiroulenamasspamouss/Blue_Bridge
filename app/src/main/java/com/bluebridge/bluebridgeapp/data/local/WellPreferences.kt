@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -32,7 +31,7 @@ class WellPreferences(val context: Context) {
         }
     }
 
-    suspend fun getWell(wellId: Int): WellData? {
+    suspend fun getWellById(wellId: Int): WellData? {
         return wellListFlow.first().find { it.id == wellId }
     }
 
@@ -44,17 +43,6 @@ class WellPreferences(val context: Context) {
         saveWellList(updated)
     }
 
-    suspend fun getFavoriteWells(): List<ShortenedWellData> {
-        val prefs = context.wellDataStore.data.first()
-        val raw = prefs[FAVORITE_WELLS_KEY] ?: return emptyList()
-        return Json.decodeFromString(raw)
-    }
-
-    suspend fun saveFavoriteWells(wells: List<ShortenedWellData>) {
-        context.wellDataStore.edit { prefs ->
-            prefs[FAVORITE_WELLS_KEY] = Json.encodeToString(wells)
-        }
-    }
 
     suspend fun updateWell(wellData: WellData) {
         val current = wellListFlow.first().toMutableList()

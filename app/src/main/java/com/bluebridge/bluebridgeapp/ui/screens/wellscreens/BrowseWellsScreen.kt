@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package com.bluebridge.bluebridgeapp.ui.screens
+package com.bluebridge.bluebridgeapp.ui.screens.wellscreens
 
 import android.content.Context
 import android.os.Build
@@ -44,8 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.data.AppEvent
-import com.bluebridge.bluebridgeapp.data.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.local.WellPreferences
 import com.bluebridge.bluebridgeapp.data.model.Location
 import com.bluebridge.bluebridgeapp.data.model.ShortenedWellData
@@ -53,12 +51,14 @@ import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import com.bluebridge.bluebridgeapp.data.model.getLatitude
 import com.bluebridge.bluebridgeapp.data.model.getLongitude
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.ui.components.EnhancedWellCard
 import com.bluebridge.bluebridgeapp.ui.components.FiltersSection
 import com.bluebridge.bluebridgeapp.ui.components.MapView
 import com.bluebridge.bluebridgeapp.ui.dialogs.EnhancedWellDetailsDialog
-import com.bluebridge.bluebridgeapp.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 import java.net.URLEncoder
@@ -196,7 +196,7 @@ fun BrowseWellsScreen(
         floatingActionButton = {
             if (userData?.role == "well_owner" || userData?.role == "admin") {
                 ExtendedFloatingActionButton(
-                    onClick = { navController.navigate("${Routes.WELL_CONFIG_SCREEN}/-1") },
+                    onClick = { navController.navigate(Routes.WELL_CONFIG_NEW) },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                     text = { Text("Add New Well") }
                 )

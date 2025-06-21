@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models');
-const { Well, User } = db;
+const { Well } = db;
+const { Op } = require('sequelize'); // Import Sequelize operators
 const { validateToken } = require('../middleware/auth');
-const { getWeatherData } = require('../services/weatherService');
 
 function mapToShortenedWellData(well) {
     // Extract latitude/longitude from wellLocation JSON if present
@@ -36,35 +36,38 @@ function mapToShortenedWellData(well) {
     };
 }
 
-// Get wells with optional filters - No authentication required
+
+// Get wells with optional filters
 router.get('/', async (req, res) => {
     try {
-        const { 
-            page = 1, 
-            limit = 20, 
+        const {
+            page = 1,
+            limit = 20,
             email,
-            wellName, 
-            wellStatus, 
-            wellWaterType, 
-            wellOwner, 
+            wellName,
+            wellStatus,
+            wellWaterType,
+            wellOwner,
             espId,
             minWaterLevel,
             maxWaterLevel,
             latitude,
             longitude,
-            radius = 50 // Default radius in kilometers
+            radius = 50
         } = req.query;
 
         // Build where clause
         const where = {};
+
+        // Use the imported Op operators
         if (email) where.wellOwner = email;
-        if (wellName) where.wellName = { [db.Sequelize.Op.like]: `%${wellName}%` };
+        if (wellName) where.wellName = { [Op.like]: `%${wellName}%` };
         if (wellStatus) where.wellStatus = wellStatus;
         if (wellWaterType) where.wellWaterType = wellWaterType;
         if (wellOwner) where.wellOwner = wellOwner;
         if (espId) where.espId = espId;
-        if (minWaterLevel) where.wellWaterLevel = { [db.Sequelize.Op.gte]: minWaterLevel };
-        if (maxWaterLevel) where.wellWaterLevel = { [db.Sequelize.Op.lte]: maxWaterLevel };
+        if (minWaterLevel) where.wellWaterLevel = { [Op.gte]: minWaterLevel };
+        if (maxWaterLevel) where.wellWaterLevel = { [Op.lte]: maxWaterLevel };
 
         // If coordinates are provided, find wells within radius
         if (latitude && longitude) {
@@ -72,14 +75,13 @@ router.get('/', async (req, res) => {
             const lon = parseFloat(longitude);
             const rad = parseFloat(radius);
 
-            // Calculate distance using Haversine formula
-            where[db.Sequelize.Op.and] = [
-                db.Sequelize.literal(`
+            where[Op.and] = [
+                db.sequelize.literal(`
                     (6371 * acos(
-                        cos(radians(${lat})) * 
-                        cos(radians(JSON_EXTRACT(wellLocation, '$.latitude'))) * 
-                        cos(radians(JSON_EXTRACT(wellLocation, '$.longitude')) - radians(${lon})) + 
-                        sin(radians(${lat})) * 
+                        cos(radians(${lat})) *
+                        cos(radians(JSON_EXTRACT(wellLocation, '$.latitude'))) *
+                        cos(radians(JSON_EXTRACT(wellLocation, '$.longitude')) - radians(${lon})) +
+                        sin(radians(${lat})) *
                         sin(radians(JSON_EXTRACT(wellLocation, '$.latitude')))
                     )) <= ${rad}
                 `)
@@ -89,20 +91,17 @@ router.get('/', async (req, res) => {
         // Get total count for pagination
         const total = await Well.count({ where });
 
-        // Get wells with pagination, sort by wellName alphabetically by default
+        // Get wells with pagination
         const wells = await Well.findAll({
             where,
             limit: parseInt(limit),
             offset: (page - 1) * limit,
-            order: [['wellName', 'ASC']]  // Sort alphabetically by well name
+            order: [['wellName', 'ASC']]
         });
-
-        // Map wells to shortened format
-        const mappedWells = wells.map(well => mapToShortenedWellData(well).data);
 
         res.json({
             status: 'success',
-            data: mappedWells,
+            data: wells.map(well => mapToShortenedWellData(well).data),
             pagination: {
                 total,
                 page: parseInt(page),

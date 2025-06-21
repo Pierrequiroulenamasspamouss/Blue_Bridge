@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.bluebridge.bluebridgeapp.network
 
 import android.content.Context
@@ -6,8 +8,8 @@ import android.util.Log
 import com.bluebridge.bluebridgeapp.R
 
 
-class SmsApi(private val context: Context) {
-    private val TAG = "SmsApi"
+class SmsApi(context: Context) {
+
     private val smsManager = SmsManager.getDefault()
     private val serverNumber: String = context.getString(R.string.sms_server_number)
 
@@ -15,9 +17,9 @@ class SmsApi(private val context: Context) {
         try {
             val message = buildMessage(command, location)
             smsManager.sendTextMessage(serverNumber, null, message, null, null)
-            Log.d(TAG, "SMS sent successfully: $message")
+            Log.d("SmsApi", "SMS sent successfully: $message")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send SMS", e)
+            Log.e("SmsApi", "Failed to send SMS", e)
             throw e
         }
     }

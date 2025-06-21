@@ -1,8 +1,8 @@
 package com.bluebridge.bluebridgeapp.data.repository
 
 import android.util.Log
-import com.bluebridge.bluebridgeapp.data.`interface`.NearbyUsersRepository
-import com.bluebridge.bluebridgeapp.data.`interface`.UserRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.NearbyUsersRepository
+import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.NearbyUser
 import com.bluebridge.bluebridgeapp.data.model.NearbyUsersRequest
 import com.bluebridge.bluebridgeapp.network.ServerApi
