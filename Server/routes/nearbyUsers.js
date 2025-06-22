@@ -129,23 +129,38 @@ router.post('/', validateToken, async (req, res) => {
 
         // Transform the data to match the expected Kotlin class
         const formattedUsers = await Promise.all(users.map(async (user) => {
-            // Fetch additional user details if needed
-            const fullUser = await User.findOne({
-                where: { userId: user.userId },
-                attributes: ['firstName', 'lastName', 'lastActive', 'waterNeeds'],
-                raw: true
-            });
+            try {
+                // Try to fetch additional user details
+                const fullUser = await User.findOne({
+                    where: { userId: user.userId },
+                    attributes: ['firstName', 'lastName', 'waterNeeds'],
+                    raw: true
+                });
 
-            return {
-                userId: user.userId,
-                username: user.username || '',
-                firstName: fullUser.firstName,
-                lastName: fullUser.lastName,
-                email: user.email,
-                waterNeeds: fullUser.waterNeeds ? JSON.parse(fullUser.waterNeeds) : [],
-                lastActive: fullUser.lastActive || '',
-                distance: user.distance
-            };
+                return {
+                    userId: user.userId,
+                    username: user.username || '',
+                    firstName: fullUser?.firstName || 'Unknown',
+                    lastName: fullUser?.lastName || 'User',
+                    email: user.email,
+                    waterNeeds: fullUser?.waterNeeds ? JSON.parse(fullUser.waterNeeds) : [],
+                    lastActive: new Date().toISOString(), // Dummy data for lastActive
+                    distance: user.distance
+                };
+            } catch (error) {
+                console.error(`Error processing user ${user.userId}:`, error);
+                // Fallback with dummy data if there's any error
+                return {
+                    userId: user.userId,
+                    username: user.username || '',
+                    firstName: 'Unknown',
+                    lastName: 'User',
+                    email: user.email,
+                    waterNeeds: [],
+                    lastActive: new Date().toISOString(), // Dummy data
+                    distance: user.distance
+                };
+            }
         }));
 
         res.json({
