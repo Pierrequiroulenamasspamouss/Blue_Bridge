@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -209,8 +210,11 @@ fun NearbyUsersScreen(
             is NearbyUsersState.Loading -> LoadingState()
             is NearbyUsersState.Success -> UserListState((state as NearbyUsersState.Success).users)
             is NearbyUsersState.Error -> ErrorState(
+
                 (state as NearbyUsersState.Error).message,
-                { nearbyUsersViewModel.refreshUsers() }
+                { nearbyUsersViewModel.refreshUsers()
+
+                }
             )
         }
     }
@@ -299,6 +303,7 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(message, color = MaterialTheme.colorScheme.error)
+            Log.e("NearbyUsersScreen", "Error: ${message}")
             Button(
                 onClick = onRetry,
                 modifier = Modifier.padding(top = 16.dp)

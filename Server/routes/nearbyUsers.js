@@ -120,47 +120,43 @@ router.post('/', validateToken, async (req, res) => {
             });
         }
 
-        const users = await getNearbyUsers(
-            parseFloat(latitude),
-            parseFloat(longitude),
-            parseFloat(radius),
-            req.user.email
-        );
+        // Get all needed fields in the initial query
+        const users = await User.findAll({
+            where: {
+                email: { [Op.ne]: req.user.email },
+                location: { [Op.ne]: null }
+            },
+            attributes: [
+                'userId', 'username', 'firstName', 'lastName',
+                'email', 'waterNeeds', 'location'
+            ],
+            raw: true
+        });
 
-        // Transform the data to match the expected Kotlin class
-        const formattedUsers = await Promise.all(users.map(async (user) => {
-            try {
-                // Try to fetch additional user details
-                const fullUser = await User.findOne({
-                    where: { userId: user.userId },
-                    attributes: ['firstName', 'lastName', 'waterNeeds'],
-                    raw: true
-                });
+        // Calculate distances and filter
+        const nearbyUsers = users
+            .map(user => {
+                // ... (keep your existing distance calculation logic) ...
+                return {
+                    ...user,
+                    distance: calculatedDistance,
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                };
+            })
+            .filter(user => user.distance <= radius)
+            .sort((a, b) => a.distance - b.distance);
 
-                return {
-                    userId: user.userId,
-                    username: user.username || '',
-                    firstName: fullUser?.firstName || 'Unknown',
-                    lastName: fullUser?.lastName || 'User',
-                    email: user.email,
-                    waterNeeds: fullUser?.waterNeeds ? JSON.parse(fullUser.waterNeeds) : [],
-                    lastActive: new Date().toISOString(), // Dummy data for lastActive
-                    distance: user.distance
-                };
-            } catch (error) {
-                console.error(`Error processing user ${user.userId}:`, error);
-                // Fallback with dummy data if there's any error
-                return {
-                    userId: user.userId,
-                    username: user.username || '',
-                    firstName: 'Unknown',
-                    lastName: 'User',
-                    email: user.email,
-                    waterNeeds: [],
-                    lastActive: new Date().toISOString(), // Dummy data
-                    distance: user.distance
-                };
-            }
+        // Format response - KEY FIX IS HERE
+        const formattedUsers = nearbyUsers.map(user => ({
+            userId: user.userId,
+            username: user.username || '',
+            firstName: user.firstName || 'Unknown',
+            lastName: user.lastName || 'User',
+            email: user.email,
+            waterNeeds: user.waterNeeds ? JSON.parse(user.waterNeeds) : [], // Parse the JSON string
+            lastActive: new Date().toISOString(), // Dummy data
+            distance: user.distance
         }));
 
         res.json({
