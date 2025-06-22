@@ -1,102 +1,96 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../models');
-const { User } = db;
+const { User } = require('../models');
 const { validateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
-/**
- * Get nearby users within a specified radius using location JSON
- */
-const getNearbyUsers = async (centerLat, centerLon, radius, excludeEmail) => {
+// Helper functions
+const cleanAndParseLocation = (locationString) => {
+    if (!locationString) return null;
+
     try {
-        console.log(`Starting nearby users search with center: ${centerLat},${centerLon} and radius: ${radius}km`);
+        // Remove surrounding quotes and escape characters
+        let cleanStr = locationString.toString()
+            .replace(/^"+|"+$/g, '')
+            .replace(/\\"/g, '"');
 
-        const users = await User.findAll({
-            where: { email: { [Op.ne]: excludeEmail } },
-            attributes: ['userId', 'email', 'location'],
-            raw: true
-        });
-
-        console.log(`Found ${users.length} total users (excluding ${excludeEmail})`);
-
-        const nearbyUsers = users.map(user => {
-            console.log(`\nProcessing user: ${user.email}`);
-            console.log(`Raw location data:`, user.location);
-
-            try {
-                if (!user.location) {
-                    console.log('Skipping - no location data');
-                    return null;
-                }
-
-                // Clean and parse the location string
-                const cleanLocation = user.location
-                    .replace(/^"+|"+$/g, '') // Remove surrounding quotes if present
-                    .replace(/\\"/g, '"');    // Unescape quotes
-
-                console.log('Cleaned location string:', cleanLocation);
-
-                let location;
-                try {
-                    location = JSON.parse(cleanLocation);
-                    console.log('Successfully parsed location:', location);
-                } catch (e) {
-                    console.log('Failed to parse location:', e);
-                    return null;
-                }
-
-                // Safely extract coordinates
-                const lat = parseFloat(location?.latitude);
-                const lon = parseFloat(location?.longitude);
-                console.log(`Extracted coordinates: ${lat},${lon}`);
-
-                if (isNaN(lat) || isNaN(lon)) {
-                    console.log('Skipping - invalid coordinates');
-                    return null;
-                }
-
-                // Haversine calculation
-                const R = 6371;
-                const dLat = (lat - centerLat) * Math.PI / 180;
-                const dLon = (lon - centerLon) * Math.PI / 180;
-                const a =
-                    Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(centerLat * Math.PI / 180) *
-                    Math.cos(lat * Math.PI / 180) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const distance = R * c;
-
-                console.log(`Distance from center: ${distance.toFixed(2)} km`);
-
-                return {
-                    ...user,
-                    distance: parseFloat(distance.toFixed(2)),
-                    latitude: lat,
-                    longitude: lon
-                };
-            } catch (e) {
-                console.error('Error processing user:', e);
-                return null;
-            }
-        })
-        .filter(user => {
-            const include = user && user.distance <= radius;
-            console.log(`User ${user?.email || 'unknown'}: ${include ? 'INCLUDED' : 'EXCLUDED'} (Distance: ${user?.distance?.toFixed(2) || 'N/A'} km)`);
-            return include;
-        })
-        .sort((a, b) => a.distance - b.distance);
-
-        console.log(`\nFinal result: Found ${nearbyUsers.length} users within ${radius} km radius`);
-        return nearbyUsers;
-    } catch (error) {
-        console.error('Error finding nearby users:', error);
-        throw error;
+        return JSON.parse(cleanStr);
+    } catch (e) {
+        console.error('Failed to parse location:', e);
+        return null;
     }
 };
 
+const parseWaterNeeds = (waterNeeds) => {
+    if (!waterNeeds) return [];
 
+    try {
+        const parsed = typeof waterNeeds === 'string'
+            ? JSON.parse(waterNeeds)
+            : waterNeeds;
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error('Failed to parse waterNeeds:', e);
+        return [];
+    }
+};
+
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+};
+
+const getUsersWithLocations = async (excludeEmail) => {
+    return await User.findAll({
+        where: {
+            email: { [Op.ne]: excludeEmail },
+            location: { [Op.ne]: null }
+        },
+        attributes: [
+            'userId', 'username', 'firstName', 'lastName',
+            'email', 'waterNeeds', 'location'
+        ],
+        raw: true
+    });
+};
+
+const processUserLocation = (user, centerLat, centerLon) => {
+    try {
+        const location = cleanAndParseLocation(user.location);
+        if (!location || !location.latitude || !location.longitude) {
+            return null;
+        }
+
+        const distance = calculateDistance(
+            centerLat,
+            centerLon,
+            location.latitude,
+            location.longitude
+        );
+
+        return {
+            ...user,
+            distance: parseFloat(distance.toFixed(2)),
+            latitude: location.latitude,
+            longitude: location.longitude,
+            waterNeeds: parseWaterNeeds(user.waterNeeds),
+            lastActive: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error(`Error processing user ${user.userId}:`, error);
+        return null;
+    }
+};
+
+// Routes
 router.get('/debug-users', async (req, res) => {
     const users = await User.findAll({
         attributes: ['email', 'location']
@@ -107,7 +101,6 @@ router.get('/debug-users', async (req, res) => {
         type: typeof u.location
     })));
 });
-
 
 router.post('/', validateToken, async (req, res) => {
     try {
@@ -120,50 +113,28 @@ router.post('/', validateToken, async (req, res) => {
             });
         }
 
-        // Get all needed fields in the initial query
-        const users = await User.findAll({
-            where: {
-                email: { [Op.ne]: req.user.email },
-                location: { [Op.ne]: null }
-            },
-            attributes: [
-                'userId', 'username', 'firstName', 'lastName',
-                'email', 'waterNeeds', 'location'
-            ],
-            raw: true
-        });
+        const users = await getUsersWithLocations(req.user.email);
 
-        // Calculate distances and filter
         const nearbyUsers = users
-            .map(user => {
-                // ... (keep your existing distance calculation logic) ...
-                return {
-                    ...user,
-                    distance: calculatedDistance,
-                    latitude: location.latitude,
-                    longitude: location.longitude
-                };
-            })
-            .filter(user => user.distance <= radius)
+            .map(user => processUserLocation(user, latitude, longitude))
+            .filter(user => user !== null && user.distance <= radius)
             .sort((a, b) => a.distance - b.distance);
-
-        // Format response - KEY FIX IS HERE
-        const formattedUsers = nearbyUsers.map(user => ({
-            userId: user.userId,
-            username: user.username || '',
-            firstName: user.firstName || 'Unknown',
-            lastName: user.lastName || 'User',
-            email: user.email,
-            waterNeeds: user.waterNeeds ? JSON.parse(user.waterNeeds) : [], // Parse the JSON string
-            lastActive: new Date().toISOString(), // Dummy data
-            distance: user.distance
-        }));
 
         res.json({
             status: 'success',
             message: 'Nearby users retrieved successfully',
-            data: formattedUsers
+            data: nearbyUsers.map(user => ({
+                userId: user.userId,
+                username: user.username || '',
+                firstName: user.firstName || 'Unknown',
+                lastName: user.lastName || 'User',
+                email: user.email,
+                waterNeeds: user.waterNeeds,
+                lastActive: user.lastActive,
+                distance: user.distance
+            }))
         });
+
     } catch (error) {
         console.error('Error getting nearby users:', error);
         res.status(500).json({
