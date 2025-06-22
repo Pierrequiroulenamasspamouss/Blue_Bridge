@@ -198,4 +198,74 @@ router.post('/weather', authenticate, async (req, res) => {
   }
 });
 
+// Update user profile
+router.post('/update-profile', async (req, res) => {
+    try {
+        const { email, token, firstName, lastName, username, location } = req.body;
+
+        // Validate required fields
+        if (!email || !token) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Email and token are required'
+            });
+        }
+
+        // Find user by email and verify token
+        const user = await User.findOne({
+            where: {
+                email: email.toLowerCase().trim(),
+                loginToken: token
+            }
+        });
+
+        if (!user) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Prepare updates
+        const updates = {};
+        if (firstName) updates.firstName = firstName;
+        if (lastName) updates.lastName = lastName;
+        if (username) updates.username = username;
+
+        // Handle location update
+        if (location) {
+            updates.location = JSON.stringify({
+                latitude: parseFloat(location.latitude),
+                longitude: parseFloat(location.longitude),
+                lastUpdated: new Date().toISOString()
+            });
+        }
+
+        // Update user profile
+        await user.update(updates);
+
+        // Return updated user data (excluding sensitive fields)
+        const updatedUser = await User.findByPk(user.userId, {
+            attributes: { exclude: ['password', 'loginToken'] },
+            raw: true
+        });
+
+        return res.json({
+            status: 'success',
+            message: 'Profile updated successfully',
+            data: {
+                ...updatedUser,
+                location: updatedUser.location ? JSON.parse(updatedUser.location) : null
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to update profile'
+        });
+    }
+});
+
 module.exports = router;

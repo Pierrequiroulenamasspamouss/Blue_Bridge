@@ -6,6 +6,7 @@ package com.bluebridge.bluebridgeapp.navigation
 object Routes {
     const val WELL_CONFIG_NEW = "new"
     const val FEATURE_NOT_IMPLEMENTED = "feature_not_implemented"
+    const val WELL_DETAILS_TEMP_SCREEN = "external_well_details_screen"
     const val EASTER_EGG_SCREEN = "easter_egg_screen"
     const val EDIT_WATER_NEEDS_SCREEN = "water_needs_edit_screen"
     const val PROFILE_SCREEN = "profile_screen"

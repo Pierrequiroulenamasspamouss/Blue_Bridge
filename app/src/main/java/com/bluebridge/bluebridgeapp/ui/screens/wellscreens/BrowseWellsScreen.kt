@@ -314,16 +314,16 @@ fun BrowseWellsScreen(
                 well = well,
                 onDismiss = { selectedWell = null },
                 onMoreDetails = {
-                    navController.navigate(Routes.WELL_DETAILS_SCREEN) //TODO: make this request all the well's data for the full details screen
-
+                    // Use the temporary route for espId
+                    selectedWell = null
+                    navController.navigate("${Routes.WELL_DETAILS_TEMP_SCREEN}/${well.espId}")
                 },
                 onAdd = {
-                    // Launch a coroutine to handle the suspend function
-                    coroutineScope.launch {  // or viewModelScope if in a ViewModel
+                    coroutineScope.launch {
                         wellPreferences.saveWell(well)
                     }
                     selectedWell = null
-                    //navController.navigate(Routes.MONITORING_SCREEN)
+                    //navController.navigate(Routes.MONITORING_SCREEN) //Should it go back th the monitoring screen after adding a well ?
                 }
             )
         }

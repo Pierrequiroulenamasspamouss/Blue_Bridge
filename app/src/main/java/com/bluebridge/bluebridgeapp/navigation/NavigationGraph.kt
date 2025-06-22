@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -192,6 +194,28 @@ fun NavigationGraph(
                 wellId = wellId,
                 userViewModel = userViewModel
             )
+        }
+
+        composable(
+            route = "${Routes.WELL_DETAILS_TEMP_SCREEN}/{espId}",
+            arguments = listOf(navArgument("espId") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            // Use LaunchedEffect to perform navigation just once
+            LaunchedEffect(Unit) {
+                navController.navigate(Routes.FEATURE_NOT_IMPLEMENTED) {
+                    // Pop the temp screen from back stack
+                    popUpTo(Routes.WELL_DETAILS_TEMP_SCREEN) {
+                        inclusive = true
+                    }
+                    // Prevent multiple instances of the feature screen
+                    launchSingleTop = true
+                }
+            }
+
+            // Show empty content while redirecting
+            Box(modifier = Modifier.fillMaxSize())
         }
 
         // Well Config Screen
