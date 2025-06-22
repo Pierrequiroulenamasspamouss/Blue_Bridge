@@ -11,7 +11,7 @@
 // Configuration Constants
 // ======================
 const appLatestVersion = '0.1.4.3   ';
-const serverVersion = '1.0.2';
+const serverVersion = '0.1.3.1';
 const isDev = process.env.NODE_ENV === 'development' || true;
 const PORT = process.env.PORT || 80;
 const httpsPort = process.env.HTTPS_PORT || 443;

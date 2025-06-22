@@ -10,65 +10,104 @@ const { Op } = require('sequelize');
  */
 const getNearbyUsers = async (centerLat, centerLon, radius, excludeEmail) => {
     try {
-        // First get all users with valid location data
+        console.log(`Starting nearby users search with center: ${centerLat},${centerLon} and radius: ${radius}km`);
+
         const users = await User.findAll({
-            where: {
-                email: { [Op.ne]: excludeEmail },
-                location: { [Op.ne]: null } // Changed from [Op.not] to [Op.ne]
-            },
-            attributes: [
-                'userId', 'username', 'firstName', 'lastName',
-                'email', 'location', 'waterNeeds'
-            ],
+            where: { email: { [Op.ne]: excludeEmail } },
+            attributes: ['userId', 'email', 'location'],
             raw: true
         });
 
-        // Filter users within radius using Haversine formula
-        return users
-            .map(user => {
-                try {
-                    const location = typeof user.location === 'string'
-                        ? JSON.parse(user.location)
-                        : user.location;
+        console.log(`Found ${users.length} total users (excluding ${excludeEmail})`);
 
-                    if (!location || typeof location !== 'object' ||
-                        !location.latitude || !location.longitude) {
-                        return null;
-                    }
+        const nearbyUsers = users.map(user => {
+            console.log(`\nProcessing user: ${user.email}`);
+            console.log(`Raw location data:`, user.location);
 
-                    // Convert degrees to radians
-                    const toRad = x => x * Math.PI / 180;
-
-                    // Haversine formula
-                    const R = 6371; // Earth radius in km
-                    const dLat = toRad(location.latitude - centerLat);
-                    const dLon = toRad(location.longitude - centerLon);
-                    const a =
-                        Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(toRad(centerLat)) * Math.cos(toRad(location.latitude)) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                    const distance = R * c;
-
-                    return {
-                        ...user,
-                        distance: parseFloat(distance.toFixed(2)), // Round to 2 decimal places
-                        latitude: location.latitude,
-                        longitude: location.longitude
-                    };
-                } catch (e) {
-                    console.error('Error processing user location:', e);
+            try {
+                if (!user.location) {
+                    console.log('Skipping - no location data');
                     return null;
                 }
-            })
-            .filter(user => user && user.distance <= radius)
-            .sort((a, b) => a.distance - b.distance);
 
+                // Clean and parse the location string
+                const cleanLocation = user.location
+                    .replace(/^"+|"+$/g, '') // Remove surrounding quotes if present
+                    .replace(/\\"/g, '"');    // Unescape quotes
+
+                console.log('Cleaned location string:', cleanLocation);
+
+                let location;
+                try {
+                    location = JSON.parse(cleanLocation);
+                    console.log('Successfully parsed location:', location);
+                } catch (e) {
+                    console.log('Failed to parse location:', e);
+                    return null;
+                }
+
+                // Safely extract coordinates
+                const lat = parseFloat(location?.latitude);
+                const lon = parseFloat(location?.longitude);
+                console.log(`Extracted coordinates: ${lat},${lon}`);
+
+                if (isNaN(lat) || isNaN(lon)) {
+                    console.log('Skipping - invalid coordinates');
+                    return null;
+                }
+
+                // Haversine calculation
+                const R = 6371;
+                const dLat = (lat - centerLat) * Math.PI / 180;
+                const dLon = (lon - centerLon) * Math.PI / 180;
+                const a =
+                    Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(centerLat * Math.PI / 180) *
+                    Math.cos(lat * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const distance = R * c;
+
+                console.log(`Distance from center: ${distance.toFixed(2)} km`);
+
+                return {
+                    ...user,
+                    distance: parseFloat(distance.toFixed(2)),
+                    latitude: lat,
+                    longitude: lon
+                };
+            } catch (e) {
+                console.error('Error processing user:', e);
+                return null;
+            }
+        })
+        .filter(user => {
+            const include = user && user.distance <= radius;
+            console.log(`User ${user?.email || 'unknown'}: ${include ? 'INCLUDED' : 'EXCLUDED'} (Distance: ${user?.distance?.toFixed(2) || 'N/A'} km)`);
+            return include;
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+        console.log(`\nFinal result: Found ${nearbyUsers.length} users within ${radius} km radius`);
+        return nearbyUsers;
     } catch (error) {
         console.error('Error finding nearby users:', error);
         throw error;
     }
 };
+
+
+router.get('/debug-users', async (req, res) => {
+    const users = await User.findAll({
+        attributes: ['email', 'location']
+    });
+    res.json(users.map(u => ({
+        email: u.email,
+        location: u.location,
+        type: typeof u.location
+    })));
+});
+
 
 router.post('/', validateToken, async (req, res) => {
     try {
