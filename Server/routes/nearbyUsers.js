@@ -127,10 +127,31 @@ router.post('/', validateToken, async (req, res) => {
             req.user.email
         );
 
+        // Transform the data to match the expected Kotlin class
+        const formattedUsers = await Promise.all(users.map(async (user) => {
+            // Fetch additional user details if needed
+            const fullUser = await User.findOne({
+                where: { userId: user.userId },
+                attributes: ['firstName', 'lastName', 'lastActive', 'waterNeeds'],
+                raw: true
+            });
+
+            return {
+                userId: user.userId,
+                username: user.username || '',
+                firstName: fullUser.firstName,
+                lastName: fullUser.lastName,
+                email: user.email,
+                waterNeeds: fullUser.waterNeeds ? JSON.parse(fullUser.waterNeeds) : [],
+                lastActive: fullUser.lastActive || '',
+                distance: user.distance
+            };
+        }));
+
         res.json({
             status: 'success',
             message: 'Nearby users retrieved successfully',
-            data: users
+            data: formattedUsers
         });
     } catch (error) {
         console.error('Error getting nearby users:', error);

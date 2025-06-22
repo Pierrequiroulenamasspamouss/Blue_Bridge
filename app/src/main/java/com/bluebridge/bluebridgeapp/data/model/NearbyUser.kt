@@ -9,8 +9,7 @@ data class NearbyUser(
     val firstName: String,
     val lastName: String,
     val email: String = "",
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
+    val role: String = "",
     val waterNeeds: List<WaterNeed> = emptyList(),
     val lastActive: String = "",
     val distance: Double
