@@ -59,6 +59,10 @@ module.exports = (sequelize) => {
       defaultValue: true
     },
 
+    registrationDate : {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
     isWellOwner: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
