@@ -116,7 +116,14 @@ router.post('/login', async (req, res) => {
 
         // Parse location and waterNeeds, providing defaults if null
         const location = parseJSON(user.location) || { latitude: 0.0, longitude: 0.0, lastUpdated: "never" };
-        const waterNeeds = parseJSON(user.waterNeeds) || [];
+        let waterNeedsRaw = parseJSON(user.waterNeeds) || [];
+        // Map to correct structure for Android app
+        const waterNeeds = waterNeedsRaw.map(w => ({
+            amount: typeof w.amount === 'number' ? w.amount : parseFloat(w.amount) || 0,
+            usageType: w.usageType || w.type || '',
+            description: w.description || '',
+            priority: typeof w.priority === 'number' ? w.priority : 0
+        }));
 
         jsonResponse(res, 200, {
             status: 'success',

@@ -17,7 +17,7 @@ data class MovementSpeeds(
 
 @Serializable
 data class WaterNeed(
-    val amount: Int,
+    val amount: Float,
     val usageType: String,
     val description: String,
     val priority: Int

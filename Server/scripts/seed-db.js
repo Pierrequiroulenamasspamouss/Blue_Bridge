@@ -74,7 +74,14 @@ const seedUsers = [
     lastName: 'Sluse',
     username: 'Pi2R',
     location: JSON.stringify({ latitude: 48.8589, longitude: 2.3469 }),
-    waterNeeds: JSON.stringify([{ type: 'drinking', amount: 2.5 }]),
+    waterNeeds: JSON.stringify([
+      {
+        amount: 2.5,
+        usageType: 'drinking',
+        description: 'Daily drinking water',
+        priority: 1
+      }
+    ]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: false,
@@ -96,7 +103,14 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33123456789',
     location: JSON.stringify({ latitude: 48.857, longitude: 2.3522 }),
-    waterNeeds: JSON.stringify([{ type: 'irrigation', amount: 5.0 }]),
+    waterNeeds: JSON.stringify([
+      {
+        amount: 5.0,
+        usageType: 'irrigation',
+        description: 'Garden irrigation',
+        priority: 2
+      }
+    ]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: true,
@@ -116,7 +130,14 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33987654321',
     location: JSON.stringify({ latitude: 48.855, longitude: 2.350 }),
-    waterNeeds: JSON.stringify([{ type: 'industrial', amount: 10.0 }]),
+    waterNeeds: JSON.stringify([
+      {
+        amount: 10.0,
+        usageType: 'industrial',
+        description: 'Factory use',
+        priority: 3
+      }
+    ]),
     notificationPreferences: JSON.stringify({
       email: false,
       sms: true,
@@ -136,7 +157,14 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33555555555',
     location: JSON.stringify({ latitude: 48.853, longitude: 2.348 }),
-    waterNeeds: JSON.stringify([{ type: 'mixed', amount: 7.5 }]),
+    waterNeeds: JSON.stringify([
+      {
+        amount: 7.5,
+        usageType: 'mixed',
+        description: 'Mixed household',
+        priority: 2
+      }
+    ]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: false,
