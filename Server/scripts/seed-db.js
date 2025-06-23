@@ -4,15 +4,32 @@ const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../utils/logger');
 
-// Initialize models
-const sequelize = new Sequelize({
+// Import model factories
+const UserFactory = require('../models/user');
+const WellFactory = require('../models/well');
+const DeviceTokenFactory = require('../models/deviceToken');
+
+// Create Sequelize instances for each database
+const sequelizeUsers = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, '../users.sqlite'),
+  storage: path.join(__dirname, '../data/users.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+const sequelizeWells = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../data/wells.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+const sequelizeTokens = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../data/deviceTokens.sqlite'),
   logging: msg => logger.debug(msg)
 });
 
-const models = require('../models');
-models.sequelize = sequelize;
+// Initialize models for each DB
+const User = UserFactory(sequelizeUsers);
+const Well = WellFactory(sequelizeWells);
+const DeviceToken = DeviceTokenFactory(sequelizeTokens);
 
 // Configuration
 const SEED_PASSWORD_SALT_ROUNDS = 10;
@@ -160,25 +177,20 @@ async function seedDatabases() {
   try {
     logger.info('Starting database seeding...');
 
-    // Sync all models
-    await models.sequelize.sync({ force: true });
-    logger.info('Database tables created');
-
-    // Hash passwords
+    // Sync and seed users
+    await sequelizeUsers.sync({ force: true });
+    logger.info('User table created');
     for (const user of seedUsers) {
       if (!user.password.startsWith('Uy6qvZV0iA2')) {
         user.password = await bcrypt.hash('defaultPassword123', SEED_PASSWORD_SALT_ROUNDS);
       }
     }
-
-    // Create users
-    const createdUsers = await models.User.bulkCreate(seedUsers, {
-      validate: true,
-      returning: true
-    });
+    const createdUsers = await User.bulkCreate(seedUsers, { validate: true, returning: true });
     logger.info(`Created ${createdUsers.length} users`);
 
-    // Create device tokens
+    // Sync and seed device tokens
+    await sequelizeTokens.sync({ force: true });
+    logger.info('DeviceToken table created');
     const deviceTokens = createdUsers.map(user => ({
       tokenId: uuidv4(),
       userId: user.userId,
@@ -189,11 +201,13 @@ async function seedDatabases() {
       createdAt: new Date(),
       updatedAt: new Date()
     }));
-    await models.DeviceToken.bulkCreate(deviceTokens, { validate: true });
+    await DeviceToken.bulkCreate(deviceTokens, { validate: true });
     logger.info(`Created ${deviceTokens.length} device tokens`);
 
-    // Create wells
-    const createdWells = await models.Well.bulkCreate(seedWells, { validate: true });
+    // Sync and seed wells
+    await sequelizeWells.sync({ force: true });
+    logger.info('Well table created');
+    const createdWells = await Well.bulkCreate(seedWells, { validate: true });
     logger.info(`Created ${createdWells.length} wells`);
 
     logger.info('Database seeded successfully!');

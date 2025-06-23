@@ -1,44 +1,54 @@
 const path = require('path');
 const { Sequelize } = require('sequelize');
-const { User, DeviceToken, Well } = require('../models');
 const logger = require('../utils/logger');
 
-// Database configuration
-const databases = {
-  users: {
-    path: path.join(__dirname, '../data/users.sqlite'),
-    models: [User]
-  },
-  wells: {
-    path: path.join(__dirname, '../data/wells.sqlite'),
-    models: [Well]
-  },
-  deviceTokens: {
-    path: path.join(__dirname, '../data/deviceTokens.sqlite'),
-    models: [DeviceToken]
-  }
-};
+// Import model factories
+const UserFactory = require('../models/user');
+const WellFactory = require('../models/well');
+const DeviceTokenFactory = require('../models/deviceToken');
 
-// Initialize databases
+// Create Sequelize instances for each database
+const sequelizeUsers = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../data/users.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+const sequelizeWells = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../data/wells.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+const sequelizeTokens = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../data/deviceTokens.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+
+// Initialize models for each DB
+const User = UserFactory(sequelizeUsers);
+const Well = WellFactory(sequelizeWells);
+const DeviceToken = DeviceTokenFactory(sequelizeTokens);
+
+// Initialize each database
 async function initDatabases() {
   try {
-    for (const [dbName, config] of Object.entries(databases)) {
-      const sequelize = new Sequelize({
-        dialect: 'sqlite',
-        storage: config.path,
-        logging: msg => logger.debug(msg)
-      });
+    // Users DB
+    await sequelizeUsers.authenticate();
+    logger.info('Connected to users database successfully');
+    await User.sync({ alter: true });
+    logger.info('Synced User model for users database');
 
-      // Test connection
-      await sequelize.authenticate();
-      logger.info(`Connected to ${dbName} database successfully`);
+    // Wells DB
+    await sequelizeWells.authenticate();
+    logger.info('Connected to wells database successfully');
+    await Well.sync({ alter: true });
+    logger.info('Synced Well model for wells database');
 
-      // Sync models
-      for (const model of config.models) {
-        await model.sync({ alter: true }); // Use alter for production, force for development
-        logger.info(`Synced model ${model.name} for ${dbName} database`);
-      }
-    }
+    // DeviceTokens DB
+    await sequelizeTokens.authenticate();
+    logger.info('Connected to deviceTokens database successfully');
+    await DeviceToken.sync({ alter: true });
+    logger.info('Synced DeviceToken model for deviceTokens database');
 
     logger.info('All databases initialized successfully');
   } catch (error) {
