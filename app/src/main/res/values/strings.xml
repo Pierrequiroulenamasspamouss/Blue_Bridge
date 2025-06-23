@@ -11,10 +11,12 @@
     <string name="ProductionServerUrl">https://192.168.0.204/</string>
 
 
-    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
-    <string name="ProductionServerUrl">https://192.168.0.98/</string>
 
     LOCAL MACHINE:
+
+
+    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
+    <string name="ProductionServerUrl">https://192.168.0.98/</string>
 
 
     GOOGLE:
@@ -24,7 +26,6 @@
 
     <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
     <string name="ProductionServerUrl" translatable="false">https://bluebridge.homeonthewater.com/</string>
-
 
 
     <!-- Firebase notifications -->

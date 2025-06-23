@@ -74,12 +74,12 @@ module.exports = (sequelize) => {
     freezeTableName: true
   });
 
-  User.associate = (models) => {
-    User.hasMany(models.DeviceToken, {
-      foreignKey: 'userId',
-      as: 'deviceTokens'
-    });
-  };
+  // User.associate = (models) => {
+  //   User.hasMany(models.DeviceToken, {
+  //     foreignKey: 'userId',
+  //     as: 'deviceTokens'
+  //   });
+  // };
 
   return User;
 };

@@ -195,7 +195,7 @@ class UserPreferences(context: Context) {
             // In future, consider parsing and saving as WaterNeed list directly
             if (waterNeeds.isNotBlank()) {
                 val waterNeed = WaterNeed(
-                    amount = waterNeeds.toIntOrNull() ?: 0,
+                    amount = waterNeeds.toFloatOrNull() ?: 0f,
                     usageType = "General",
                     priority = 3,
                     description = "General water need"

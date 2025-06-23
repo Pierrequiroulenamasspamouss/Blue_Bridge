@@ -6,9 +6,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
+import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.events.AppEvent
 import com.bluebridge.bluebridgeapp.events.AppEventChannel.sendEvent
-import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -42,7 +42,7 @@ class WaterNeedsManager(
 
     // CRUD Operations
     suspend fun addWaterNeed() {
-        val amount = newAmount.toIntOrNull() ?: 0
+        val amount = newAmount.toFloatOrNull() ?: 0f
         when {
             amount <= 0 -> sendEvent(AppEvent.ShowError("Please enter a valid amount"))
             newUsageType.isBlank() -> sendEvent(AppEvent.ShowError("Please select a usage type"))
@@ -56,7 +56,7 @@ class WaterNeedsManager(
     }
 
     suspend fun updateWaterNeed(index: Int) {
-        val amount = newAmount.toIntOrNull() ?: 0
+        val amount = newAmount.toFloatOrNull() ?: 0f
         when {
             amount <= 0 -> sendEvent(AppEvent.ShowError("Please enter a valid amount"))
             newUsageType.isBlank() -> sendEvent(AppEvent.ShowError("Please select a usage type"))
@@ -113,7 +113,7 @@ class WaterNeedsManager(
     }
 
     // Private Helpers
-    private fun createWaterNeed(amount: Int): WaterNeed {
+    private fun createWaterNeed(amount: Float): WaterNeed {
         return WaterNeed(
             amount = amount,
             usageType = if (newUsageType == "Other") customType else newUsageType,

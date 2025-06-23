@@ -67,13 +67,13 @@ module.exports = (sequelize) => {
         }
     });
 
-    // Define associations
-    Well.associate = (models) => {
-        Well.belongsTo(models.User, {
-            foreignKey: 'ownerId',
-            as: 'owner'
-        });
-    };
+    // // Define associations
+    // Well.associate = (models) => {
+    //     Well.belongsTo(models.User, {
+    //         foreignKey: 'ownerId',
+    //         as: 'owner'
+    //     });
+    // };
 
     return Well;
 }; 

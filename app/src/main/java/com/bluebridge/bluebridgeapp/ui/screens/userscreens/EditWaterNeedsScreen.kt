@@ -37,13 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridge.bluebridgeapp.events.AppEvent
-import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
 import com.bluebridge.bluebridgeapp.data.repository.WaterNeedsManager
+import com.bluebridge.bluebridgeapp.events.AppEvent
+import com.bluebridge.bluebridgeapp.events.AppEventChannel
+import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
 import com.bluebridge.bluebridgeapp.ui.dialogs.DeleteWaterNeedDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.WaterNeedDialog
-import com.bluebridge.bluebridgeapp.ui.components.WaterNeedCard
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -77,7 +77,7 @@ fun EditWaterNeedsScreen(
                 waterManager.waterNeeds.clear()
                 waterManager.waterNeeds.addAll(needs)
                 if (waterManager.waterNeeds.isEmpty()) {
-                    waterManager.waterNeeds.add(WaterNeed(0, "General", "", 3))
+                    waterManager.waterNeeds.add(WaterNeed(0f, "General", "", 3))
                 }
             }
         } catch (e: Exception) {
