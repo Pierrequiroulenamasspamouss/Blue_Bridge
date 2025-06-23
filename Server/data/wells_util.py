@@ -3,10 +3,9 @@ import json
 import re
 from datetime import datetime
 import random
-from faker import Faker
+import string
 
 db = DatabaseManager()
-fake = Faker()
 
 def get_db_connection():
     return db._get_connection('wells')
@@ -52,15 +51,31 @@ def delete_well(well_id):
 def update_well_field(well_id, field_name, new_value):
     return db.wells().update_well(well_id, {field_name: new_value})
 
+def generate_random_string(length=10):
+    """Generate a random string of fixed length"""
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for _ in range(length)).capitalize()
+
+def generate_random_phone():
+    """Generate a random phone number"""
+    return f"{random.randint(100, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+
+def generate_random_address():
+    """Generate a simple random address"""
+    street_num = random.randint(1, 999)
+    street_types = ['St', 'Ave', 'Blvd', 'Rd', 'Ln']
+    return f"{street_num} {generate_random_string(random.randint(5, 10))} {random.choice(street_types)}"
+
 def generate_random_well_data(count=5):
-    """Generate random well data according to the model"""
+    """Generate random well data without Faker"""
     water_types = ['Clean', 'Mineral', 'Spring', 'Artesian', 'Borehole']
     statuses = ['Active', 'Inactive', 'Maintenance', 'Unknown']
+    locations = ['North', 'South', 'East', 'West', 'Central']
 
     for _ in range(count):
         well_data = {
-            'name': fake.street_name() + " Well",
-            'description': fake.sentence(),
+            'name': f"{generate_random_string(random.randint(5, 10))} {random.choice(locations)} Well",
+            'description': f"A {random.choice(['deep', 'shallow', 'artesian'])} well located in {generate_random_string(random.randint(5, 10))} area",
             'latitude': round(random.uniform(-90, 90), 6),
             'longitude': round(random.uniform(-180, 180), 6),
             'water_level': round(random.uniform(0, 100), 2),
@@ -70,11 +85,11 @@ def generate_random_well_data(count=5):
                 'tds': random.randint(50, 500)
             },
             'status': random.choice(statuses),
-            'owner': fake.company(),
-            'contact_info': fake.phone_number(),
-            'access_info': fake.address(),
-            'notes': fake.text(max_nb_chars=200),
-            'espId': f"ESP-{fake.unique.bothify(text='??-####')}",
+            'owner': f"{generate_random_string(random.randint(5, 10))} Water Co.",
+            'contact_info': generate_random_phone(),
+            'access_info': generate_random_address(),
+            'notes': f"Random notes about well maintenance and usage. Installed in {random.randint(2010, 2023)}.",
+            'espId': f"ESP-{random.randint(1000, 9999)}-{random.choice(string.ascii_uppercase)}{random.choice(string.ascii_uppercase)}",
             'wellWaterConsumption': round(random.uniform(0, 1000), 2),
             'wellWaterType': random.choice(water_types)
         }
