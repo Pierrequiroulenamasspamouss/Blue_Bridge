@@ -29,3 +29,4 @@ ssh_connection_commands.txt
 server.bat
 /Server/node_modules/
 cloud_tunnelling.bat
+/Server/update_latest.sh
