@@ -1,12 +1,27 @@
 #!/bin/bash
 
-# Colors for output
+# --- Configuration ---
+# The directory where the server will be installed
+DEST_DIR="/opt/bluebridge"
+# The directory where this script is located (source of files)
+SOURCE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# --- Colors for output ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${GREEN}Starting BlueBridge Server Installation...${NC}"
+echo -e "Source: $SOURCE_DIR"
+echo -e "Destination: $DEST_DIR"
+
+# --- Pre-flight Checks ---
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${RED}Please run as root or with sudo.${NC}"
+  exit 1
+fi
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -20,69 +35,64 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+# Check if rsync is installed
+if ! command -v rsync &> /dev/null; then
+    echo -e "${RED}rsync is not installed. Please install it (e.g., 'sudo apt-get install rsync').${NC}"
+    exit 1
+fi
+
+# --- Installation ---
 # Create necessary directories
-mkdir -p /opt/bluebridge
-mkdir -p /opt/bluebridge/APK
-mkdir -p /opt/bluebridge/ssl
-mkdir -p /opt/bluebridge/html
-mkdir -p /opt/bluebridge/data
+echo -e "${YELLOW}Creating required directories in $DEST_DIR...${NC}"
+mkdir -p "$DEST_DIR/data"
+mkdir -p "$DEST_DIR/ssl"
+mkdir -p "$DEST_DIR/APK"
+mkdir -p "$DEST_DIR/html"
 
-# Clean previous installation
-rm -rf /opt/bluebridge/*
+# Copy application files (preserves data directory)
+echo -e "${YELLOW}Copying server files...${NC}"
+rsync -av --exclude 'data/' --exclude 'install.sh' --exclude '.git/' "$SOURCE_DIR/" "$DEST_DIR/"
 
-# Copy files with force
-cp -f server.js /opt/bluebridge/
-cp -f package.json /opt/bluebridge/
-cp -f .greenlockrc /opt/bluebridge/
-cp -f routeExplorer.js /opt/bluebridge/
-
-# Copy directories with force
-cp -rf routes /opt/bluebridge/
-cp -rf models /opt/bluebridge/
-cp -rf services /opt/bluebridge/
-cp -rf scripts /opt/bluebridge/
-cp -rf APK /opt/bluebridge/
-cp -rf ssl /opt/bluebridge/
-cp -rf html /opt/bluebridge/
-cp -rf data /opt/bluebridge/
-
-# Install dependencies
-cd /opt/bluebridge
+# Install dependencies in the destination
+echo -e "${YELLOW}Installing npm dependencies in $DEST_DIR...${NC}"
+cd "$DEST_DIR" || { echo -e "${RED}Failed to change directory to $DEST_DIR${NC}"; exit 1; }
 npm install
 
 # Set permissions
-chmod +x /opt/bluebridge/server.js
-chmod +x /opt/bluebridge/scripts/*.js
-
-# Create SSL certificates if they don't exist
-if [ ! -f "ssl/private.key" ] || [ ! -f "ssl/certificate.crt" ]; then
-    echo -e "${YELLOW}Generating self-signed SSL certificates...${NC}"
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout ssl/private.key \
-        -out ssl/certificate.crt \
-        -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+echo -e "${YELLOW}Setting permissions...${NC}"
+chmod +x "$DEST_DIR/server.js"
+if [ -d "$DEST_DIR/scripts" ]; then
+    chmod +x "$DEST_DIR/scripts"/*.js
 fi
 
-# Initialize databases
-echo -e "${YELLOW}Initializing databases...${NC}"
-node scripts/init-db.js
+# Initialize databases only if they don't exist
+if [ ! -f "$DEST_DIR/data/users.sqlite" ]; then
+    echo -e "${YELLOW}Database not found. Initializing...${NC}"
+    node "$DEST_DIR/scripts/init-db.js"
+else
+    echo -e "${GREEN}Existing database found. Skipping initialization.${NC}"
+fi
 
-# Set up DNS updater
-echo -e "${YELLOW}Setting up DNS updater...${NC}"
-chmod +x scripts/dns-setup.sh
+# SSL Certificate generation is removed as requested.
 
+# --- Service Setup ---
 # Create systemd service
 echo -e "${YELLOW}Creating systemd service...${NC}"
-sudo tee /etc/systemd/system/bluebridge.service << EOL
+SERVICE_USER=$SUDO_USER
+if [ -z "$SERVICE_USER" ]; then
+    SERVICE_USER=$(whoami)
+fi
+
+sudo tee /etc/systemd/system/bluebridge.service > /dev/null << EOL
 [Unit]
 Description=BlueBridge Server
 After=network.target
 
-[Service] # LSB compliant header for init.d script
+[Service]
 Type=simple
-User=$USER
-WorkingDirectory=/opt/bluebridge
-ExecStart=/usr/bin/node /opt/bluebridge/server.js
+User=$SERVICE_USER
+WorkingDirectory=$DEST_DIR
+ExecStart=/usr/bin/node $DEST_DIR/server.js
 Restart=on-failure
 Environment=NODE_ENV=production
 
@@ -90,9 +100,9 @@ Environment=NODE_ENV=production
 WantedBy=multi-user.target
 EOL
 
-# Create init.d script for broader compatibility (e.g., sudo service)
+# Create init.d script for broader compatibility
 echo -e "${YELLOW}Creating init.d script...${NC}"
-sudo tee /etc/init.d/bluebridge << EOL
+sudo tee /etc/init.d/bluebridge > /dev/null << EOL
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          bluebridge
@@ -114,17 +124,12 @@ esac
 EOL
 sudo chmod +x /etc/init.d/bluebridge
 
+# --- Final Steps ---
 # Enable and start service
-echo -e "${YELLOW}Enabling and starting service...${NC}"
+echo -e "${YELLOW}Reloading services and starting BlueBridge...${NC}"
 sudo systemctl daemon-reload
 sudo systemctl enable bluebridge
-sudo systemctl start bluebridge
+sudo systemctl restart bluebridge
 
 echo -e "${GREEN}Installation completed successfully!${NC}"
-echo -e "${YELLOW}The server should now be running on:${NC}"
-echo -e "HTTP: http://localhost:3000"
-echo -e "HTTPS: https://localhost:3443"
-echo -e "${YELLOW}To check the service status:${NC}"
-echo -e "sudo systemctl status bluebridge"
-echo -e "or"
-echo -e "sudo service bluebridge status"
+echo -e "To check the service status, run: ${YELLOW}sudo systemctl status bluebridge${NC}"
