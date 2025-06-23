@@ -3,7 +3,16 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../utils/logger');
-const { User, DeviceToken, Well } = require('../models');
+
+// Initialize models
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../users.sqlite'),
+  logging: msg => logger.debug(msg)
+});
+
+const models = require('../models');
+models.sequelize = sequelize;
 
 // Configuration
 const SEED_PASSWORD_SALT_ROUNDS = 10;
@@ -11,7 +20,31 @@ const ADMIN_EMAIL = 'admin@bluebridge.com';
 const USER_EMAIL = 'user@bluebridge.com';
 const OWNER_EMAIL = 'owner@bluebridge.com';
 
-// Seed data
+// Enhanced logger for validation errors
+function logValidationErrors(errors) {
+  logger.error('Validation errors encountered:');
+  errors.forEach((err, index) => {
+    logger.error(`  ${index + 1}. Field: ${err.path}`);
+    logger.error(`     Type: ${err.type}`);
+    logger.error(`     Value: ${JSON.stringify(err.value)}`);
+    logger.error(`     Message: ${err.message}`);
+    if (err.validatorKey) {
+      logger.error(`     Validator: ${err.validatorKey}`);
+    }
+  });
+}
+
+// Helper functions
+const randomFloat = (min, max, decimals = 2) =>
+  parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
+
+const randomInt = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+const randomDate = (start, end) =>
+  new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+
+// Seed data with all required fields
 const seedUsers = [
   {
     userId: uuidv4(),
@@ -19,10 +52,22 @@ const seedUsers = [
     phoneNumber: '+33666666666',
     role: 'admin',
     themePreference: 0,
-    password: 'Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=', // Note: In production, always hash passwords
+    password: 'Uy6qvZV0iA2/drm4zACDLCCm7BE9aCKZVQ16bg80XiU=',
     firstName: 'Pierre',
     lastName: 'Sluse',
-    username: 'Pi2R'
+    username: 'Pi2R',
+    location: JSON.stringify({ latitude: 48.8589, longitude: 2.3469 }),
+    waterNeeds: JSON.stringify({ type: 'drinking', amount: 2.5 }),
+    notificationPreferences: JSON.stringify({
+      email: true,
+      sms: false,
+      push: true
+    }),
+    lastActive: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    loginToken: uuidv4(),
+    isWellOwner: true
   },
   {
     userId: uuidv4(),
@@ -30,7 +75,19 @@ const seedUsers = [
     firstName: 'Admin',
     lastName: 'User',
     role: 'admin',
-    username: 'admin'
+    username: 'admin',
+    password: '', // Will be hashed
+    phoneNumber: '+33123456789',
+    location: JSON.stringify({ latitude: 48.857, longitude: 2.3522 }),
+    waterNeeds: JSON.stringify({ type: 'irrigation', amount: 5.0 }),
+    notificationPreferences: JSON.stringify({
+      email: true,
+      sms: true,
+      push: true
+    }),
+    lastActive: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     userId: uuidv4(),
@@ -38,7 +95,19 @@ const seedUsers = [
     firstName: 'Regular',
     lastName: 'User',
     role: 'user',
-    username: 'user'
+    username: 'user',
+    password: '', // Will be hashed
+    phoneNumber: '+33987654321',
+    location: JSON.stringify({ latitude: 48.855, longitude: 2.350 }),
+    waterNeeds: JSON.stringify({ type: 'industrial', amount: 10.0 }),
+    notificationPreferences: JSON.stringify({
+      email: false,
+      sms: true,
+      push: false
+    }),
+    lastActive: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     userId: uuidv4(),
@@ -46,84 +115,98 @@ const seedUsers = [
     firstName: 'Well',
     lastName: 'Owner',
     role: 'well_owner',
-    username: 'owner'
+    username: 'owner',
+    password: '', // Will be hashed
+    phoneNumber: '+33555555555',
+    location: JSON.stringify({ latitude: 48.853, longitude: 2.348 }),
+    waterNeeds: JSON.stringify({ type: 'mixed', amount: 7.5 }),
+    notificationPreferences: JSON.stringify({
+      email: true,
+      sms: false,
+      push: true
+    }),
+    lastActive: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 
-const seedWells = [
-  {
-    espId: "esp32-001",
-    name: 'Central Park Well',
+// Generate wells with all required fields
+const seedWells = Array.from({ length: 10 }, (_, i) => {
+  const wellId = i + 1;
+  return {
+    espId: `esp32-${String(wellId).padStart(3, '0')}`,
+    name: `Well ${wellId}`,
+    description: `Description for well ${wellId}`,
+    location: JSON.stringify({ latitude: randomFloat(48.85, 48.86), longitude: randomFloat(2.34, 2.36) }),
+    latitude: randomFloat(48.85, 48.86),
+    longitude: randomFloat(2.34, 2.36),
+    water_level: randomFloat(30, 100).toString(),
+    water_quality: 'Good',
+    status: ['Active', 'Maintenance', 'Inactive'][randomInt(0, 2)],
     owner: OWNER_EMAIL,
-    location: JSON.stringify({ latitude: 48.8589, longitude: 2.3469 }),
-    waterType: 'Clean',
-    capacity: 1000.0,
-    waterLevel: 85.5,
-    waterConsumption: 50.0,
-    extraData: JSON.stringify({
-      description: 'Main water source for Central Park area',
-      contactInfo: 'Contact well owner for access',
-      accessInfo: '24/7 access with key',
-      notes: 'Regular maintenance every 3 months'
-    }),
-    status: 'Active',
-    waterQuality: JSON.stringify({ ph: 7.2, turbidity: 0.5, tds: 120 })
-  },
-  {
-    espId: "esp32-002",
-    name: 'River Well',
-    owner: OWNER_EMAIL,
-    location: JSON.stringify({ latitude: 48.857, longitude: 2.3504 }),
-    waterType: 'Clean',
-    capacity: 800.0,
-    waterLevel: 75.0,
-    waterConsumption: 30.0,
-    extraData: JSON.stringify({
-      description: 'Secondary water source near the river',
-      contactInfo: 'Contact well owner for access',
-      accessInfo: 'Daytime access only',
-      notes: 'Water quality monitoring daily'
-    }),
-    status: 'Active',
-    waterQuality: JSON.stringify({ ph: 7.0, turbidity: 0.7, tds: 150 })
-  }
-];
+    contact_info: 'contact@example.com',
+    access_info: '24/7 access',
+    notes: 'Regular maintenance',
+    last_update: new Date(),
+    wellWaterConsumption: randomFloat(10, 100).toString(),
+    wellWaterType: ['Clean', 'Potable', 'Brackish'][randomInt(0, 2)],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+});
 
 async function seedDatabases() {
   try {
     logger.info('Starting database seeding...');
 
-    // Hash passwords for seeded users
+    // Sync all models
+    await models.sequelize.sync({ force: true });
+    logger.info('Database tables created');
+
+    // Hash passwords
     for (const user of seedUsers) {
-      if (user.email !== 'pierresluse@gmail.com') { // Skip hashing for the pre-hashed password
+      if (!user.password.startsWith('Uy6qvZV0iA2')) {
         user.password = await bcrypt.hash('defaultPassword123', SEED_PASSWORD_SALT_ROUNDS);
       }
     }
 
     // Create users
-    const createdUsers = await User.bulkCreate(seedUsers, { returning: true });
+    const createdUsers = await models.User.bulkCreate(seedUsers, {
+      validate: true,
+      returning: true
+    });
     logger.info(`Created ${createdUsers.length} users`);
 
     // Create device tokens
     const deviceTokens = createdUsers.map(user => ({
       tokenId: uuidv4(),
       userId: user.userId,
-      token: `${user.username}-device-token-1`,
-      deviceType: 'android',
-      isActive: true
+      token: `${user.username}-device-token-${uuidv4().slice(0, 8)}`,
+      deviceType: ['android', 'ios'][randomInt(0, 1)],
+      isActive: true,
+      lastUsed: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     }));
-
-    await DeviceToken.bulkCreate(deviceTokens);
+    await models.DeviceToken.bulkCreate(deviceTokens, { validate: true });
     logger.info(`Created ${deviceTokens.length} device tokens`);
 
     // Create wells
-    const createdWells = await Well.bulkCreate(seedWells);
+    const createdWells = await models.Well.bulkCreate(seedWells, { validate: true });
     logger.info(`Created ${createdWells.length} wells`);
 
     logger.info('Database seeded successfully!');
     process.exit(0);
   } catch (error) {
-    logger.error('Error seeding database:', error);
+    logger.error('SEEDING FAILED:');
+    logger.error(`Error name: ${error.name}`);
+    logger.error(`Error message: ${error.message}`);
+
+    if (error.name === 'SequelizeValidationError') {
+      logValidationErrors(error.errors);
+    }
+
     process.exit(1);
   }
 }

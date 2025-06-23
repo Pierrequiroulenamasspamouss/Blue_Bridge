@@ -484,7 +484,7 @@ def display_users(users: List[Dict[str, Any]]) -> None:
             user_id = user_id[:8] + "..."
 
         print(f"{idx:<5} | {email:<30} | {name:<20} | {role:<10} | {last_active:<20} | {user_id}")
-    print("-" * 100)s
+    print("-" * 100)
 
 # Initialize the database manager
 db = DatabaseManager()
