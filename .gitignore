@@ -19,7 +19,7 @@ local.properties
 app/google-services.json
 
 #SERVER
-/Server/update-latest.sh
+
 /Server/.env
 api-testing.html
 /Server/scripts/firebase-service-account.json
@@ -28,5 +28,6 @@ api-testing.html
 /Server/data/wells.sqlite
 ssh_connection_commands.txt
 server.bat
+update-latest.sh
 /Server/node_modules/
 cloud_tunnelling.bat

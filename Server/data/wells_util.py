@@ -2,8 +2,11 @@ from database_manager import DatabaseManager
 import json
 import re
 from datetime import datetime
+import random
+from faker import Faker
 
 db = DatabaseManager()
+fake = Faker()
 
 def get_db_connection():
     return db._get_connection('wells')
@@ -49,6 +52,35 @@ def delete_well(well_id):
 def update_well_field(well_id, field_name, new_value):
     return db.wells().update_well(well_id, {field_name: new_value})
 
+def generate_random_well_data(count=5):
+    """Generate random well data according to the model"""
+    water_types = ['Clean', 'Mineral', 'Spring', 'Artesian', 'Borehole']
+    statuses = ['Active', 'Inactive', 'Maintenance', 'Unknown']
+
+    for _ in range(count):
+        well_data = {
+            'name': fake.street_name() + " Well",
+            'description': fake.sentence(),
+            'latitude': round(random.uniform(-90, 90), 6),
+            'longitude': round(random.uniform(-180, 180), 6),
+            'water_level': round(random.uniform(0, 100), 2),
+            'water_quality': {
+                'ph': round(random.uniform(6.0, 8.5), 2),
+                'turbidity': round(random.uniform(0.1, 5.0), 2),
+                'tds': random.randint(50, 500)
+            },
+            'status': random.choice(statuses),
+            'owner': fake.company(),
+            'contact_info': fake.phone_number(),
+            'access_info': fake.address(),
+            'notes': fake.text(max_nb_chars=200),
+            'espId': f"ESP-{fake.unique.bothify(text='??-####')}",
+            'wellWaterConsumption': round(random.uniform(0, 1000), 2),
+            'wellWaterType': random.choice(water_types)
+        }
+        add_well(well_data)
+    print(f"\nSuccessfully generated {count} random wells")
+
 def parse_indices(input_str, list_len):
     input_str = input_str.strip().lower()
     indices = set()
@@ -78,59 +110,110 @@ def main():
     wells = get_all_wells()
 
     if not wells:
-        print("No wells found.")
-        return
+        print("No wells found in the database.")
+        generate = input("Would you like to generate sample wells? (y/n): ").strip().lower()
+        if generate == 'y':
+            try:
+                count = int(input("How many wells to generate? (default 5): ") or 5)
+                generate_random_well_data(count)
+                wells = get_all_wells()  # Refresh the wells list
+            except ValueError:
+                print("Invalid number. Using default count of 5.")
+                generate_random_well_data()
+                wells = get_all_wells()
+        else:
+            return
 
     print("\nWells:")
     for idx, well in enumerate(wells):
         print(f"{idx}: ID={well['id']} Name={well['name']}")
 
-    try:
-        selection = int(input("\nEnter the number of the well to edit: ").strip())
-        well = wells[selection]
-    except (ValueError, IndexError):
-        print("Invalid selection.")
-        return
+    print("\nOptions:")
+    print("1. Edit existing well")
+    print("2. Add new well")
+    print("3. Generate random wells")
+    choice = input("\nEnter your choice (1-3): ").strip()
 
-    print("\nWell data:")
-    for key, value in well.items():
-        print(f"{key}: {value}")
+    if choice == '1':
+        try:
+            selection = int(input("\nEnter the number of the well to edit: ").strip())
+            well = wells[selection]
+        except (ValueError, IndexError):
+            print("Invalid selection.")
+            return
 
-    try:
-        field_name = input("\nEnter field name to edit: ").strip()
-        if field_name not in well:
+        print("\nWell data:")
+        for key, value in well.items():
+            print(f"{key}: {value}")
+
+        try:
+            field_name = input("\nEnter field name to edit: ").strip()
+            if field_name not in well:
+                print("Invalid field name.")
+                return
+        except (ValueError, IndexError):
             print("Invalid field name.")
             return
-    except (ValueError, IndexError):
-        print("Invalid field name.")
-        return
 
-    value = well[field_name]
-    try:
-        parsed = json.loads(value)
-        if not isinstance(parsed, list):
-            print("The field is not a JSON list.")
+        value = well[field_name]
+        try:
+            parsed = json.loads(value)
+            if not isinstance(parsed, list):
+                print("The field is not a JSON list.")
+                return
+        except Exception:
+            print("The field does not contain valid JSON.")
             return
-    except Exception:
-        print("The field does not contain valid JSON.")
-        return
 
-    print(f"\nCurrent list ({len(parsed)} items):")
-    for i, item in enumerate(parsed):
-        print(f"  {i}: {item}")
+        print(f"\nCurrent list ({len(parsed)} items):")
+        for i, item in enumerate(parsed):
+            print(f"  {i}: {item}")
 
-    delete_input = input("\nEnter indices to delete (e.g., 1,2,4-6, last-2, all): ").strip()
-    try:
-        to_delete = parse_indices(delete_input, len(parsed))
-    except Exception as e:
-        print(f"Invalid format: {e}")
-        return
+        delete_input = input("\nEnter indices to delete (e.g., 1,2,4-6, last-2, all): ").strip()
+        try:
+            to_delete = parse_indices(delete_input, len(parsed))
+        except Exception as e:
+            print(f"Invalid format: {e}")
+            return
 
-    for i in reversed(to_delete):
-        removed = parsed.pop(i)
-        print(f"Deleted index {i}: {removed}")
+        for i in reversed(to_delete):
+            removed = parsed.pop(i)
+            print(f"Deleted index {i}: {removed}")
 
-    update_well_field(well['id'], field_name, json.dumps(parsed))
+        update_well_field(well['id'], field_name, json.dumps(parsed))
+
+    elif choice == '2':
+        print("\nCreating a new well:")
+        well_data = {
+            'name': input("Well name: "),
+            'description': input("Description: "),
+            'latitude': float(input("Latitude: ")),
+            'longitude': float(input("Longitude: ")),
+            'water_level': float(input("Water level: ")),
+            'water_quality': json.dumps({
+                'ph': float(input("pH level: ")),
+                'turbidity': float(input("Turbidity: ")),
+                'tds': int(input("TDS: "))
+            }),
+            'status': input("Status: "),
+            'owner': input("Owner: "),
+            'contact_info': input("Contact info: "),
+            'access_info': input("Access info: "),
+            'notes': input("Notes: "),
+            'espId': input("ESP ID: "),
+            'wellWaterConsumption': float(input("Water consumption: ")),
+            'wellWaterType': input("Water type: ")
+        }
+        add_well(well_data)
+        print("\nWell created successfully!")
+
+    elif choice == '3':
+        try:
+            count = int(input("\nHow many random wells to generate? (default 5): ") or 5)
+            generate_random_well_data(count)
+        except ValueError:
+            print("Invalid number. Using default count of 5.")
+            generate_random_well_data()
 
 if __name__ == "__main__":
     main()
