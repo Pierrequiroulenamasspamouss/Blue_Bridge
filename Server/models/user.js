@@ -53,6 +53,12 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       defaultValue: 0
     },
+    lastActive: DataTypes.DATE,
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
+
     isWellOwner: {
       type: DataTypes.BOOLEAN,
       defaultValue: false

@@ -4,33 +4,16 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
 from dataclasses import dataclass
 from pathlib import Path
+import uuid
+import re
+import random
 
+@dataclass
 class DatabaseConfig:
     path: str
     schema: Dict[str, str]  # table_name -> create_table_sql
 
 class DatabaseManager:
-    def verify_schema():
-        conn = sqlite3.connect('users.sqlite')
-        cursor = conn.cursor()
-
-        # Check if table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-        if not cursor.fetchone():
-            print("Users table doesn't exist!")
-            return
-
-        # Get all columns
-        cursor.execute("PRAGMA table_info(users)")
-        columns = cursor.fetchall()
-        print("Current columns in users table:")
-        for col in columns:
-            print(f"{col[1]} ({col[2]})")
-
-        conn.close()
-
-    if __name__ == "__main__":
-        verify_schema()
     def __init__(self):
         self.databases = {
             'users': DatabaseConfig(
@@ -47,7 +30,7 @@ class DatabaseManager:
                             role TEXT NOT NULL DEFAULT 'user',
                             location TEXT,
                             waterNeeds TEXT,
-                            lastActive TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            lastActive TIMESTAMP,
                             registrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             notificationPreferences TEXT,
                             loginToken TEXT UNIQUE,
@@ -56,8 +39,33 @@ class DatabaseManager:
                             isWellOwner BOOLEAN DEFAULT 0,
                             themePreference INTEGER DEFAULT 0,
                             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-                        
+                            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    '''
+                }
+            ),
+            'wells': DatabaseConfig(
+                path='wells.sqlite',
+                schema={
+                    'wells': '''
+                        CREATE TABLE IF NOT EXISTS wells (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL,
+                            description TEXT,
+                            location TEXT NOT NULL,
+                            latitude REAL NOT NULL,
+                            longitude REAL NOT NULL,
+                            water_level TEXT,
+                            water_quality TEXT,
+                            status TEXT,
+                            owner TEXT,
+                            contact_info TEXT,
+                            access_info TEXT,
+                            notes TEXT,
+                            last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            espId TEXT UNIQUE,
+                            wellWaterConsumption TEXT,
+                            wellWaterType TEXT
                         )
                     '''
                 }
@@ -67,6 +75,7 @@ class DatabaseManager:
                 schema={
                     'device_tokens': '''
                         CREATE TABLE IF NOT EXISTS device_tokens (
+                            tokenId TEXT PRIMARY KEY,
                             userId TEXT NOT NULL,
                             token TEXT NOT NULL UNIQUE,
                             deviceType TEXT NOT NULL DEFAULT 'android',
@@ -83,272 +92,394 @@ class DatabaseManager:
     def _initialize_databases(self):
         """Initialize all databases and create tables if they don't exist."""
         for db_name, config in self.databases.items():
-            db_path = config.path
-            print(f"\nInitializing database: {db_path}")
-
-            # Delete existing database file to ensure clean slate
-            if Path(db_path).exists():
-                print(f"Removing existing database file: {db_path}")
-                Path(db_path).unlink()
-
-            with self._get_connection(db_name) as conn:
-                cursor = conn.cursor()
-                for table_name, schema in config.schema.items():
-                    try:
+            try:
+                with self._get_connection(db_name) as conn:
+                    cursor = conn.cursor()
+                    for table_name, schema in config.schema.items():
                         cursor.execute(schema)
-                        print(f"Created table {table_name} with schema:")
-                        print(schema)
-                    except sqlite3.Error as e:
-                        print(f"Error creating table {table_name}: {e}")
-                conn.commit()
+                    conn.commit()
+            except sqlite3.Error as e:
+                print(f"Error initializing database {db_name}: {str(e)}")
+
     def _get_connection(self, db_name: str) -> sqlite3.Connection:
         """Get a connection to the specified database."""
         if db_name not in self.databases:
             raise ValueError(f"Unknown database: {db_name}")
-        return sqlite3.connect(self.databases[db_name].path)
+        conn = sqlite3.connect(self.databases[db_name].path)
+        conn.row_factory = sqlite3.Row  # Enable dictionary-like access
+        return conn
 
-    # User-related methods
-    def users(self):
+    def users(self) -> 'UserDatabase':
         """Get the users database interface."""
         return UserDatabase(self._get_connection('users'))
 
-    # Well-related methods
-    def wells(self):
+    def wells(self) -> 'WellDatabase':
         """Get the wells database interface."""
         return WellDatabase(self._get_connection('wells'))
 
-    # Device token-related methods
-    def deviceTokens(self):
+    def deviceTokens(self) -> 'DeviceTokenDatabase':
         """Get the device tokens database interface."""
         return DeviceTokenDatabase(self._get_connection('deviceTokens'))
 
-class UserDatabase:
+class BaseDatabase:
+    """Base class for database operations with common functionality."""
+
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
-    def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get a user by ID."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE userId = ?', (user_id,))
-        row = cursor.fetchone()
-        if not row:
-            return None
-        return dict(zip([col[0] for col in cursor.description], row))
-    def get_all_users(self) -> List[Dict[str, Any]]:
-        """Get all users."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM users')
-        return [dict(zip([col[0] for col in cursor.description], row)) 
-                for row in cursor.fetchall()]
-                    
-    def get_user_by_email(email):
-        try:
-            user = db.users().get_user_by_email(email)
-            if user:
-                # Parse JSON fields
-                for field in ['location', 'waterNeeds', 'notificationPreferences']:
-                    if field in user and user[field]:
-                        try:
-                            user[field] = json.loads(user[field])
-                        except json.JSONDecodeError:
-                            user[field] = None
-            return user
-        except Exception as e:
-            print(f"Error fetching user by email {email}: {str(e)}")
-            return None
-
-    def create_user(user_data):
-        # Ensure JSON fields are properly stringified
-        for field in ['location', 'waterNeeds', 'notificationPreferences']:
-            if field in user_data and user_data[field] is not None:
-                if not isinstance(user_data[field], str):
-                    user_data[field] = json.dumps(user_data[field])
-        return db.users().create_user(user_data)
-    def update_user(self, user_id: str, updates: Dict[str, Any]) -> bool:
-        """Update a user's information."""
+    def _execute(self, query: str, params: tuple = ()) -> sqlite3.Cursor:
+        """Execute a query with error handling."""
         try:
             cursor = self.conn.cursor()
-            set_clause = ', '.join([f'{k} = ?' for k in updates.keys()])
-            query = f'UPDATE users SET {set_clause} WHERE userId = ?'
-            cursor.execute(query, list(updates.values()) + [user_id])
+            cursor.execute(query, params)
+            return cursor
+        except sqlite3.Error as e:
+            print(f"Database error: {str(e)}")
+            raise
+
+    def _parse_json_fields(self, row: dict, json_fields: List[str]) -> dict:
+        """Parse JSON fields in a row."""
+        result = dict(row)
+        for field in json_fields:
+            if field in result and result[field]:
+                try:
+                    result[field] = json.loads(result[field])
+                except json.JSONDecodeError:
+                    result[field] = None
+        return result
+
+class UserDatabase(BaseDatabase):
+    """Handles all user-related database operations."""
+
+    JSON_FIELDS = ['location', 'waterNeeds', 'notificationPreferences']
+
+    def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get a user by ID with parsed JSON fields."""
+        cursor = self._execute('SELECT * FROM users WHERE userId = ?', (user_id,))
+        row = cursor.fetchone()
+        return self._parse_json_fields(row, self.JSON_FIELDS) if row else None
+
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Get a user by email with parsed JSON fields."""
+        cursor = self._execute('SELECT * FROM users WHERE email = ?', (email.lower().strip(),))
+        row = cursor.fetchone()
+        return self._parse_json_fields(row, self.JSON_FIELDS) if row else None
+
+    def get_all_users(self) -> List[Dict[str, Any]]:
+        """Get all users with parsed JSON fields."""
+        cursor = self._execute('SELECT * FROM users')
+        return [self._parse_json_fields(row, self.JSON_FIELDS) for row in cursor.fetchall()]
+
+    def create_user(self, user_data: Dict[str, Any]) -> bool:
+        """Create a new user with proper JSON serialization."""
+        # Ensure required fields are present
+        required_fields = ['userId', 'email', 'password', 'firstName', 'lastName']
+        if not all(field in user_data for field in required_fields):
+            raise ValueError("Missing required user fields")
+
+        # Prepare data with JSON serialization
+        prepared_data = user_data.copy()
+        for field in self.JSON_FIELDS:
+            if field in prepared_data and prepared_data[field] is not None:
+                if not isinstance(prepared_data[field], str):
+                    prepared_data[field] = json.dumps(prepared_data[field])
+
+        # Generate timestamps if not provided
+        if 'createdAt' not in prepared_data:
+            prepared_data['createdAt'] = datetime.now().isoformat()
+        if 'updatedAt' not in prepared_data:
+            prepared_data['updatedAt'] = datetime.now().isoformat()
+
+        # Execute insert
+        columns = ', '.join(prepared_data.keys())
+        placeholders = ', '.join(['?' for _ in prepared_data])
+        query = f'INSERT INTO users ({columns}) VALUES ({placeholders})'
+
+        try:
+            self._execute(query, tuple(prepared_data.values()))
             self.conn.commit()
             return True
-        except sqlite3.Error:
+        except sqlite3.IntegrityError as e:
+            print(f"User creation failed (possible duplicate): {str(e)}")
+            return False
+
+    def update_user(self, user_id: str, updates: Dict[str, Any]) -> bool:
+        """Update a user's information with proper JSON serialization."""
+        if not updates:
+            return False
+
+        # Prepare updates with JSON serialization
+        prepared_updates = updates.copy()
+        for field in self.JSON_FIELDS:
+            if field in prepared_updates and prepared_updates[field] is not None:
+                if not isinstance(prepared_updates[field], str):
+                    prepared_updates[field] = json.dumps(prepared_updates[field])
+
+        # Add updated timestamp
+        prepared_updates['updatedAt'] = datetime.now().isoformat()
+
+        # Build and execute update query
+        set_clause = ', '.join([f'{k} = ?' for k in prepared_updates.keys()])
+        query = f'UPDATE users SET {set_clause} WHERE userId = ?'
+        params = list(prepared_updates.values()) + [user_id]
+
+        try:
+            cursor = self._execute(query, tuple(params))
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"User update failed: {str(e)}")
             return False
 
     def delete_user(self, user_id: str) -> bool:
-        """Delete a user."""
+        """Delete a user by ID."""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute('DELETE FROM users WHERE userId = ?', (user_id,))
+            cursor = self._execute('DELETE FROM users WHERE userId = ?', (user_id,))
             self.conn.commit()
-            return True
-        except sqlite3.Error:
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"User deletion failed: {str(e)}")
             return False
 
-class WellDatabase:
-    def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
+class WellDatabase(BaseDatabase):
+    """Handles all well-related database operations."""
 
     def get_well(self, well_id: int) -> Optional[Dict[str, Any]]:
         """Get a well by ID."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM wells WHERE id = ?', (well_id,))
+        cursor = self._execute('SELECT * FROM wells WHERE id = ?', (well_id,))
         row = cursor.fetchone()
-        if not row:
-            return None
-        return dict(zip([col[0] for col in cursor.description], row))
+        return dict(row) if row else None
 
     def get_well_by_esp_id(self, esp_id: str) -> Optional[Dict[str, Any]]:
         """Get a well by ESP ID."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM wells WHERE espId = ?', (esp_id,))
+        cursor = self._execute('SELECT * FROM wells WHERE espId = ?', (esp_id,))
         row = cursor.fetchone()
-        if not row:
-            return None
-        return dict(zip([col[0] for col in cursor.description], row))
+        return dict(row) if row else None
+
+    def get_all_wells(self) -> List[Dict[str, Any]]:
+        """Get all wells."""
+        cursor = self._execute('SELECT * FROM wells')
+        return [dict(row) for row in cursor.fetchall()]
 
     def create_well(self, well_data: Dict[str, Any]) -> bool:
         """Create a new well."""
+        required_fields = ['name', 'latitude', 'longitude']
+        if not all(field in well_data for field in required_fields):
+            raise ValueError("Missing required well fields")
+
+        columns = ', '.join(well_data.keys())
+        placeholders = ', '.join(['?' for _ in well_data])
+        query = f'INSERT INTO wells ({columns}) VALUES ({placeholders})'
+
         try:
-            cursor = self.conn.cursor()
-            columns = ', '.join(well_data.keys())
-            placeholders = ', '.join(['?' for _ in well_data])
-            query = f'INSERT INTO wells ({columns}) VALUES ({placeholders})'
-            cursor.execute(query, list(well_data.values()))
+            self._execute(query, tuple(well_data.values()))
             self.conn.commit()
             return True
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print(f"Well creation failed: {str(e)}")
             return False
 
     def update_well(self, well_id: int, updates: Dict[str, Any]) -> bool:
         """Update a well's information."""
+        if not updates:
+            return False
+
+        set_clause = ', '.join([f'{k} = ?' for k in updates.keys()])
+        query = f'UPDATE wells SET {set_clause} WHERE id = ?'
+        params = list(updates.values()) + [well_id]
+
         try:
-            cursor = self.conn.cursor()
-            set_clause = ', '.join([f'{k} = ?' for k in updates.keys()])
-            query = f'UPDATE wells SET {set_clause} WHERE id = ?'
-            cursor.execute(query, list(updates.values()) + [well_id])
+            cursor = self._execute(query, tuple(params))
             self.conn.commit()
-            return True
-        except sqlite3.Error:
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"Well update failed: {str(e)}")
             return False
 
     def delete_well(self, well_id: int) -> bool:
-        """Delete a well."""
+        """Delete a well by ID."""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute('DELETE FROM wells WHERE id = ?', (well_id,))
+            cursor = self._execute('DELETE FROM wells WHERE id = ?', (well_id,))
             self.conn.commit()
-            return True
-        except sqlite3.Error:
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"Well deletion failed: {str(e)}")
             return False
 
-    def get_all_wells(self) -> List[Dict[str, Any]]:
-        """Get all wells."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM wells')
-        return [dict(zip([col[0] for col in cursor.description], row)) 
-                for row in cursor.fetchall()]
-
-class DeviceTokenDatabase:
-    def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
-
-    def get_all_tokens(self) -> List[Dict[str, Any]]:
-        """Get all device tokens."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM device_tokens')
-        return [dict(zip([col[0] for col in cursor.description], row)) 
-                for row in cursor.fetchall()]
+class DeviceTokenDatabase(BaseDatabase):
+    """Handles all device token-related database operations."""
 
     def get_tokens_by_user(self, user_id: str) -> List[Dict[str, Any]]:
         """Get all device tokens for a user."""
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM device_tokens WHERE userId = ?', (user_id,))
-        return [dict(zip([col[0] for col in cursor.description], row)) 
-                for row in cursor.fetchall()]
+        cursor = self._execute('SELECT * FROM device_tokens WHERE userId = ?', (user_id,))
+        return [dict(row) for row in cursor.fetchall()]
 
     def add_token(self, user_id: str, token: str, device_type: str = 'android') -> bool:
         """Add a new device token."""
+        token_data = {
+            'tokenId': str(uuid.uuid4()),
+            'userId': user_id,
+            'token': token,
+            'deviceType': device_type,
+            'lastUsed': datetime.now().isoformat(),
+            'isActive': True
+        }
+
+        columns = ', '.join(token_data.keys())
+        placeholders = ', '.join(['?' for _ in token_data])
+        query = f'INSERT INTO device_tokens ({columns}) VALUES ({placeholders})'
+
         try:
-            cursor = self.conn.cursor()
-            cursor.execute('''
-                INSERT INTO device_tokens (userId, token, deviceType, lastUsed, isActive)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (user_id, token, device_type, datetime.now().isoformat(), True))
+            self._execute(query, tuple(token_data.values()))
             self.conn.commit()
             return True
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print(f"Token addition failed: {str(e)}")
             return False
 
-    def update_token(self, user_id: str, old_token: str, new_token: str) -> bool:
+    def update_token(self, token_id: str, updates: Dict[str, Any]) -> bool:
         """Update a device token."""
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute('''
-                UPDATE device_tokens 
-                SET token = ?, lastUsed = ?
-                WHERE userId = ? AND token = ?
-            ''', (new_token, datetime.now().isoformat(), user_id, old_token))
-            self.conn.commit()
-            return cursor.rowcount > 0
-        except sqlite3.Error:
+        if not updates:
             return False
 
-    def delete_token(self, user_id: str, token: str) -> bool:
-        """Delete a device token."""
+        set_clause = ', '.join([f'{k} = ?' for k in updates.keys()])
+        query = f'UPDATE device_tokens SET {set_clause} WHERE tokenId = ?'
+        params = list(updates.values()) + [token_id]
+
         try:
-            cursor = self.conn.cursor()
-            cursor.execute('DELETE FROM device_tokens WHERE userId = ? AND token = ?', (user_id, token))
+            cursor = self._execute(query, tuple(params))
             self.conn.commit()
             return cursor.rowcount > 0
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print(f"Token update failed: {str(e)}")
+            return False
+
+    def delete_token(self, token_id: str) -> bool:
+        """Delete a device token by ID."""
+        try:
+            cursor = self._execute('DELETE FROM device_tokens WHERE tokenId = ?', (token_id,))
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"Token deletion failed: {str(e)}")
             return False
 
     def verify_token(self, user_id: str, token: str) -> bool:
-        """Verify a device token."""
+        """Verify a device token and update last used timestamp."""
         try:
-            cursor = self.conn.cursor()
-            cursor.execute('''
-                SELECT * FROM device_tokens 
-                WHERE userId = ? AND token = ? AND isActive = ?
-            ''', (user_id, token, True))
-            result = cursor.fetchone()
-            if result:
+            # Check if token exists and is active
+            cursor = self._execute('''
+                SELECT tokenId FROM device_tokens 
+                WHERE userId = ? AND token = ? AND isActive = 1
+            ''', (user_id, token))
+
+            if cursor.fetchone():
                 # Update last used timestamp
-                cursor.execute('''
+                self._execute('''
                     UPDATE device_tokens 
                     SET lastUsed = ?
                     WHERE userId = ? AND token = ?
                 ''', (datetime.now().isoformat(), user_id, token))
                 self.conn.commit()
-            return result is not None
-        except sqlite3.Error:
+                return True
+            return False
+        except sqlite3.Error as e:
+            print(f"Token verification failed: {str(e)}")
             return False
 
-# Example usage:
+# Helper functions for user management
+def generate_random_user() -> Dict[str, Any]:
+    """Generate a random user with realistic test data."""
+    first_names = ["John", "Jane", "Robert", "Emily", "Michael", "Sarah"]
+    last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia"]
+
+    return {
+        'userId': str(uuid.uuid4()),
+        'email': f"user_{uuid.uuid4().hex[:6]}@example.com",
+        'password': str(uuid.uuid4()),
+        'firstName': random.choice(first_names),
+        'lastName': random.choice(last_names),
+        'username': f"user_{uuid.uuid4().hex[:6]}",
+        'role': random.choice(['user', 'admin', 'manager']),
+        'location': {
+            'latitude': round(random.uniform(-90, 90), 6),
+            'longitude': round(random.uniform(-180, 180), 6)
+        },
+        'waterNeeds': {
+            'type': random.choice(['drinking', 'irrigation', 'industrial']),
+            'amount': random.randint(1, 100)
+        },
+        'notificationPreferences': {
+            'email': random.choice([True, False]),
+            'sms': random.choice([True, False]),
+            'push': random.choice([True, False])
+        },
+        'phoneNumber': f"+1{random.randint(200, 999)}{random.randint(100, 999)}{random.randint(1000, 9999)}"
+    }
+
+def parse_indices(input_str: str, list_len: int) -> List[int]:
+    """
+    Parse user input for index selection with support for:
+    - single numbers (1, 2, 3)
+    - ranges (1-3)
+    - 'all' keyword
+    - 'last' and 'last-x' syntax
+    """
+    input_str = input_str.strip().lower()
+    indices = set()
+
+    if input_str == "all":
+        return list(range(list_len))
+    elif input_str.startswith("last"):
+        if input_str == "last":
+            return [list_len - 1] if list_len > 0 else []
+        match = re.match(r"last-(\d+)", input_str)
+        if match:
+            count = int(match.group(1))
+            return list(range(max(0, list_len - count), list_len))
+        else:
+            raise ValueError("Invalid 'last-x' format.")
+    else:
+        parts = input_str.split(',')
+        for part in parts:
+            part = part.strip()
+            if '-' in part:
+                start, end = map(int, part.split('-'))
+                indices.update(range(start, end + 1))
+            else:
+                indices.add(int(part))
+    return sorted(i for i in indices if 0 <= i < list_len)
+
+def display_users(users: List[Dict[str, Any]]) -> None:
+    """Display a formatted table of users."""
+    if not users:
+        print("No users to display.")
+        return
+
+    print("\nList of Users:")
+    print("-" * 100)
+    print(f"{'Index':<5} | {'Email':<30} | {'Name':<20} | {'Role':<10} | {'Last Active':<20} | {'ID'}")
+    print("-" * 100)
+    for idx, user in enumerate(users, 1):
+        name = f"{user.get('firstName', '')} {user.get('lastName', '')}"
+        last_active = user.get('lastActive', 'Never')
+        if len(last_active) > 20:
+            last_active = last_active[:17] + "..."
+        print(f"{idx:<5} | {user.get('email', '')[:30]:<30} | {name[:20]:<20} | {user.get('role', ''):<10} | {last_active:<20} | {user.get('userId', '')[:8]}...")
+    print("-" * 100)
+
+# Initialize the database manager
+db = DatabaseManager()
+
 if __name__ == "__main__":
-    db = DatabaseManager()
-    
-    # Example: Create a user
-    user_data = {
-        'userId': '123',
-        'email': 'test@example.com',
-        'password': 'hashed_password',
-        'firstName': 'John',
-        'lastName': 'Doe',
-        'username': 'johndoe'
-    }
-    db.users().create_user(user_data)
-    
-    # Example: Create a well
-    well_data = {
-        'name': 'Test Well',
-        'latitude': 12.34,
-        'longitude': 56.78,
-        'espId': 'ESP123'
-    }
-    db.wells().create_well(well_data)
-    
-    # Example: Set device token
-    db.deviceTokens().set_token('123', 'device_token_123') 
+    # Example usage
+    user_db = db.users()
+
+    # Create a test user
+    test_user = generate_random_user()
+    if user_db.create_user(test_user):
+        print(f"Created test user: {test_user['email']}")
+
+    # Retrieve and display all users
+    all_users = user_db.get_all_users()
+    display_users(all_users)

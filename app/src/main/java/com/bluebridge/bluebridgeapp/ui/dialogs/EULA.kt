@@ -54,6 +54,8 @@ fun ScrollableEULADialog(
                     Text("   b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.")
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("   c. Any data collected is stored securely and handled in accordance with applicable data protection laws.")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("   c. When using this app you agree to share your location with other users. You can change this anytime in the settings. But your defined location will be available for anyone to see. This is not your real-time location but one you chose to make public. ")
                     // More content...
                 }
 
