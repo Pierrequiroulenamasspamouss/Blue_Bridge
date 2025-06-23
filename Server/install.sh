@@ -60,6 +60,7 @@ npm install
 npm audit fix
 
 # Set permissions
+sudo chmod -R 777 DEST_DIR
 echo -e "${YELLOW}Setting permissions...${NC}"
 chmod +x "$DEST_DIR/server.js"
 if [ -d "$DEST_DIR/scripts" ]; then
