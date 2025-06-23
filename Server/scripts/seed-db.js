@@ -57,7 +57,7 @@ const seedUsers = [
     lastName: 'Sluse',
     username: 'Pi2R',
     location: JSON.stringify({ latitude: 48.8589, longitude: 2.3469 }),
-    waterNeeds: JSON.stringify({ type: 'drinking', amount: 2.5 }),
+    waterNeeds: JSON.stringify([{ type: 'drinking', amount: 2.5 }]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: false,
@@ -79,7 +79,7 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33123456789',
     location: JSON.stringify({ latitude: 48.857, longitude: 2.3522 }),
-    waterNeeds: JSON.stringify({ type: 'irrigation', amount: 5.0 }),
+    waterNeeds: JSON.stringify([{ type: 'irrigation', amount: 5.0 }]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: true,
@@ -99,7 +99,7 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33987654321',
     location: JSON.stringify({ latitude: 48.855, longitude: 2.350 }),
-    waterNeeds: JSON.stringify({ type: 'industrial', amount: 10.0 }),
+    waterNeeds: JSON.stringify([{ type: 'industrial', amount: 10.0 }]),
     notificationPreferences: JSON.stringify({
       email: false,
       sms: true,
@@ -119,7 +119,7 @@ const seedUsers = [
     password: '', // Will be hashed
     phoneNumber: '+33555555555',
     location: JSON.stringify({ latitude: 48.853, longitude: 2.348 }),
-    waterNeeds: JSON.stringify({ type: 'mixed', amount: 7.5 }),
+    waterNeeds: JSON.stringify([{ type: 'mixed', amount: 7.5 }]),
     notificationPreferences: JSON.stringify({
       email: true,
       sms: false,
@@ -202,6 +202,19 @@ async function seedDatabases() {
     logger.error('SEEDING FAILED:');
     logger.error(`Error name: ${error.name}`);
     logger.error(`Error message: ${error.message}`);
+    logger.error(`Full error object: ${JSON.stringify(error, null, 2)}`);
+
+    if (error.name === 'AggregateError' && error.errors) {
+      logger.error('AggregateError details:');
+      error.errors.forEach((err, idx) => {
+        logger.error(`  [${idx + 1}] ${err.name}: ${err.message}`);
+        if (err.errors) {
+          err.errors.forEach((subErr, subIdx) => {
+            logger.error(`    [${subIdx + 1}] ${subErr.path}: ${subErr.message}`);
+          });
+        }
+      });
+    }
 
     if (error.name === 'SequelizeValidationError') {
       logValidationErrors(error.errors);
