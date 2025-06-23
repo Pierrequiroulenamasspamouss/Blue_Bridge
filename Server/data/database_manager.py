@@ -451,7 +451,7 @@ def parse_indices(input_str: str, list_len: int) -> List[int]:
     return sorted(i for i in indices if 0 <= i < list_len)
 
 def display_users(users: List[Dict[str, Any]]) -> None:
-    """Display a formatted table of users."""
+    """Display a formatted table of users with proper null handling."""
     if not users:
         print("No users to display.")
         return
@@ -460,13 +460,31 @@ def display_users(users: List[Dict[str, Any]]) -> None:
     print("-" * 100)
     print(f"{'Index':<5} | {'Email':<30} | {'Name':<20} | {'Role':<10} | {'Last Active':<20} | {'ID'}")
     print("-" * 100)
+
     for idx, user in enumerate(users, 1):
-        name = f"{user.get('firstName', '')} {user.get('lastName', '')}"
-        last_active = user.get('lastActive', 'Never')
-        if len(last_active) > 20:
-            last_active = last_active[:17] + "..."
-        print(f"{idx:<5} | {user.get('email', '')[:30]:<30} | {name[:20]:<20} | {user.get('role', ''):<10} | {last_active:<20} | {user.get('userId', '')[:8]}...")
-    print("-" * 100)
+        # Safely get values with defaults
+        email = user.get('email', 'N/A')[:30]
+        first_name = user.get('firstName', '')
+        last_name = user.get('lastName', '')
+        name = f"{first_name} {last_name}".strip()[:20] or 'N/A'
+        role = user.get('role', 'N/A')[:10]
+
+        # Handle lastActive safely
+        last_active = user.get('lastActive')
+        if last_active is None:
+            last_active = 'Never'
+        else:
+            last_active = str(last_active)
+            if len(last_active) > 20:
+                last_active = last_active[:17] + "..."
+
+        # Handle user ID safely
+        user_id = user.get('userId', 'N/A')
+        if user_id and len(user_id) > 8:
+            user_id = user_id[:8] + "..."
+
+        print(f"{idx:<5} | {email:<30} | {name:<20} | {role:<10} | {last_active:<20} | {user_id}")
+    print("-" * 100)s
 
 # Initialize the database manager
 db = DatabaseManager()
