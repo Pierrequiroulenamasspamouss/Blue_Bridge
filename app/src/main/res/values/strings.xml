@@ -20,8 +20,8 @@
 
 
     GOOGLE:
-    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com:3000/</string>
-    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com:3443/</string>
+    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com/</string>
+    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com/</string>
     -->
 
     <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>

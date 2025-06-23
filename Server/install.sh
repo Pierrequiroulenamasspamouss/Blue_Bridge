@@ -57,6 +57,7 @@ rsync -av --exclude 'data/' --exclude 'install.sh' --exclude '.git/' "$SOURCE_DI
 echo -e "${YELLOW}Installing npm dependencies in $DEST_DIR...${NC}"
 cd "$DEST_DIR" || { echo -e "${RED}Failed to change directory to $DEST_DIR${NC}"; exit 1; }
 npm install
+npm audit fix
 
 # Set permissions
 echo -e "${YELLOW}Setting permissions...${NC}"
@@ -123,7 +124,7 @@ case "\$1" in
 esac
 EOL
 sudo chmod +x /etc/init.d/bluebridge
-
+sudo setcap 'cap_net_bind_service=+ep' $(which node)
 # --- Final Steps ---
 # Enable and start service
 echo -e "${YELLOW}Reloading services and starting BlueBridge...${NC}"

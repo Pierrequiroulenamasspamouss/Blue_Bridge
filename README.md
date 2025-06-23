@@ -1,10 +1,3 @@
-FOR ME WHEN I WILL RESTART THE PROJECT:
---> i started implementing https but the issue is that the certificates seem to not work.
---> UPDATE: tha app accepts both http and https. But http is in fallback
---> LOGCAT :
-NearbyUsersScreen       bluebridge.wellmonitoring       E  Error fetching nearby users: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.
---> this is to fix but for now, I have to STUDY and SLEEP
---> Send a sms via adb --> to implement :
 adb shell am start -a android.intent.action.SENDTO -d sms:+32491142936 --es sms_body "Automatic_message2" --ez exit_on_sent true &&adb shell input tap 960 2170
 (to use with a phone connected to the server) 
 
@@ -74,23 +67,10 @@ BlueBridge is an Android application designed to help communities in Africa moni
 - Implemented a basic map system
 - Implemented a basic compass system
 - Implemented a basic nearby users system
+- Implemented a basic SMS message sending ( no internet required )
 
 #### To implement
--Backporting to run on android 4.4 or 7 --> use older versions of Java to run with API 24(target) instead of 35(current)
-- More robust server
-- Real data
-- Better UI
-- server input sanitization
-- different user types and privileges
-- change language option
-- Accept more users
-- Web scraping to update the database server-side
-- HTML frontpage for the server.
-- Transition from http to https ? (not sure if it's possible with the free EC2 instance and Android)
-- Fixes on the app:
-    - User data security
-    - Compass issues
-    - Minor map issues
+Go check in the issues of Github to get more infos about what works and what doesn't
 
 
 
@@ -117,22 +97,7 @@ git clone https://github.com/Pierrequiroulenamasspamouss/Blue_Bridge/.git
 ./gradlew build
 ```
 
-## Project Structure
 
-```
-app/
-├── src/
-│   ├── main/
-│   │   ├── java/com/bluebridge/wellmonitoring/
-│   │   │   ├── data/           # Data models and states
-│   │   │   ├── network/        # API and network utilities
-│   │   │   ├── ui/            # Compose UI components
-│   │   │   ├── utils/         # Utility classes
-│   │   │   └── viewmodels/    # ViewModels
-│   │   └── res/               # Resources
-├── build.gradle               # App-level build file
-└── proguard-rules.pro        # ProGuard rules
-```
 
 ## Contributing
 
@@ -143,12 +108,11 @@ app/
 5. Create a Pull Request
 
 ## License
-Apache2 license for the server.
+No license for now... Thinking about the MIT license
 
 ## Acknowledgments
 
-- Thanks to all community members who provided feedback
-- Special thanks to contributors and maintainers
+- Thanks to Pierre Sluse who did all the coding... And fuck you to Joel
 - Built with support from the Kanard'eau organization.
 
 ## Contact

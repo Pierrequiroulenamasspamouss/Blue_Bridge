@@ -1588,16 +1588,6 @@
             file="src/main/res/raw/server_csr.csr"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.GeneralIp` appears to be unused"
-        errorLine1="    &lt;string name=&quot;GeneralIp&quot;>http://wellconnect.homeonthewater.com:3000/&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="10"
-            column="13"/>
-    </issue>
 
     <issue
         id="UnusedResources"
