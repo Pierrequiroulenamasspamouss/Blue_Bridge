@@ -9,30 +9,32 @@ TARGET_DIR="/opt/bluebridge"
 REPO_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git"
 SERVER_DIR="Server"
 
-# Create target dir if needed
+# Create a temporary clone location
+TMP_CLONE=$(mktemp -d)
+
+# Clone fresh copy (shallow, sparse)
+echo "Cloning repository..."
+git clone --branch $BRANCH --single-branch --depth 1 \
+          --filter=blob:none --sparse "$REPO_URL" "$TMP_CLONE"
+
+cd "$TMP_CLONE"
+git sparse-checkout set "$SERVER_DIR"
+
+# Clean target directory except config files
+echo "Preparing target directory..."
 mkdir -p "$TARGET_DIR"
+find "$TARGET_DIR" -mindepth 1 -maxdepth 1 ! -name '*.env' ! -name '*.json' ! -name 'config*' -exec rm -rf {} +
 
-# Check if we already have a clone
-if [ -d "$TARGET_DIR/.git" ]; then
-    echo "Updating existing repository..."
-    cd "$TARGET_DIR"
-    git fetch origin
-    git reset --hard origin/$BRANCH
-    git clean -fd
-else
-    echo "Cloning repository for the first time..."
-    git clone --branch $BRANCH --single-branch --depth 1 \
-              --filter=blob:none --sparse "$REPO_URL" "$TARGET_DIR"
-    cd "$TARGET_DIR"
-    git sparse-checkout set "$SERVER_DIR"
-fi
+# Deploy only Server directory contents
+echo "Deploying files..."
+rsync -a "$TMP_CLONE/$SERVER_DIR/" "$TARGET_DIR/"
 
-# Only copy the Server directory contents
-echo "Deploying Server files..."
-rsync -a --delete "$TARGET_DIR/$SERVER_DIR/" "$TARGET_DIR/"
+# Cleanup
+rm -rf "$TMP_CLONE"
 
-# Clean up Git files if you don't need them in production
-rm -rf "$TARGET_DIR/.git"
+# Set permissions
+chown -R bluebridge:bluebridge "$TARGET_DIR"
+chmod -R 750 "$TARGET_DIR"
 
 # Notification and restart
 if [ "$1" == "-prod" ]; then
@@ -40,3 +42,4 @@ if [ "$1" == "-prod" ]; then
 fi
 
 service bluebridge restart
+echo "Update completed successfully"
