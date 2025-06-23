@@ -9,37 +9,58 @@ TARGET_DIR="/opt/bluebridge"
 REPO_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git"
 SERVER_DIR="Server"
 
-# Create a temporary clone location
-TMP_CLONE=$(mktemp -d)
+# Create temporary working directory
+WORK_DIR=$(mktemp -d)
+echo "Using temporary directory: $WORK_DIR"
 
-# Clone fresh copy (shallow, sparse)
+# Clone fresh copy
 echo "Cloning repository..."
 git clone --branch $BRANCH --single-branch --depth 1 \
-          --filter=blob:none --sparse "$REPO_URL" "$TMP_CLONE"
+          --filter=blob:none "$REPO_URL" "$WORK_DIR/repo"
 
-cd "$TMP_CLONE"
-git sparse-checkout set "$SERVER_DIR"
+# Verify Server directory exists
+if [ ! -d "$WORK_DIR/repo/$SERVER_DIR" ]; then
+    echo "Error: Server directory not found in repository!"
+    rm -rf "$WORK_DIR"
+    exit 1
+fi
 
-# Clean target directory except config files
-echo "Preparing target directory..."
-mkdir -p "$TARGET_DIR"
-find "$TARGET_DIR" -mindepth 1 -maxdepth 1 ! -name '*.env' ! -name '*.json' ! -name 'config*' -exec rm -rf {} +
+# Backup existing config files
+echo "Backing up configuration files..."
+mkdir -p "$WORK_DIR/backup"
+shopt -s dotglob
+cp -r "$TARGET_DIR"/*.env "$WORK_DIR/backup/" 2>/dev/null || true
+cp -r "$TARGET_DIR"/*.json "$WORK_DIR/backup/" 2>/dev/null || true
+cp -r "$TARGET_DIR"/config* "$WORK_DIR/backup/" 2>/dev/null || true
 
-# Deploy only Server directory contents
-echo "Deploying files..."
-rsync -a "$TMP_CLONE/$SERVER_DIR/" "$TARGET_DIR/"
+# Clean target directory
+echo "Cleaning target directory..."
+find "$TARGET_DIR" -mindepth 1 -delete
 
-# Cleanup
-rm -rf "$TMP_CLONE"
+# Copy new files
+echo "Deploying new version..."
+cp -r "$WORK_DIR/repo/$SERVER_DIR"/* "$TARGET_DIR/"
+
+# Restore config files
+echo "Restoring configuration files..."
+cp -r "$WORK_DIR/backup"/* "$TARGET_DIR/" 2>/dev/null || true
 
 # Set permissions
+echo "Setting permissions..."
 chown -R bluebridge:bluebridge "$TARGET_DIR"
 chmod -R 750 "$TARGET_DIR"
 
+# Cleanup
+rm -rf "$WORK_DIR"
+
 # Notification and restart
 if [ "$1" == "-prod" ]; then
+    echo "Sending update notification..."
     python3 "$TARGET_DIR/scripts/new_update_available.py"
 fi
 
+echo "Restarting service..."
 service bluebridge restart
+
 echo "Update completed successfully"
+exit 0
