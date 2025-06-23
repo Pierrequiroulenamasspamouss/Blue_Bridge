@@ -65,7 +65,17 @@ class DatabaseManager:
                             last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             espId TEXT UNIQUE,
                             wellWaterConsumption TEXT,
-                            wellWaterType TEXT
+                            wellWaterType TEXT,
+                            wellName TEXT,
+                            wellOwner TEXT,
+                            wellLocation TEXT,
+                            wellCapacity REAL,
+                            wellWaterLevel REAL,
+                            wellStatus TEXT,
+                            waterQuality TEXT,
+                            extraData TEXT,
+                            lastUpdated TIMESTAMP,
+                            ownerId INTEGER
                         )
                     '''
                 }
@@ -262,21 +272,102 @@ class WellDatabase(BaseDatabase):
         return [dict(row) for row in cursor.fetchall()]
 
     def create_well(self, well_data: Dict[str, Any]) -> bool:
-        """Create a new well."""
-        required_fields = ['name', 'latitude', 'longitude']
-        if not all(field in well_data for field in required_fields):
-            raise ValueError("Missing required well fields")
+        """Create a new well with flexible field mapping."""
 
-        columns = ', '.join(well_data.keys())
-        placeholders = ', '.join(['?' for _ in well_data])
+        # Define field mappings - map from input field names to database column names
+        field_mappings = {
+            'wellName': 'name',
+            'wellOwner': 'owner',
+            'wellLocation': 'location',
+            'wellWaterLevel': 'water_level',
+            'wellStatus': 'status',
+            'waterQuality': 'water_quality',
+            'wellWaterType': 'wellWaterType',
+            'wellCapacity': 'wellCapacity',
+            'wellWaterConsumption': 'wellWaterConsumption',
+            'extraData': 'extraData',
+            'lastUpdated': 'last_update',
+            'ownerId': 'ownerId'
+        }
+
+        # Create a copy of the input data
+        prepared_data = {}
+
+        # Map fields from input to database schema
+        for input_field, db_field in field_mappings.items():
+            if input_field in well_data:
+                prepared_data[db_field] = well_data[input_field]
+
+        # Handle direct field mappings (where input field name = db field name)
+        direct_fields = ['espId', 'description', 'latitude', 'longitude', 'contact_info', 'access_info', 'notes']
+        for field in direct_fields:
+            if field in well_data:
+                prepared_data[field] = well_data[field]
+
+        # Handle required fields with fallbacks
+        # For 'name' field (required)
+        if 'name' not in prepared_data:
+            if 'wellName' in well_data:
+                prepared_data['name'] = well_data['wellName']
+            elif 'espId' in well_data:
+                prepared_data['name'] = f"Well {well_data['espId']}"
+            else:
+                prepared_data['name'] = "Unnamed Well"
+
+        # For 'latitude' and 'longitude' (required)
+        if 'latitude' not in prepared_data:
+            if 'wellLocation' in well_data and isinstance(well_data['wellLocation'], str):
+                try:
+                    location_data = json.loads(well_data['wellLocation'])
+                    prepared_data['latitude'] = location_data.get('latitude', 0.0)
+                    prepared_data['longitude'] = location_data.get('longitude', 0.0)
+                except:
+                    prepared_data['latitude'] = 0.0
+                    prepared_data['longitude'] = 0.0
+            else:
+                prepared_data['latitude'] = well_data.get('latitude', 0.0)
+                prepared_data['longitude'] = well_data.get('longitude', 0.0)
+
+        if 'longitude' not in prepared_data:
+            prepared_data['longitude'] = well_data.get('longitude', 0.0)
+
+        # Handle location field (should be JSON string)
+        if 'location' not in prepared_data:
+            location_obj = {
+                'latitude': prepared_data.get('latitude', 0.0),
+                'longitude': prepared_data.get('longitude', 0.0)
+            }
+            prepared_data['location'] = json.dumps(location_obj)
+
+        # Ensure JSON fields are properly serialized
+        json_fields = ['water_quality', 'waterQuality', 'extraData', 'location']
+        for field in json_fields:
+            if field in prepared_data and prepared_data[field] is not None:
+                if not isinstance(prepared_data[field], str):
+                    prepared_data[field] = json.dumps(prepared_data[field])
+
+        # Set default timestamp if not provided
+        if 'last_update' not in prepared_data:
+            prepared_data['last_update'] = datetime.now().isoformat()
+
+        # Validate that we have the minimum required fields
+        required_fields = ['name', 'latitude', 'longitude']
+        missing_fields = [field for field in required_fields if field not in prepared_data or prepared_data[field] is None]
+        if missing_fields:
+            raise ValueError(f"Missing required well fields: {missing_fields}")
+
+        # Execute insert
+        columns = ', '.join(prepared_data.keys())
+        placeholders = ', '.join(['?' for _ in prepared_data])
         query = f'INSERT INTO wells ({columns}) VALUES ({placeholders})'
 
         try:
-            self._execute(query, tuple(well_data.values()))
+            cursor = self._execute(query, tuple(prepared_data.values()))
             self.conn.commit()
-            return True
+            return cursor.lastrowid  # Return the ID of the created well
         except sqlite3.Error as e:
             print(f"Well creation failed: {str(e)}")
+            print(f"Prepared data: {prepared_data}")
             return False
 
     def update_well(self, well_id: int, updates: Dict[str, Any]) -> bool:
