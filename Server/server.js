@@ -37,7 +37,6 @@ const app = express();
 // Database Setup
 // =============
 const { initializeFirebase } = require('./services/firebaseService');
-const sequelize = require('./config/database');
 const models = require('./models');
 
 // ===============
@@ -243,11 +242,7 @@ async function startServer() {
         await initializeFirebase();
         console.log('✅ Firebase initialized');
         
-        await sequelize.authenticate();
-        console.log('✅ Database connected');
-        
-        await sequelize.sync();
-        console.log('✅ Database synchronized');
+        console.log('✅ Database connections are managed by the models.');
 
         // Create HTTP server
         const server = http.createServer(app);
