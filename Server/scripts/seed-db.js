@@ -136,7 +136,7 @@ const seedWells = Array.from({ length: 10 }, (_, i) => {
   const wellId = i + 1;
   return {
     espId: `esp32-${String(wellId).padStart(3, '0')}`,
-    name: `Well ${wellId}`,
+    wellName: `Well ${wellId}`,
     description: `Description for well ${wellId}`,
     location: JSON.stringify({ latitude: randomFloat(48.85, 48.86), longitude: randomFloat(2.34, 2.36) }),
     latitude: randomFloat(48.85, 48.86),
