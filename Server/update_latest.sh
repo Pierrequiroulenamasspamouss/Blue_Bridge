@@ -1,40 +1,42 @@
 #!/bin/bash
 
-
-# Save your GitHub token safely
+# Configuration
 GITHUB_TOKEN="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"
 GITHUB_USER="Pierrequiroulenamasspamouss"
 REPO_NAME="Blue_Bridge"
 BRANCH="master"
 TARGET_DIR="/opt/bluebridge"
-
-# Temp download folder
-TMP_DIR=$(mktemp -d)
-
-# Download ZIP
-curl -L -H "Authorization: token $GITHUB_TOKEN" \
-  -o "$TMP_DIR/repo.zip" \
-  "https://api.github.com/repos/$GITHUB_USER/$REPO_NAME/zipball/$BRANCH"
-
-# Extract only the Server/ folder
-unzip -q "$TMP_DIR/repo.zip" -d "$TMP_DIR/unzipped"
-
-# Find the exact path (GitHub puts a hash in folder name)
-SOURCE_DIR=$(find "$TMP_DIR/unzipped" -type d -name "Server")
+REPO_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git"
+SERVER_DIR="Server"
 
 # Create target dir if needed
 mkdir -p "$TARGET_DIR"
 
-# Copy contents
-cp -r "$SOURCE_DIR"/* "$TARGET_DIR"
-
-# Cleanup
-rm -rf "$TMP_DIR"
-
-# Send a notification to all users that a new update has been deployed if -prod is passed
-if [ "$1" == "-prod" ]; then
-    python3 /opt/bluebridge/scripts/new_update_available.py
+# Check if we already have a clone
+if [ -d "$TARGET_DIR/.git" ]; then
+    echo "Updating existing repository..."
+    cd "$TARGET_DIR"
+    git fetch origin
+    git reset --hard origin/$BRANCH
+    git clean -fd
+else
+    echo "Cloning repository for the first time..."
+    git clone --branch $BRANCH --single-branch --depth 1 \
+              --filter=blob:none --sparse "$REPO_URL" "$TARGET_DIR"
+    cd "$TARGET_DIR"
+    git sparse-checkout set "$SERVER_DIR"
 fi
 
-#Restart the server to apply the update
+# Only copy the Server directory contents
+echo "Deploying Server files..."
+rsync -a --delete "$TARGET_DIR/$SERVER_DIR/" "$TARGET_DIR/"
+
+# Clean up Git files if you don't need them in production
+rm -rf "$TARGET_DIR/.git"
+
+# Notification and restart
+if [ "$1" == "-prod" ]; then
+    python3 "$TARGET_DIR/scripts/new_update_available.py"
+fi
+
 service bluebridge restart
