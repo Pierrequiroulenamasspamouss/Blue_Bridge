@@ -1,0 +1,3 @@
+Server/scripts/firebase-service-account.json
+Server/.env
+app/google-services.json
