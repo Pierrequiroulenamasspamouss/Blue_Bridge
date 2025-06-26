@@ -1,9 +1,21 @@
 const admin = require('firebase-admin');
-const path = require('path');
-const fs = require('fs');
+const dotenv = require('dotenv');
+dotenv.config();
 
-// Path to the service account JSON file
-const SERVICE_ACCOUNT_PATH = path.join(__dirname, '../scripts/firebase-service-account.json');
+// Build service account object from environment variables
+const serviceAccount = {
+    type: process.env.FIREBASE_TYPE,
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: process.env.FIREBASE_AUTH_URI,
+    token_uri: process.env.FIREBASE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
+};
 
 // Flag to track if Firebase is initialized
 let isInitialized = false;
@@ -15,54 +27,13 @@ const initializeFirebase = () => {
     }
 
     try {
-        // Check if service account file exists
-        if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-            console.error(`❌ Firebase initialization failed: Service account file not found at ${SERVICE_ACCOUNT_PATH}`);
-            return false;
-        }
-
-        // Read service account file
-        const serviceAccount = require(SERVICE_ACCOUNT_PATH);
-        
-        // Diagnostic logging
-        console.log('🔍 Firebase Initialization Diagnostics:');
-        console.log('Service Account Project ID:', serviceAccount.project_id);
-        console.log('Client Email:', serviceAccount.client_email);
-
-        // Attempt to initialize with more verbose error handling
-        try {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        } catch (initError) {
-            console.error('❌ Firebase App Initialization Error:', initError);
-            
-            // Additional diagnostics
-            console.log('Available admin methods:', Object.keys(admin));
-            console.log('Credential methods:', Object.keys(admin.credential));
-            
-            throw initError;
-        }
-
-        // Verify messaging methods
-        const messagingMethods = Object.keys(admin.messaging());
-        console.log('🔍 Available Messaging Methods:', messagingMethods);
-
-        // Explicit method check
-        const messagingInstance = admin.messaging();
-        console.log('🔍 Messaging Instance Methods:', Object.keys(messagingInstance));
-
-        console.log('✅ Firebase Admin SDK initialized successfully using service account file');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
         isInitialized = true;
         return true;
     } catch (error) {
-        console.error('❌ Firebase initialization comprehensive error:', error);
-        
-        // Log full error details
-        console.error('Error Name:', error.name);
-        console.error('Error Message:', error.message);
-        console.error('Error Stack:', error.stack);
-
+        console.error('❌ Firebase initialization error:', error);
         return false;
     }
 };

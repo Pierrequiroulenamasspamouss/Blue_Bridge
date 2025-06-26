@@ -22,7 +22,6 @@ app/google-services.json
 
 /Server/.env
 api-testing.html
-/Server/scripts/firebase-service-account.json
 /Server/data/deviceTokens.sqlite
 /Server/data/users.sqlite
 /Server/data/wells.sqlite
