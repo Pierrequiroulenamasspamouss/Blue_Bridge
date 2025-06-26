@@ -161,6 +161,34 @@ router.post('/weather', validateToken, async (req, res) => {
     }
 });
 
+// Token Validation Endpoint
+router.post('/validate', async (req, res) => {
+    const { loginToken } = req.body;
+    if (!loginToken) {
+        return jsonResponse(res, 400, { status: 'error', message: 'Login token required' });
+    }
+
+    try {
+        const user = await User.findOne({ where: { loginToken } });
+        if (!user) {
+            return jsonResponse(res, 401, { status: 'error', message: 'invalid token' });
+        }
+
+        // Update last active time
+        user.lastActive = new Date();
+        await user.save();
+
+        jsonResponse(res, 200, {
+            status: 'success',
+            message: 'Token is valid',
+            userId: user.userId
+        });
+    } catch (error) {
+        console.error('Token validation error:', error);
+        jsonResponse(res, 500, { status: 'error', message: 'Authentication error' });
+    }
+});
+
 // Other endpoints (logout, delete, validate) follow same pattern...
 
 module.exports = router;
