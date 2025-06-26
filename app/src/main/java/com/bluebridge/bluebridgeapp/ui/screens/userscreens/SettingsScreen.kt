@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
@@ -40,15 +41,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.bluebridge.bluebridgeapp.data.model.BugReportRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.events.AppEvent
 import com.bluebridge.bluebridgeapp.events.AppEventChannel
 import com.bluebridge.bluebridgeapp.events.UserEvent
 import com.bluebridge.bluebridgeapp.navigation.Routes
+import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
 import com.bluebridge.bluebridgeapp.ui.components.SettingsItem
 import com.bluebridge.bluebridgeapp.ui.components.SettingsSection
+import com.bluebridge.bluebridgeapp.ui.dialogs.BugReportDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.DeleteAccountDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
 import com.bluebridge.bluebridgeapp.ui.dialogs.NotificationPermissionDialog
@@ -72,12 +78,14 @@ fun SettingsScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var passwordForDeletion by remember { mutableStateOf("") }
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
+    var showBugReportDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val userData = (userState as? UiState.Success<UserData>)?.data
     var easterCount by remember { mutableIntStateOf(0) }
     var currentUserRole by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
 
-    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
     // Get current theme preference directly from ViewModel's theme state
     val currentThemePreference by userViewModel.currentTheme.collectAsState()
 
@@ -98,6 +106,12 @@ fun SettingsScreen(
     val role = userData?.role?.replaceFirstChar { it.uppercase() } ?: "Guest"
     val latitude = userData?.location?.latitude ?: 0.0
     val longitude = userData?.location?.longitude ?: 0.0
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(navBackStackEntry) {
+        // Always reload user data when entering the Settings screen or returning from EditWaterNeedsScreen
+        userViewModel.loadUser()
+    }
 
     Scaffold(
         topBar = {
@@ -167,7 +181,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Register to notifications",
-                    subtitle = if (currentUserRole <= guestRole){ "Register with a proper E-mail address to recieve notifications"}else "Send your firebase push notification loginToken to the server",
+                    subtitle = if (currentUserRole <= guestRole){ "Register with a proper E-mail address to receive notifications"}else "Send your firebase push notification loginToken to the server",
                     onClick = {
                         if (currentUserRole > guestRole) {
                             showNotificationPermissionDialog = true
@@ -251,6 +265,13 @@ fun SettingsScreen(
                     title = "Support BlueBridge",
                     subtitle = "Help us by viewing ads",
                     onClick = { navController.navigate(Routes.ADMOB_SCREEN) }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.BugReport,
+                    title = "Send Bug Report",
+                    subtitle = "Report a bug or suggest an improvement",
+                    onClick = { showBugReportDialog = true }
                 )
 
                 SettingsItem(
@@ -338,6 +359,37 @@ fun SettingsScreen(
                 }
             }
         )
+
+        if (showBugReportDialog) {
+            BugReportDialog(
+                showDialog = showBugReportDialog,
+                onDismiss = { showBugReportDialog = false },
+                onSubmit = { name, description, category, extra ->
+                    coroutineScope.launch {
+                        try {
+                            val api = RetrofitBuilder.getServerApi(context)
+                            val response = api.submitBugReport(
+                                BugReportRequest(
+                                    name = name,
+                                    description = description,
+                                    category = category,
+                                    extra = extra
+                                )
+                            )
+                            if (response.isSuccessful && response.body()?.status == "success") {
+                                AppEventChannel.sendEvent(AppEvent.ShowError("Bug report sent! Thank you."))
+                            } else {
+                                AppEventChannel.sendEvent(AppEvent.ShowError("Failed to send bug report: ${response.body()?.message ?: response.message()}"))
+                               
+                            }
+                        } catch (e: Exception) {
+                            AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.localizedMessage}"))
+                        }
+                        showBugReportDialog = false
+                    }
+                }
+            )
+        }
     }
 
     if (showNotificationPermissionDialog) {

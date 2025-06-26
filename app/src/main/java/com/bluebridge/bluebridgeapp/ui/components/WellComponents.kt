@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.bluebridge.bluebridgeapp.data.model.WellData
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun WellCard(
@@ -141,8 +142,13 @@ fun WellCard(
             if (showLastRefresh || showLastUpdate) {
                 Spacer(modifier = Modifier.height(8.dp))
                 if (showLastRefresh) {
-                    Text(
-                        text = "Last Refreshed: ${well.lastRefreshTime?.let { formatDateTime(it.toString()) } ?: "Never"}",
+                    val lastRefreshText = if (well.lastRefreshTime > 0) {
+                        val date = Date(well.lastRefreshTime)
+                        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date)
+                    } else {
+                        "Never"
+                    }
+                    Text(text = "Last Refreshed: $lastRefreshText",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

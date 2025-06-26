@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +54,8 @@ fun NavigationGraph(
     wellViewModel: WellViewModel,
     userViewModel: UserViewModel,
     weatherViewModel: WeatherViewModel,
-    smsViewModel: SmsViewModel
+    smsViewModel: SmsViewModel,
+    paddingValues: PaddingValues
 ) {
 
     NavHost(

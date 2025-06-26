@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bluebridge.bluebridgeapp.events.UserEvent
 import com.bluebridge.bluebridgeapp.data.interfaces.UserRepository
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
 import com.bluebridge.bluebridgeapp.data.model.Location
@@ -12,6 +11,7 @@ import com.bluebridge.bluebridgeapp.data.model.LoginRequest
 import com.bluebridge.bluebridgeapp.data.model.RegisterRequest
 import com.bluebridge.bluebridgeapp.data.model.UserData
 import com.bluebridge.bluebridgeapp.data.model.WaterNeed
+import com.bluebridge.bluebridgeapp.events.UserEvent
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -116,7 +116,7 @@ class UserViewModel(
         }
     }
 
-    private fun loadUser() {
+    fun loadUser() {
         viewModelScope.launch {
             _state.value = UiState.Loading
             try {
@@ -507,6 +507,9 @@ class UserViewModel(
 
     suspend fun getLoginToken(): String? {
         return repository.getLoginToken()
+    }
+    suspend fun getUserId(): String? {
+        return repository.getUserId()
     }
 
 }

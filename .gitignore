@@ -21,6 +21,7 @@ app/google-services.json
 #SERVER
 
 /Server/.env
+/Server/data/bugreports.json
 api-testing.html
 /Server/data/deviceTokens.sqlite
 /Server/data/users.sqlite

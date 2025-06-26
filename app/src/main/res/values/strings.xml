@@ -6,17 +6,10 @@
     <string name="projects" translatable="false">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
     <!--
-    RASPI:
-    <string name="DevelopmentServerUrl">http://192.168.0.204/</string>
-    <string name="ProductionServerUrl">https://192.168.0.204/</string>
-
-
 
     LOCAL MACHINE:
-
-
-    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
-    <string name="ProductionServerUrl">https://192.168.0.98/</string>
+    <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
+    <string name="ProductionServerUrl" translatable="false">https://bluebridge.homeonthewater.com/</string>
 
 
     GOOGLE:
@@ -24,11 +17,12 @@
     <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com/</string>
     -->
 
-    <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
-    <string name="ProductionServerUrl" translatable="false">https://bluebridge.homeonthewater.com/</string>
+    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
+    <string name="ProductionServerUrl">https://192.168.0.98/</string>
 
 
     <!-- Firebase notifications -->
+
 
     <string name="default_notification_channel_id" translatable="false">bluebridge_notifications</string>
     <string name="notification_permission_message">Get updates about water levels, nearby users, and important alerts.</string>

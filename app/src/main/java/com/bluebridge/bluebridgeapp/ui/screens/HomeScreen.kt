@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
@@ -54,11 +53,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridge.bluebridgeapp.R
 import com.bluebridge.bluebridgeapp.data.model.UserData
+import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.ui.components.FeatureCard
 import com.bluebridge.bluebridgeapp.ui.components.OfflineBanner
 import com.bluebridge.bluebridgeapp.ui.components.WelcomeHeader
 import com.bluebridge.bluebridgeapp.ui.dialogs.LogoutConfirmationDialog
-import com.bluebridge.bluebridgeapp.navigation.Routes
 import com.bluebridge.bluebridgeapp.utils.isNetworkAvailable
 import com.bluebridge.bluebridgeapp.viewmodels.UiState
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
@@ -219,7 +218,8 @@ fun HomeScreen(
                 }
             }
 
-            // Support section
+            // removed Support section since not needed
+            /*
             Text(
                 text = "Support BlueBridge",
                 modifier = Modifier
@@ -269,6 +269,7 @@ fun HomeScreen(
                     }
                 }
             }
+            */
 
             // Account section
             if (currentUserRole >= guestRole) { // Show account section for logged-in users (user, well_owner, admin)

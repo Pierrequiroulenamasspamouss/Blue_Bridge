@@ -10,6 +10,7 @@ const notificationsRouter = require('./notifications');
 const nearbyUsersRouter = require('./nearbyUsers');
 const weatherRouter = require('./weather');
 const wellStatisticsRouter = require('./wellStatistics');
+const bugReportsRouter = require('./bugreports');
 
 // Mount routers
 router.use('/wells', wellsRouter);
@@ -20,5 +21,6 @@ router.use('/notifications', notificationsRouter);
 router.use('/nearby-users', nearbyUsersRouter);
 router.use('/weather', weatherRouter);
 router.use('/well-statistics', wellStatisticsRouter);
+router.use('/bugreports', bugReportsRouter);
 
 module.exports = router; 

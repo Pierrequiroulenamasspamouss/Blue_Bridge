@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="BlueBridge-dev">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-06-13T01:52:45.132716400Z">
+        <DropdownSelection timestamp="2025-06-26T22:06:30.747491900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Pierr\.android\avd\Pixel_XL.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=jnbm954pmzdmj74h" />
             </handle>
           </Target>
         </DropdownSelection>

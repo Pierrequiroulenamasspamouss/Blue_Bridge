@@ -11,9 +11,16 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
@@ -26,15 +33,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.bluebridge.bluebridgeapp.data.model.BugReportRequest
+import com.bluebridge.bluebridgeapp.data.model.ValidateAuthTokenRequest
 import com.bluebridge.bluebridgeapp.events.UserEvent
 import com.bluebridge.bluebridgeapp.navigation.NavigationGraph
+import com.bluebridge.bluebridgeapp.navigation.Routes
+import com.bluebridge.bluebridgeapp.network.RetrofitBuilder
+import com.bluebridge.bluebridgeapp.ui.dialogs.BugReportDialog
 import com.bluebridge.bluebridgeapp.ui.theme.getCyanColorScheme
 import com.bluebridge.bluebridgeapp.ui.theme.getGreenColorScheme
 import com.bluebridge.bluebridgeapp.ui.theme.getOrangeColorScheme
@@ -49,6 +63,7 @@ import com.bluebridge.bluebridgeapp.viewmodels.ServerState
 import com.bluebridge.bluebridgeapp.viewmodels.ServerViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.UserViewModel
 import com.bluebridge.bluebridgeapp.viewmodels.WellViewModel
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -56,6 +71,10 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val isOnline by rememberNetworkState(context)
+    val showBugReportDialog = remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val api = RetrofitBuilder.getServerApi(context)
 
     // ViewModels
     val userViewModel: UserViewModel = viewModel(factory = viewModelFactory)
@@ -82,6 +101,37 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
         else -> if (isSystemDark) darkColorScheme() else lightColorScheme() // Fallback
     }
 
+    // Authenticate on startup
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                val token = userViewModel.getLoginToken()
+                if (token.isNullOrBlank()) {
+                    userViewModel.logout()
+                    navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+                } else {
+                    // Try a simple authenticated request (e.g., get profile or weather)
+                    val response = api.getServerStatus()
+                    if (!response.isSuccessful || response.body()?.status != "success") {
+                        userViewModel.logout()
+                        navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+                    } else {
+                        // Validate token with a dedicated endpoint
+                        val request = ValidateAuthTokenRequest(token = token, userId = userViewModel.getUserId()
+                            .toString())
+                        val authResponse = api.validateAuthToken(request)
+                        if (!authResponse.isSuccessful || authResponse.body()?.status == "error" && authResponse.body()?.message == "invalid token") {
+                            userViewModel.logout()
+                            navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                userViewModel.logout()
+                navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+            }
+        }
+    }
 
     // Effects
     LaunchedEffect(Unit) {
@@ -93,17 +143,42 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
 
     // UI
     MaterialTheme(colorScheme = colorScheme) {
-        NavigationGraph(
-            navController = navController,
-            modifier = Modifier.fillMaxSize(),
-            nearbyUsersViewModel = nearbyUsersViewModel,
-            wellViewModel = wellViewModel,
-            userViewModel = userViewModel,
-            weatherViewModel = viewModel(factory = viewModelFactory),
-            smsViewModel = viewModel(factory = viewModelFactory)
-        )
+        Scaffold(
+            floatingActionButton = {
+                FloatingActionButton(onClick = { showBugReportDialog.value = true }) {
+                    Icon(Icons.Default.BugReport, contentDescription = "Report a Bug")
+                }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            NavigationGraph(
+                navController = navController,
+                modifier = Modifier.fillMaxSize(),
+                nearbyUsersViewModel = nearbyUsersViewModel,
+                wellViewModel = wellViewModel,
+                userViewModel = userViewModel,
+                weatherViewModel = viewModel(factory = viewModelFactory),
+                smsViewModel = viewModel(factory = viewModelFactory),
+                paddingValues = paddingValues
+            )
 
-        ServerStatusDialogs(serverViewModel)
+            ServerStatusDialogs(serverViewModel)
+
+            if (showBugReportDialog.value) {
+                BugReportDialog(
+                    showDialog = showBugReportDialog.value,
+                    onDismiss = { showBugReportDialog.value = false },
+                    onSubmit = { name, description, category, extra ->
+                        coroutineScope.launch {
+                            val bugreport = BugReportRequest(name, description, category, extra)
+                            api.submitBugReport(bugreport)
+                            snackbarHostState.showSnackbar("Bug report sent! Thank you.")
+                        }
+                        showBugReportDialog.value = false
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -127,8 +202,6 @@ private fun rememberNetworkState(context: Context): State<Boolean> {
 
     return isOnline
 }
-
-
 
 @Composable
 private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
@@ -166,4 +239,11 @@ private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
             dismissButton = { TextButton({ serverViewModel.resetUpdateState() }) { Text("Later") } }
         )
     }
+}
+
+@Preview
+@Composable
+fun BlueBridgeAppPreview() {
+    // This is a simplified preview and won't have actual ViewModel logic
+    // BlueBridgeApp(viewModelFactory = /* Provide a mock ViewModelProvider.Factory here if needed */)
 }

@@ -154,3 +154,17 @@ data class WellStats(
     val waterTypeCounts: Map<String, Int>,
     val recentlyUpdated: Int
 )
+
+@Serializable
+data class BugReportRequest(
+    val name: String,
+    val description: String,
+    val category: String,
+    val extra: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class ValidateAuthTokenRequest(
+    val token: String,
+    val userId: String
+)

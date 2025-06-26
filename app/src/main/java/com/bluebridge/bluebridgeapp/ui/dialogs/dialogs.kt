@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -158,7 +159,6 @@ fun WaterNeedDialog(
 
                 Text("Usage Type", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
-
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -169,10 +169,8 @@ fun WaterNeedDialog(
                         readOnly = true,
                         label = { Text("Select usage type") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-
                     ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
@@ -516,3 +514,95 @@ fun DeleteAccountDialog(
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BugReportDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (name: String, description: String, category: String, extra: Map<String, String>) -> Unit
+) {
+    if (!showDialog) return
+
+    val categories = listOf("Major Bug", "Minor Bug", "Edge Case", "Enhancement", "Other")
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf(categories.first()) }
+    var extra by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Submit Bug Report") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).wrapContentHeight()) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Your Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Bug Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = category,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        categories.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat) },
+                                onClick = {
+                                    category = cat
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = extra,
+                    onValueChange = { extra = it },
+                    label = { Text("Extra Info (optional, key1:value1,key2:value2)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val extraMap = extra.split(',').mapNotNull {
+                        val parts = it.split(':', limit = 2)
+                        if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
+                    }.toMap()
+                    onSubmit(name, description, category, extraMap)
+                },
+                enabled = name.isNotBlank() && description.isNotBlank()
+            ) { Text("Send") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+

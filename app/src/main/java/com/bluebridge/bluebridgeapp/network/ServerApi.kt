@@ -1,6 +1,7 @@
 package com.bluebridge.bluebridgeapp.network
 
 import com.bluebridge.bluebridgeapp.data.model.BasicResponse
+import com.bluebridge.bluebridgeapp.data.model.BugReportRequest
 import com.bluebridge.bluebridgeapp.data.model.CertificateResponse
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountRequest
 import com.bluebridge.bluebridgeapp.data.model.DeleteAccountResponse
@@ -15,6 +16,7 @@ import com.bluebridge.bluebridgeapp.data.model.ServerStatusResponse
 import com.bluebridge.bluebridgeapp.data.model.UpdateLocationRequest
 import com.bluebridge.bluebridgeapp.data.model.UpdateProfileRequest
 import com.bluebridge.bluebridgeapp.data.model.UpdateWaterNeedsRequest
+import com.bluebridge.bluebridgeapp.data.model.ValidateAuthTokenRequest
 import com.bluebridge.bluebridgeapp.data.model.WeatherRequest
 import com.bluebridge.bluebridgeapp.data.model.WeatherResponse
 import com.bluebridge.bluebridgeapp.data.model.WellData
@@ -131,4 +133,14 @@ interface ServerApi {
 
     @GET("/api/certificates")
     suspend fun getServerCertificate(): Response<CertificateResponse>
+
+    @POST("/api/bugreports")
+    suspend fun submitBugReport(
+        @Body bugReport: BugReportRequest
+    ): Response<BasicResponse>
+
+    @POST("/api/auth/validate")
+    suspend fun validateAuthToken(
+        @Body request: ValidateAuthTokenRequest
+    ): Response<BasicResponse>
 }

@@ -54,6 +54,12 @@ sealed class AppEvent {
     data class LogError(val message: String): AppEvent()
     data class LogInfo(val message: String): AppEvent()
     data class LogSuccess(val message: String): AppEvent()
+    data class SubmitBugReport(
+        val name: String,
+        val description: String,
+        val category: String,
+        val extra: Map<String, String> = emptyMap()
+    ) : AppEvent()
 }
 
 object AppEventChannel {

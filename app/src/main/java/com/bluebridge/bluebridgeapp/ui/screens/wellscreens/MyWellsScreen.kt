@@ -274,6 +274,7 @@ private fun WellsList(
     ) {
         items(wellsList.size) { index ->
             val well = wellsList[index]
+
             WellCard(
                 well = well,
                 isWellOwner = isWellOwner,

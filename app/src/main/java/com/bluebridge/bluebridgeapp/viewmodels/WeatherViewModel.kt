@@ -16,7 +16,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bluebridge.bluebridgeapp.data.model.Location as LocationData
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
+private val Context.weatherDataStore by preferencesDataStore(name = "weather_cache")
+private val WEATHER_KEY = stringPreferencesKey("weather_data")
+
+@RequiresApi(Build.VERSION_CODES.O)
 class WeatherViewModel(
     private val userRepository: UserRepository,
     private val context: Context
@@ -28,6 +42,13 @@ class WeatherViewModel(
     // Location state
     private val _location = mutableStateOf<Location?>(null)
     val location = _location
+
+    init {
+        // Try to load cached weather on init
+        viewModelScope.launch {
+            loadWeatherFromCache()
+        }
+    }
 
     /**
      * Set the current location for weather data
@@ -54,25 +75,25 @@ class WeatherViewModel(
         
         viewModelScope.launch {
             try {
-
                 val token = userRepository.getLoginToken() ?: ""
-
                 val weatherData = fetchFromServer(
                     location = LocationData(currentLocation.latitude, currentLocation.longitude),
                     userId = userRepository.getUserId(),
                     loginToken = token
                 )
-
                 _weatherState.value = UiState.Success(weatherData)
+                saveWeatherToCache(weatherData)
             } catch (e: Exception) {
-                Log.e("WeatherViewModel", "Error fetching weather: ${e.message}", e)
-                _weatherState.value = UiState.Error("Failed to load weather data: ${e.message}")
-                Log.d("WeatherViewModel", e.message, e)
+                // Try to load from cache if server fails
+                val loaded = loadWeatherFromCache()
+                if (!loaded) {
+                    _weatherState.value = UiState.Error("Failed to load weather data: ${e.message}\nNo offline data available.")
+                } else {
+                    _weatherState.value = UiState.Error("Failed to update weather: ${e.message}\nShowing offline data.")
+                }
                 if (e.message == "Invalid loginToken") {
-                    Log.e("WeatherViewModel", "Invalid loginToken, logging out")
                     userRepository.logout()
                 }
-
             }
         }
     }
@@ -123,10 +144,9 @@ class WeatherViewModel(
             // Extract the weather data
             val weatherData = responseBody.data
 
-            val weatherList = mutableListOf<WeatherData>()
-            weatherList.add(weatherData)
 
-            return@withContext weatherList
+
+            return@withContext weatherData
         } catch (e: Exception) {
             Log.e("WeatherViewModel", "Error fetching weather from API: ${e.message}", e)
             throw e
@@ -141,4 +161,30 @@ class WeatherViewModel(
         fetchWeatherForecast()
     }
 
+    private suspend fun saveWeatherToCache(weatherList: List<WeatherData>) {
+        val json = Json.encodeToString(weatherList)
+        context.weatherDataStore.edit { prefs ->
+            prefs[WEATHER_KEY] = json
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun loadWeatherFromCache(): Boolean {
+        val prefs = context.weatherDataStore.data.firstOrNull() ?: return false
+        val json = prefs[WEATHER_KEY] ?: return false
+        return try {
+            val weatherList = Json.decodeFromString<List<WeatherData>>(json)
+            // Only show if the latest date is today or newer
+            val today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+            val validWeather = weatherList.filter { it.date >= today }
+            if (validWeather.isNotEmpty()) {
+                _weatherState.value = UiState.Success(validWeather)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
 } 
