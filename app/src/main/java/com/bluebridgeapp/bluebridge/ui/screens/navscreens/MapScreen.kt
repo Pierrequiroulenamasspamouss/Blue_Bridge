@@ -16,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,16 +30,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.data.model.hasValidCoordinates
-import com.bluebridgeapp.bluebridge.ui.dialogs.WellDetailsDialog
 import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.dialogs.WellDetailsDialog
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import org.osmdroid.config.Configuration
@@ -46,6 +49,9 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.compass.CompassOverlay
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,12 +94,14 @@ fun MapScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
+
             // Map View
             AndroidView(
                 factory = { ctx ->
                     MapView(ctx).apply {
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
+
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
                         setTileSource(TileSourceFactory.MAPNIK)
@@ -112,18 +120,35 @@ fun MapScreen(
                         controller.setCenter(initialPoint)
                         controller.setZoom(15.0)
 
-                        // Add user location marker if available
-                        userLat?.let { lat ->
-                            userLon?.let { lon ->
-                                Marker(this).apply {
-                                    position = GeoPoint(lat, lon)
-                                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                    title = "Your Location"
-                                    icon = ContextCompat.getDrawable(context, R.drawable.small_map_arrow)
-                                    setInfoWindowAnchor(0.5f, 0f)
-                                    overlays.add(this)
-                                }
-                            }
+                        // Add user location overlay
+                        val locationProvider = GpsMyLocationProvider(context)
+                        val locationOverlay = MyLocationNewOverlay(locationProvider, this)
+                        locationOverlay.enableMyLocation()
+                        locationOverlay.enableFollowLocation()
+                        locationOverlay.setDirectionArrow(
+                            ContextCompat.getDrawable(context, R.drawable.small_map_arrow)!!.toBitmap(),
+                            ContextCompat.getDrawable(context, R.drawable.small_map_arrow)!!.toBitmap()
+                        )
+                        overlays.add(locationOverlay)
+
+                        // Add compass overlay for orientation
+                        val compassOverlay = CompassOverlay(context, this)
+                        compassOverlay.enableCompass()
+                        // Optionally, customize the compass appearance
+                        // compassOverlay.setCompassCenter(35f, 35f) // Example: Set compass position
+                        // compassOverlay.setCompassMode(CompassOverlay.CompassMode.ROTATES_WITH_MAP) // Example: Set compass mode
+                        overlays.add(compassOverlay)
+
+
+                        // Center map on user location if available, otherwise on target or first well
+                        // The follow location will handle centering if enabled.
+                        if (userLat != null && userLon != null) {
+                            controller.setCenter(GeoPoint(userLat, userLon))
+                        } else if (targetLat != null && targetLon != null) {
+                            controller.setCenter(GeoPoint(targetLat, targetLon))
+                        } else if (wells.any { it.hasValidCoordinates() }) {
+                            val well = wells.first { it.hasValidCoordinates() }
+                            controller.setCenter(GeoPoint(well.getLatitude(), well.getLongitude()))
                         }
 
                         // Add well markers
@@ -148,21 +173,22 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Focus button (floating action button)
-            if (userLat != null && userLon != null) {
-                FloatingActionButton(
-                    onClick = {
-                        mapViewRef?.controller?.apply {
-                            animateTo(GeoPoint(userLat, userLon))
-                            setZoom(15.0)
+            FloatingActionButton(
+                onClick = {
+                    userLat?.let { lat ->
+                        userLon?.let { lon ->
+                            mapViewRef?.controller?.animateTo(GeoPoint(lat, lon))
+                            mapViewRef?.controller?.setZoom(15.0)
                         }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(innerPadding) // Apply the padding here
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Focus on my location")
-                }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(innerPadding)
+                    .padding(16.dp), // Additional padding for FAB
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = "Focus on my location", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
     }
@@ -190,7 +216,16 @@ fun MapScreen(
     }
 }
 
-
+private fun android.graphics.drawable.Drawable.toBitmap(): android.graphics.Bitmap {
+    if (this is android.graphics.drawable.BitmapDrawable) {
+        return bitmap
+    }
+    val bitmap = createBitmap(intrinsicWidth, intrinsicHeight)
+    val canvas = android.graphics.Canvas(bitmap)
+    setBounds(0, 0, canvas.width, canvas.height)
+    draw(canvas)
+    return bitmap
+}
 
 // Helper extension function
 private fun UiState<List<WellData>>.dataOrEmpty(): List<WellData> {

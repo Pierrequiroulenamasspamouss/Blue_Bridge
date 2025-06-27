@@ -1,12 +1,23 @@
 <layer-list xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background image -->
     <item
-        android:gravity="center">
+        android:gravity="fill">
+        <bitmap android:src="@drawable/background"
+            android:gravity="fill"/>
+    </item>
+
+    <!-- Centered logo -->
+    <item
+        android:gravity="center"
+        >
         <bitmap
-            android:src="@drawable/app_logo"
+            android:src="@drawable/logo_nobackground"
             android:gravity="center"
             android:tileMode="disabled"
             android:antialias="true"
             tools:ignore="PrivateResource" />
     </item>
+
 </layer-list>
