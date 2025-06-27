@@ -73,6 +73,7 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val isOnline by rememberNetworkState(context)
+    val role = remember {mutableStateOf("")}
     val showBugReportDialog = remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -110,48 +111,55 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
                 if (isOnline) {
                     // Validate token with a dedicated endpoint
                     val token = userViewModel.getLoginToken()
-                    val request = ValidateAuthTokenRequest(
-                        token = token.toString(),
-                        userId = userViewModel.getUserId().toString()
-                    )
-                    val authResponse = api.validateAuthToken(request)
-                    Log.d("Auth", "Token validation response: ${authResponse.body()}")
+                    val role = userViewModel.getRole()
+                    if (token != null && role != "guest" ) {
+                        val request = ValidateAuthTokenRequest(
+                            token = token.toString(),
+                            userId = userViewModel.getUserId().toString()
+                        )
+                        val authResponse = api.validateAuthToken(request)
+                        Log.d("Auth", "Token validation response: ${authResponse.body()}")
 
-                    when {
-                        authResponse.isSuccessful && authResponse.body()?.status == "success" -> {
-                            // Token is valid, continue with app
-                        }
-                        authResponse.code() == 401 -> {
-                            // Specific handling for unauthorized (401) responses
-                            val errorMessage = authResponse.body()?.message ?: "Session expired"
-                            AppEventChannel.sendEvent(
-                                AppEvent.ShowError("$errorMessage. Please log in again.")
-                            )
-                            userViewModel.logout()
-                            navController.navigate(Routes.LOGIN_SCREEN) {
-                                popUpTo(0) { inclusive = true }
+                        when {
+                            authResponse.isSuccessful && authResponse.body()?.status == "success" -> {
+                                // Token is valid, continue with app
                             }
-                        }
-                        else -> {
-                            // Handle other error cases
-                            val errorBody = authResponse.errorBody()?.string()
-                            val errorMessage = if (errorBody != null) {
-                                // Try to parse the error body if it exists
-                                try {
-                                    val json = JSONObject(errorBody)
-                                    json.getString("message")
-                                } catch (e: Exception) {
+                            authResponse.code() == 401 -> {
+                                // Specific handling for unauthorized (401) responses
+                                val errorMessage = authResponse.body()?.message ?: "Session expired"
+                                AppEventChannel.sendEvent(
+                                    AppEvent.ShowError("$errorMessage. Please log in again.")
+                                )
+                                userViewModel.logout()
+                                //navController.navigate(Routes.LOGIN_SCREEN) {
+                                //    popUpTo(0) { inclusive = true }
+                                //}
+                            }
+                            else -> {
+                                // Handle other error cases
+                                val errorBody = authResponse.errorBody()?.string()
+                                val errorMessage = if (errorBody != null) {
+                                    // Try to parse the error body if it exists
+                                    try {
+                                        val json = JSONObject(errorBody)
+                                        json.getString("message")
+                                    } catch (e: Exception) {
+                                        authResponse.message()
+                                    }
+                                } else {
                                     authResponse.message()
                                 }
-                            } else {
-                                authResponse.message()
-                            }
 
-                            AppEventChannel.sendEvent(
-                                AppEvent.ShowError("Authentication error: $errorMessage")
-                            )
+                                AppEventChannel.sendEvent(
+                                    AppEvent.ShowError("Authentication error: $errorMessage")
+                                )
+                            }
                         }
                     }
+                    else{
+                        //Ignore and do nothing to try and log in
+                    }
+
                 }
             } catch (e: Exception) {
                 Log.e("Auth", "Token validation failed", e)
@@ -174,12 +182,23 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
 
     LaunchedEffect(isOnline) { if (isOnline) serverViewModel.getServerStatus() }
 
+    LaunchedEffect(role) {
+        coroutineScope.launch {
+            role.value = userViewModel.getRole().toString()
+            Log.d("Role", "User role: ${role.value}")
+        }
+    }
     // UI
     MaterialTheme(colorScheme = colorScheme) {
         Scaffold(
             floatingActionButton = {
-                FloatingActionButton(onClick = { showBugReportDialog.value = true }) {
-                    Icon(Icons.Default.BugReport, contentDescription = "Report a Bug")
+                // Only show bug report FAB for admin users
+
+
+                if (role.value == "admin") {
+                    FloatingActionButton(onClick = { showBugReportDialog.value = true }) {
+                        Icon(Icons.Default.BugReport, contentDescription = "Report a Bug")
+                    }
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }

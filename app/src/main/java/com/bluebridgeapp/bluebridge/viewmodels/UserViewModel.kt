@@ -512,4 +512,8 @@ class UserViewModel(
         return repository.getUserId()
     }
 
+    suspend fun getRole(): String? {
+        return repository.getRole()
+    }
+
 }

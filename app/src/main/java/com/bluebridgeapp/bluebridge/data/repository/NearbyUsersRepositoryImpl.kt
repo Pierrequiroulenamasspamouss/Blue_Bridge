@@ -96,4 +96,5 @@ class NearbyUsersRepositoryImpl(
     override suspend fun deleteNearbyUser(userId: String) {
         _nearbyUsers.update { list -> list.filterNot { it.userId == userId } }
     }
+
 }

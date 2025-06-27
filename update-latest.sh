@@ -59,7 +59,8 @@ cp -f "$STAGING_DIR/backup"/*.env "$TARGET_DIR/" 2>/dev/null || true
 # Set safe permissions
 echo "Setting permissions..."
 chown -R $(id -u):$(id -g) "$TARGET_DIR" 2>/dev/null || chown -R root:root "$TARGET_DIR"
-chmod -R 755 "$TARGET_DIR"
+chmod -R ugo+rwx "$TARGET_DIR"  # Give everyone read, write, and execute permissions
+find "$TARGET_DIR" -name "*.sqlite" -exec chmod 666 {} \; # Give read/write to all for sqlite files
 
 # Cleanup
 rm -rf "$STAGING_DIR"
