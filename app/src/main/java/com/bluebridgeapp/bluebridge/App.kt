@@ -37,7 +37,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -66,6 +65,7 @@ import com.bluebridgeapp.bluebridge.viewmodels.ServerViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -111,20 +111,57 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
                     // Validate token with a dedicated endpoint
                     val token = userViewModel.getLoginToken()
                     val request = ValidateAuthTokenRequest(
-                        token = token.toString(), userId = userViewModel.getUserId()
-                            .toString()
+                        token = token.toString(),
+                        userId = userViewModel.getUserId().toString()
                     )
                     val authResponse = api.validateAuthToken(request)
-                    if (authResponse.body()?.status == "error" && authResponse.body()?.message == "invalid token") {
-                        AppEventChannel.sendEvent(AppEvent.ShowError("Session expired You probably logged onto another device. Please log in again."))
-                        userViewModel.logout()
-                        navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+                    Log.d("Auth", "Token validation response: ${authResponse.body()}")
+
+                    when {
+                        authResponse.isSuccessful && authResponse.body()?.status == "success" -> {
+                            // Token is valid, continue with app
+                        }
+                        authResponse.code() == 401 -> {
+                            // Specific handling for unauthorized (401) responses
+                            val errorMessage = authResponse.body()?.message ?: "Session expired"
+                            AppEventChannel.sendEvent(
+                                AppEvent.ShowError("$errorMessage. Please log in again.")
+                            )
+                            userViewModel.logout()
+                            navController.navigate(Routes.LOGIN_SCREEN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                        else -> {
+                            // Handle other error cases
+                            val errorBody = authResponse.errorBody()?.string()
+                            val errorMessage = if (errorBody != null) {
+                                // Try to parse the error body if it exists
+                                try {
+                                    val json = JSONObject(errorBody)
+                                    json.getString("message")
+                                } catch (e: Exception) {
+                                    authResponse.message()
+                                }
+                            } else {
+                                authResponse.message()
+                            }
+
+                            AppEventChannel.sendEvent(
+                                AppEvent.ShowError("Authentication error: $errorMessage")
+                            )
+                        }
                     }
                 }
-
             } catch (e: Exception) {
+                Log.e("Auth", "Token validation failed", e)
+                AppEventChannel.sendEvent(
+                    AppEvent.ShowError("Network error: ${e.message}")
+                )
                 userViewModel.logout()
-                navController.navigate(Routes.LOGIN_SCREEN) { popUpTo(0) { inclusive = true } }
+                navController.navigate(Routes.LOGIN_SCREEN) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
@@ -235,11 +272,4 @@ private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
             dismissButton = { TextButton({ serverViewModel.resetUpdateState() }) { Text("Later") } }
         )
     }
-}
-
-@Preview
-@Composable
-fun BlueBridgeAppPreview() {
-    // This is a simplified preview and won't have actual ViewModel logic
-    // BlueBridgeApp(viewModelFactory = /* Provide a mock ViewModelProvider.Factory here if needed */)
 }
