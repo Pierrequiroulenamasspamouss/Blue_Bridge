@@ -41,7 +41,7 @@ GMAIL_APP_PASSWORD=tbix drij febn renr       # App-specific password (not regula
 
 ### OpenWeather API
 ```env
-OPENWEATHER_API_KEY=46fbb715f54850c8de70b53815a15cdb    # API key for weather service
+OPENWEATHER_API_KEY=your-openweather-api-key    # API key for weather service
 ```
 
 ## Where These Variables Are Used
