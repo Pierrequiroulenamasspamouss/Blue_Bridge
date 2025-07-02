@@ -30,13 +30,16 @@ class UserViewModel(
     private val _state = mutableStateOf<UiState<UserData>>(UiState.Empty)
     val state = _state
     private val _currentTheme = MutableStateFlow(0) // Default theme
+    private val _currentLanguage = MutableStateFlow("en") // Default language
     val currentTheme: StateFlow<Int> = _currentTheme.asStateFlow()
+    val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
 
     // Push notification state
     private val _notificationsEnabled = mutableStateOf(false)
 
     init {
         // Load theme preference immediately on ViewModel creation
+        loadLanguagePreference()
         loadThemePreference()
     }
 
@@ -50,6 +53,23 @@ class UserViewModel(
                 Log.e("UserViewModel", "Failed to load theme preference", e)
                 _currentTheme.value = 0 // Default to system theme
             }
+        }
+    }
+    private fun loadLanguagePreference() {
+        viewModelScope.launch {
+            try {
+                val savedLanguage = repository.getLanguage()
+                _currentLanguage.value = savedLanguage
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Failed to load language preference", e)
+                _currentLanguage.value = "en" // Default to English
+            }
+        }
+    }
+    fun updateLanguage(language: String){
+        viewModelScope.launch {
+            repository.setLanguage(language)
+            loadLanguagePreference()
         }
     }
 
@@ -222,7 +242,8 @@ class UserViewModel(
                     role = "guest",
                     userId = "guest-UID" ,
                     loginToken = "1234567890",
-                    themePreference = 0
+                    themePreference = 0,
+                    languageCode = "en",
 
                 )
 
@@ -515,5 +536,7 @@ class UserViewModel(
     suspend fun getRole(): String? {
         return repository.getRole()
     }
-
+    suspend fun setLanguage(language: String) {
+        return repository.setLanguage(language)
+    }
 }

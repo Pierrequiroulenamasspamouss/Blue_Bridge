@@ -44,15 +44,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.ui.components.WellCard
 import com.bluebridgeapp.bluebridge.viewmodels.ActionState
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
@@ -118,7 +120,7 @@ fun MonitorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Wells") },
+                title = { Text(stringResource(R.string.my_wells)) },
                 actions = {
                     IconButton(onClick = { expanded = true }) {
                         Icon(Icons.Default.MoreVert, "More options")
@@ -132,7 +134,7 @@ fun MonitorScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Refresh, "Refresh", Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Refresh")
+                                    Text(stringResource(R.string.refresh))
                                 }
                             },
                             onClick = {
@@ -141,7 +143,7 @@ fun MonitorScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Browse Wells") },
+                            text = { Text(stringResource(R.string.browse_wells)) },
                             onClick = {
                                 navController.navigate(Routes.BROWSE_WELLS_SCREEN)
                                 expanded = false
@@ -156,7 +158,7 @@ fun MonitorScreen(
                 ExtendedFloatingActionButton(
                     onClick = { navController.navigate("${Routes.WELL_CONFIG_SCREEN}/new") },
                     icon = { Icon(Icons.Default.Add, "Add Well") },
-                    text = { Text("Add New Well") }
+                    text = { Text(stringResource(R.string.add_new_well)) }
                 )
             }
         }
@@ -168,7 +170,7 @@ fun MonitorScreen(
                 }
                 is UiState.Error -> {
                     Text(
-                        "Error: ${wellsState.message}",
+                        stringResource(R.string.error, wellsState.message),
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -204,8 +206,8 @@ fun MonitorScreen(
         wellToDelete?.let { well ->
             AlertDialog(
                 onDismissRequest = { wellToDelete = null },
-                title = { Text("Delete Well") },
-                text = { Text("Are you sure you want to delete this well? This action cannot be undone.") },
+                title = { Text(stringResource(R.string.delete_well)) },
+                text = { Text(stringResource(R.string.delete_well_confirm)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -215,12 +217,12 @@ fun MonitorScreen(
                             wellToDelete = null
                         }
                     ) {
-                        Text("Delete")
+                        Text(stringResource(R.string.delete))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { wellToDelete = null }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -239,10 +241,10 @@ private fun EmptyWellsState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("No wells saved", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.no_wells_saved), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
         Text(
-            "Browse wells to add them to your monitoring list",
+            stringResource(R.string.browse_wells_to_add_to_monitoring_list),
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -253,7 +255,7 @@ private fun EmptyWellsState(
             ) {
                 Icon(Icons.Default.Add, "Add Well", Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Browse existing Wells")
+                Text(stringResource(R.string.browse_existing_wells))
             }
         }
     }

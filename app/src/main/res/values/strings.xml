@@ -5,23 +5,9 @@
     <string name="helper" translatable="false">ChatGPT,o4 Mini, Claude 3.5 Sonnet,Claude 3.7 Sonnet, DeepSeek</string>
     <string name="projects" translatable="false">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
-    <!--
 
-    LOCAL MACHINE:
+
     <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
-    <string name="ProductionServerUrl" translatable="false">https://bluebridge.homeonthewater.com/</string>
-
-    <string name="DevelopmentServerUrl">http://192.168.0.98/</string>
-    <string name="ProductionServerUrl">https://192.168.0.98/</string>
-
-    GOOGLE:
-    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com/</string>
-    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com/</string>
-    -->
-
-
-    <string name="DevelopmentServerUrl">http://bluebridge.homeonthewater.com/</string>
-    <string name="ProductionServerUrl">https://bluebridge.homeonthewater.com/</string>
 
     <!-- Firebase notifications -->
 
@@ -35,5 +21,190 @@
 
     <!-- Emergency phone number -->
     <string name="sms_server_number" translatable="false">+32491142936</string>
+
+    <string name="support_bluebridge">Support BlueBridge</string>
+    <string name="agreement_terms">1. Agreement terms...</string>
+    <string name="data_privacy_usage">2. Data Privacy and Usage:</string>
+    <string name="privacy_commitment">a. We are committed to protecting your privacy. We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information.</string>
+    <string name="data_collection">b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.</string>
+    <string name="data_storage">c. Any data collected is stored securely and handled in accordance with applicable data protection laws.</string>
+    <string name="location_sharing">c. When using this app you agree to share your location with other users. You can change this anytime in the settings. But your defined location will be available for anyone to see. This is necessary for the app\'s core functionality.</string>
+    <string name="cancel">Cancel</string>
+    <string name="i_agree">I Agree</string>
+    <string name="go_back_home">Go Back to Home</string>
+    <string name="play_again">Play Again</string>
+    <string name="reset">Reset</string>
+    <string name="weather_forecast">Weather Forecast</string>
+    <string name="loading_weather">Loading weather data...</string>
+    <string name="retry">Retry</string>
+    <string name="session_expired">Session Expired</string>
+    <string name="logged_out">You have been logged out. This might be because you logged in on another device.</string>
+    <string name="ok">OK</string>
+    <string name="load_weather">Load Weather</string>
+    <string name="browse_wells">Browse Wells</string>
+    <string name="add_new_well">Add New Well</string>
+    <string name="search_well">Search well by name or description</string>
+    <string name="well_not_found">Well with ID %1$s was not found</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="username">Username</string>
+    <string name="email">Email</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="settings">Settings</string>
+    <string name="edit_water_needs">Edit Water Needs</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="dont_have_account">Don\'t have an account? Sign up</string>
+    <string name="continue_guest">Continue as Guest</string>
+    <string name="are_you_well_owner">Are you a well owner?</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="edit_water_needs_title">Edit Water Needs</string>
+    <string name="add_water_need">Add Water Need</string>
+    <string name="save_all">Save All</string>
+    <string name="location">Location</string>
+    <string name="use_current_location">Use My Current Location</string>
+    <string name="save_well">Save Well</string>
+    <string name="unsaved_changes">Unsaved Changes</string>
+    <string name="discard_changes">You have unsaved changes. Do you want to discard them?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
+    <string name="large_search_radius">Large Search Radius</string>
+    <string name="proceed">Proceed</string>
+    <string name="radius_km">Radius (km)</string>
+    <string name="search">Search</string>
+    <string name="finding_nearby_users">Finding nearby users...</string>
+    <string name="find_nearest_water_source">Find Nearest Water Source</string>
+    <string name="request_emergency_assistance">Request Emergency Assistance</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="sms_permission_required">SMS permission is required to send emergency messages. Please enable it in Settings.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="my_wells">My Wells</string>
+    <string name="refresh">Refresh</string>
+    <string name="delete_well">Delete Well</string>
+    <string name="delete_well_confirm">Are you sure you want to delete this well? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="browse_existing_wells">Browse existing Wells</string>
+    <string name="find_nearest_wells">Find Nearest Wells</string>
+    <string name="nearest_wells">Nearest Wells</string>
+    <string name="close">Close</string>
+    <string name="support_with_ads">Support with Ads</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="logout">Logout</string>
+    <string name="amount_liters">Amount (liters)</string>
+    <string name="select_usage_type">Select usage type</string>
+    <string name="custom_usage_type">Custom Usage Type (max 15 chars)</string>
+    <string name="description_optional">Description (optional)</string>
+    <string name="save">Save</string>
+    <string name="location_permission">Location Permission</string>
+    <string name="location_permission_message">BlueBridge needs location access for nearby water sources</string>
+    <string name="allow">Allow</string>
+    <string name="notification_permission">Notification Permission</string>
+    <string name="enable_notifications">Enable notifications for water source updates</string>
+    <string name="later">Later</string>
+    <string name="add_to_my_wells">Add to My Wells</string>
+    <string name="select_language">Select Language</string>
+    <string name="priority">Priority</string>
+    <string name="emergency_services">Emergency services</string>
+    <string name="use_these_buttons_to_request_emergency_assistance_or_find_the_nearest_water_source">Use these buttons to request assistance or find the nearest water source</string>
+    <string name="get_nearest_water">Get the nearest water</string>
+    <string name="send_help">Send a help request</string>
+    <string name="go_to_settings">Go to settings</string>
+    <string name="main_features">Main Features</string>
+    <string name="monitor_wells">Monitor Wells</string>
+    <string name="track_water_levels">Track water levels and quality data</string>
+    <string name="map_view">Map View</string>
+    <string name="see_nearby_water_resources">See nearby water resources</string>
+    <string name="navigation">Navigation</string>
+    <string name="find_your_way_to_nearest_well">Find your way to the nearest well</string>
+    <string name="weather">Weather</string>
+    <string name="check_upcoming_weather_forecast">Check upcoming weather forecast</string>
+    <string name="nearby_users">Nearby Users</string>
+    <string name="find_community_members_near_you">Find community members near you</string>
+    <string name="urgent_sms">Urgent SMS</string>
+    <string name="send_urgent_messages_to_contacts">Send urgent messages to contacts</string>
+    <string name="sign_in_to_access_more_features">Sign in to access more features</string>
+    <string name="help_us_improve_bluebridge">Help us improve BlueBridge</string>
+    <string name="bluebridge_is_community_driven" translatable="true">BlueBridge is a community-driven app to help everyone access clean water. Your support keeps us running.</string>
+    <string name="sign_in_to_your_account">Sign in to your account</string>
+    <string name="not_logged_in">Not logged in</string>
+    <string name="role">Role</string>
+    <string name="register_to_notifications">Register to notifications</string>
+    <string name="register_with_email_to_receive_notifications">Register with a proper E-mail address to receive notifications</string>
+    <string name="send_firebase_token_to_server">Send your firebase push notification loginToken to the server</string>
+    <string name="need_to_be_registered_to_receive_notifications">You need to be registered to receive notifications</string>
+    <string name="theme">Theme</string>
+    <string name="system_default">System Default</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="green">Green</string>
+    <string name="pink">Pink</string>
+    <string name="red">Red</string>
+    <string name="purple">Purple</string>
+    <string name="yellow">Yellow</string>
+    <string name="tan">Tan</string>
+    <string name="orange">Orange</string>
+    <string name="cyan">Cyan</string>
+    <string name="language">Language</string>
+    <string name="the_language_of_the_app">The language of the app</string>
+    <string name="current_location">Current Location</string>
+    <string name="lat_lon">Lat: %1$s, Lon: %2$s</string>
+    <string name="no_water_needs_configured">No water needs configured</string>
+    <string name="tap_below_to_add_water_needs">Tap below to add your water needs</string>
+    <string name="support">Support</string>
+    <string name="help_us_by_viewing_ads">Help us by viewing ads</string>
+    <string name="send_bug_report">Send Bug Report</string>
+    <string name="report_a_bug_or_suggest_improvement">Report a bug or suggest an improvement</string>
+    <string name="credits">Credits</string>
+    <string name="view_app_credits">View app credits</string>
+    <string name="account_actions">Account Actions</string>
+    <string name="sign_out_of_your_account">Sign out of your account</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="no_wells_saved">No wells saved</string>
+    <string name="browse_wells_to_add_to_monitoring_list">Browse wells to add them to your monitoring list</string>
+    <string name="error">Error: %1$s</string>
+    <string name="profile">Profile</string>
+    <string name="account">Account</string>
+    <string name="appearance">Appearance</string>
+    <string name="location_section">Location</string>
+    <string name="water_needs">Water Needs</string>
+    <string name="account_actions_section">Account Actions</string>
+    <string name="delete_account_section">Delete Account</string> <!-- Assuming this was intended to be English -->
+    <string name="permanently_delete_account">Permanently delete your account and all data</string> <!-- Assuming this was intended to be English -->
+    <string name="unique_identifier_for_esp32_microcontroller">Unique Well Identifier</string>
+    <string name="technical_details">Technical Details</string>
+    <string name="daily_consumption">Daily Consumption</string>
+    <string name="water_level">Water Level</string>
+    <string name="well_capacity">Water Capacity</string>
+    <string name="water_type">Water Type</string>
+    <string name="water_specifications">Water Specifications</string>
+    <string name="well_owner">Well Owner</string>
+    <string name="basic_information">Basic Information</string>
+    <string name="well_name">Well Name</string>
+    <string name="edit_well">Edit Well</string>
+    <string name="error_loading_data">An error occurred while loading the wells</string>
+    <string name="required_information">Required Information</string>
+    <string name="confirm_password">Confirm your password</string>
+    <string name="optional_information">Optional Information</string>
+    <string name="your_location">Your Location</string>
+    <string name="esp_id" translatable="false">ESP id</string>
+    <string name="app_logo_description" translatable="false">App logo</string>
+    <string name="welcome_back_user">Welcome back</string>
+    <string name="welcome_to_app">Welcome to Bluebridge</string>
+    <string name="server_unreachable">The server is currently unreachable</string>
+    <string name="server_unavailable_message">the server is unavailable or busy. try again later</string>
+    <string name="update_available">A new update is available.</string>
+    <string name="update_available_message">Download it now to get the full experience</string>
+    <string name="update">Update</string>
+    <string name="bug_report_thank_you">Thank you for submitting this bug report</string>
+    <string name="report_bug">Report a bug</string>
+    <string name="network_error">Network error. Do you have Internet ?</string>
+    <string name="authentication_error">We detected you have logged in elsewhere. For that reason, you have been logged out</string>
+    <string name="please_login_again">Please log in again</string>
+    <string name="update_url" translatable="false">\"http://bluebridge.homeonthewater.com/home\"</string>
+    <string name="selected">Selected</string>
+    <string name="back">Back</string>
 
 </resources>

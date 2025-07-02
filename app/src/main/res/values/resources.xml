@@ -1,4 +1,4 @@
 
 <resources>
-        <string name="logo_description">Water well logo</string>
+        <string name="logo_description" translatable="false">Water well logo</string>
 </resources>

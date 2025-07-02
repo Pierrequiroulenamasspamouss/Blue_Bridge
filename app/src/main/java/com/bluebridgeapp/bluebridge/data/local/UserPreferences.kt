@@ -1,3 +1,6 @@
+
+
+
 package com.bluebridgeapp.bluebridge.data.local
 
 import android.content.Context
@@ -21,6 +24,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
+
 // Define DataStore at top level
 val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
@@ -41,6 +45,7 @@ object PreferencesKeys {
     val IS_GUEST = booleanPreferencesKey("is_guest")
     val NOTIFICATION_TOKEN = stringPreferencesKey("notification_token")
     val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+    val LANGUAGE_CODE = stringPreferencesKey("language_code")
 }
 
 class UserPreferences(context: Context) {
@@ -57,11 +62,7 @@ class UserPreferences(context: Context) {
             }
         }
         .map { preferences ->
-            Log.d(
-                "UserPreferences",
-                "Reading preferences: isLoggedIn=${preferences[PreferencesKeys.IS_LOGGED_IN]}"
-            )
-            if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
+                if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
                 val email = preferences[PreferencesKeys.EMAIL] ?: run {
                     Log.e("UserPreferences", "Email not found in preferences")
                     return@map null
@@ -72,6 +73,7 @@ class UserPreferences(context: Context) {
                 val role = preferences[PreferencesKeys.ROLE] ?: "user"
                 val theme = preferences[PreferencesKeys.THEME] ?: 0
                 val token = preferences[PreferencesKeys.LOGIN_TOKEN]
+                val languageCode = preferences[PreferencesKeys.LANGUAGE_CODE] ?: "en"
                 val userId = preferences[PreferencesKeys.USER_ID] ?: run {
                     Log.e("UserPreferences", "UserID not found in preferences")
                     return@map null
@@ -79,7 +81,7 @@ class UserPreferences(context: Context) {
 
                 Log.d(
                     "UserPreferences",
-                    "Found user data: email=$email, userId=$userId, role=$role"
+                    "Found user data: email=$email, userId=$userId, role=$role, firstName=$firstName, lastName=$lastName, username=$username, theme=$theme, token=$token, language = $languageCode"
                 )
 
                 // Parse location from JSON string
@@ -120,7 +122,8 @@ class UserPreferences(context: Context) {
                     location = location,
                     themePreference = theme,
                     waterNeeds = waterNeeds,
-                    loginToken = token
+                    loginToken = token,
+                    languageCode = languageCode
                 ).also {
                     Log.d("UserPreferences", "Successfully constructed UserData object: $it")
                 }
@@ -236,6 +239,18 @@ class UserPreferences(context: Context) {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.NOTIFICATION_TOKEN)
         }
+    }
+
+    suspend fun setLanguage(language: String) {
+        // Save to both for backward compatibility
+        prefs.edit().putString("language_code", language).apply()
+        dataStore.edit { preferences -> preferences[PreferencesKeys.LANGUAGE_CODE] = language }
+    }
+
+    suspend fun getLanguage(): String? {
+        val preferences = dataStore.data.first()
+        Log.d("UserPreferences", "Language code from preferences: ${preferences[stringPreferencesKey("language_code")]}")
+        return preferences[stringPreferencesKey("language_code")]
     }
 
 }

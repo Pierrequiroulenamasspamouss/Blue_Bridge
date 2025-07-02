@@ -40,7 +40,7 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.data.model.hasValidCoordinates
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.ui.dialogs.WellDetailsDialog
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel

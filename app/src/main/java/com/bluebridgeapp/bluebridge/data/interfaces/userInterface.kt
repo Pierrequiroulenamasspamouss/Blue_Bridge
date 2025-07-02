@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.data.interfaces
 
+import androidx.datastore.preferences.core.Preferences
 import com.bluebridgeapp.bluebridge.data.model.DeleteAccountRequest
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.LoginRequest
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
 interface UserRepository {
+    suspend fun getLanguage(): String
     suspend fun saveThemePreference(theme: Int)
     suspend fun getRole(): String
     suspend fun getRoleValue(): Int
@@ -19,7 +21,7 @@ interface UserRepository {
     suspend fun getUserData(): Flow<UserData?>
     suspend fun getUserEmail(): String?
     suspend fun getUserWaterNeeds(): String?
-    suspend fun setUserWaterNeeds(waterNeeds: String)
+    suspend fun setUserWaterNeeds(waterNeeds: List<WaterNeed>)
     suspend fun clearUserData()
     suspend fun getLoginToken(): String?
     suspend fun isLoggedIn(): Boolean
@@ -50,4 +52,5 @@ interface UserRepository {
             false
         }
     }
+    suspend fun setLanguage(language:String)
 }

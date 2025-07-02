@@ -34,9 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.data.model.WellData
@@ -47,7 +49,7 @@ import com.bluebridgeapp.bluebridge.ui.components.compass.DistanceInfo
 import com.bluebridgeapp.bluebridge.ui.components.compass.MiniMapCard
 import com.bluebridgeapp.bluebridge.ui.components.compass.rememberCompassSensor
 import com.bluebridgeapp.bluebridge.ui.dialogs.LocationPermissionDialog
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.utils.calculateDistance
 import com.bluebridgeapp.bluebridge.utils.findNearestWells
 import com.bluebridgeapp.bluebridge.utils.formatDistance
@@ -256,7 +258,7 @@ fun CompassScreen(
                         .fillMaxWidth()
                         .padding(vertical = 16.dp)
                 ) {
-                    Text("Find Nearest Wells")
+                    Text(stringResource(R.string.find_nearest_wells))
                 }
             }
         }
@@ -274,7 +276,7 @@ private fun NearestWellsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nearest Wells") },
+        title = { Text(stringResource(R.string.nearest_wells)) },
         text = {
             Column {
                 wells.forEach { well ->
@@ -297,7 +299,7 @@ private fun NearestWellsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         }
     )

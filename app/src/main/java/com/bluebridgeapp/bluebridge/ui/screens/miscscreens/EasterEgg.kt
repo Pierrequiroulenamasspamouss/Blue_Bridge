@@ -41,10 +41,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bluebridgeapp.bluebridge.R
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -265,7 +267,7 @@ fun EasterEgg() {
                             gameOver = false
                             isPlaying = true
                         }) {
-                            Text("Play Again")
+                            Text(stringResource(R.string.play_again))
                         }
                     }
                 }
@@ -467,7 +469,7 @@ fun EasterEgg() {
                         gameSpeed = 200
                         gameOver = false
                     }) {
-                        Text("Reset")
+                        Text(stringResource(R.string.reset))
                     }
                 }
 

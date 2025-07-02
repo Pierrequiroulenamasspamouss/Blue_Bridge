@@ -44,11 +44,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.repository.WaterNeedsManager
 import com.bluebridgeapp.bluebridge.ui.components.StatusIndicator
@@ -121,7 +123,7 @@ fun WaterNeedDialog(
                     .padding(16.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Text("Amount (liters)", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.amount_liters), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
 
                 Text(
@@ -150,14 +152,14 @@ fun WaterNeedDialog(
                             state.newAmountSlider = filtered.toFloatOrNull() ?: 0f
                         }
                     },
-                    label = { Text("Amount (liters)") },
+                    label = { Text(stringResource(R.string.amount_liters)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(16.dp))
 
-                Text("Usage Type", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.select_usage_type), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -167,7 +169,7 @@ fun WaterNeedDialog(
                         value = state.newUsageType,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Select usage type") },
+                        label = { Text(stringResource(R.string.select_usage_type)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
@@ -202,7 +204,7 @@ fun WaterNeedDialog(
                     OutlinedTextField(
                         value = state.customType,
                         onValueChange = { if (it.length <= 15) state.customType = it },
-                        label = { Text("Custom Usage Type (max 15 chars)") },
+                        label = { Text(stringResource(R.string.custom_usage_type)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -210,7 +212,7 @@ fun WaterNeedDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                Text("Priority (0 = Highest, 5 = Lowest)", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.priority), style = MaterialTheme.typography.titleSmall)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -230,7 +232,7 @@ fun WaterNeedDialog(
                 OutlinedTextField(
                     value = state.newDescription,
                     onValueChange = { state.newDescription = it },
-                    label = { Text("Description (optional)") },
+                    label = { Text(stringResource(R.string.description_optional)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -240,11 +242,11 @@ fun WaterNeedDialog(
                 onClick = onConfirm,
                 enabled = state.newAmount.isNotBlank() && state.newUsageType.isNotBlank()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
@@ -265,12 +267,12 @@ fun LocationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Location Permission") },
-        text = { Text("BlueBridge needs location access for nearby water sources") },
+        title = { Text(stringResource(R.string.location_permission)) },
+        text = { Text(stringResource(R.string.location_permission_message)) },
         confirmButton = {
-            Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) { Text("Allow") }
+            Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) { Text(stringResource(R.string.allow)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }
 
@@ -292,12 +294,12 @@ fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
     if (!isPermissionGranted) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Notification Permission") },
-            text = { Text("Enable notifications for water source updates") },
+            title = { Text(stringResource(R.string.notification_permission)) },
+            text = { Text(stringResource(R.string.enable_notifications)) },
             confirmButton = {
-                Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("Allow") }
+                Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text(stringResource(R.string.allow)) }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Later") } }
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.later)) } }
         )
     }
 }
@@ -355,7 +357,7 @@ fun EnhancedWellDetailsDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onAdd) { Text("Add to My Wells") }
+            Button(onClick = onAdd) { Text(stringResource(R.string.add_to_my_wells)) }
         },
         dismissButton = {
             Row {

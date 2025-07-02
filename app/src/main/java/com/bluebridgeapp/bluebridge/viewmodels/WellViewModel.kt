@@ -163,7 +163,7 @@ class WellViewModel(
     suspend fun saveWellToServer(wellData: WellData): Boolean {
         return try {
             // Get user data
-            val userData = userPreferences.getUserData().first()
+            val userData = userPreferences.getUserData()!!.first()
             repository.saveWellToServer(
                 wellData,
                 userData?.email ?: "",
@@ -179,7 +179,7 @@ class WellViewModel(
     suspend fun deleteWellFromServer(espId: String): Boolean {
         return try {
             // Get user data
-            val userData = userPreferences.getUserData().first()
+            val userData = userPreferences.getUserData()!!.first()
             repository.deleteWellFromServer(
                 espId,
                 userData?.email ?: "",

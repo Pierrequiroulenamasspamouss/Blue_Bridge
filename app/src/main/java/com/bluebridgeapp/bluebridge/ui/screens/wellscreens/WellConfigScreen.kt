@@ -56,10 +56,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -154,7 +156,7 @@ fun WellConfigScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (wellId == -1) "Add New Well" else "Edit Well") },
+                title = { Text(if (wellId == -1) stringResource(R.string.add_new_well) else stringResource(R.string.edit_well)) },
                 navigationIcon = {
                     IconButton(onClick = { onBackPressed() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -184,7 +186,7 @@ fun WellConfigScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Basic Info Section
-                SectionHeader(title = "Basic Information", icon = Icons.Default.Person)
+                SectionHeader(title = stringResource(R.string.basic_information), icon = Icons.Default.Person)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -199,14 +201,14 @@ fun WellConfigScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         WellField(
-                            label = "Well Name",
+                            label = stringResource(R.string.well_name),
                             value = wellData.wellName,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellNameEntered(it)) }
                         )
 
                         WellField(
-                            label = "Well owner",
+                            label = stringResource(R.string.well_owner),
                             value = wellData.wellOwner,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
@@ -215,7 +217,7 @@ fun WellConfigScreen(
                 }
 
                 // Location Section
-                SectionHeader(title = "Location", icon = Icons.Default.LocationOn)
+                SectionHeader(title = stringResource(R.string.location), icon = Icons.Default.LocationOn)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -232,7 +234,7 @@ fun WellConfigScreen(
                         OutlinedTextField(
                             value = locationInput,
                             onValueChange = { locationInput = it },
-                            label = { Text("Location") },
+                            label = { Text(stringResource(R.string.location)) },
                             singleLine = false,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -312,13 +314,13 @@ fun WellConfigScreen(
                                 contentDescription = null,
                                 modifier = Modifier.padding(end = 8.dp)
                             )
-                            Text("Use My Current Location")
+                            Text(stringResource(R.string.use_current_location))
                         }
                     }
                 }
 
                 // Water Specifications Section
-                SectionHeader(title = "Water Specifications", icon = Icons.Default.Water)
+                SectionHeader(title = stringResource(R.string.water_specifications), icon = Icons.Default.Water)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -333,14 +335,14 @@ fun WellConfigScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         WellField(
-                            label = "Water type",
+                            label = stringResource(R.string.water_type),
                             value = wellData.wellWaterType,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterTypeEntered(it)) }
                         )
 
                         WellField(
-                            label = "Well Capacity (L)",
+                            label = stringResource(R.string.well_capacity),
                             value = wellData.wellCapacity,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellCapacityEntered(it)) },
@@ -348,7 +350,7 @@ fun WellConfigScreen(
                         )
 
                         WellField(
-                            label = "Water Level (L)",
+                            label = stringResource(R.string.water_level),
                             value = wellData.wellWaterLevel,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterLevelEntered(it)) },
@@ -356,7 +358,7 @@ fun WellConfigScreen(
                         )
 
                         WellField(
-                            label = "Daily Consumption (L)",
+                            label = stringResource(R.string.daily_consumption),
                             value = wellData.wellWaterConsumption,
                             keyId = wellData.id,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
@@ -396,7 +398,7 @@ fun WellConfigScreen(
                 }
 
                 // Technical Details Section
-                SectionHeader(title = "Technical Details", icon = Icons.Default.SettingsRemote)
+                SectionHeader(title = stringResource(R.string.technical_details), icon = Icons.Default.SettingsRemote)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -410,7 +412,7 @@ fun WellConfigScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         WellField(
-                            label = "ESP ID",
+                            label = stringResource(R.string.esp_id),
                             value = wellData.espId,
                             keyId = wellData.id,
                             onValueChange = { newEspId ->
@@ -426,7 +428,7 @@ fun WellConfigScreen(
                         )
 
                         Text(
-                            text = "Unique identifier for the ESP32 microcontroller",
+                            text = stringResource(R.string.unique_identifier_for_esp32_microcontroller),
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(start = 8.dp, top = 4.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -501,7 +503,7 @@ fun WellConfigScreen(
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp)
                         )
-                        Text("Save Well")
+                        Text(stringResource(R.string.save_well))
                     }
                 }
 
@@ -512,8 +514,8 @@ fun WellConfigScreen(
             if (showUnsavedChangesDialog) {
                 AlertDialog(
                     onDismissRequest = { showUnsavedChangesDialog = false },
-                    title = { Text("Unsaved Changes") },
-                    text = { Text("You have unsaved changes. Do you want to discard them?") },
+                    title = { Text(stringResource(R.string.unsaved_changes)) },
+                    text = { Text(stringResource(R.string.discard_changes)) },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -521,14 +523,14 @@ fun WellConfigScreen(
                                 navigateBack = true
                             }
                         ) {
-                            Text("Discard")
+                            Text(stringResource(R.string.discard))
                         }
                     },
                     dismissButton = {
                         TextButton(
                             onClick = { showUnsavedChangesDialog = false }
                         ) {
-                            Text("Keep Editing")
+                            Text(stringResource(R.string.keep_editing))
                         }
                     }
                 )

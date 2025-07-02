@@ -34,10 +34,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -166,7 +168,7 @@ fun ProfileScreen(
                         navController.navigate("settings")
                     }
                 ) {
-                    Text("Go to Settings")
+                    Text(stringResource(R.string.go_to_settings))
                 }
             }
         }
@@ -209,28 +211,28 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = firstName,
                 onValueChange = { firstName = it },
-                label = { Text("First Name") },
+                label = { Text(stringResource(R.string.first_name)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = lastName,
                 onValueChange = { lastName = it },
-                label = { Text("Last Name") },
+                label = { Text(stringResource(R.string.last_name)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text(stringResource(R.string.email)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = false // Email cannot be changed
             )
@@ -249,7 +251,7 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = latitude,
                     onValueChange = { latitude = it },
-                    label = { Text("Latitude") },
+                    label = { Text(stringResource(R.string.latitude)) },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -257,7 +259,7 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = longitude,
                     onValueChange = { longitude = it },
-                    label = { Text("Longitude") },
+                    label = { Text(stringResource(R.string.longitude)) },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -282,7 +284,7 @@ fun ProfileScreen(
                 onClick = {
                     scope.launch {
                         try {
-                            val updatedUserData = userData.copy(
+                            val updatedUserData = userData!!.copy(
                                 firstName = firstName,
                                 lastName = lastName,
                                 username = username,
@@ -305,7 +307,7 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .padding(vertical = 16.dp)
             ) {
-                Text("Save Changes")
+                Text(stringResource(R.string.save_changes))
             }
             
             // Easter egg - clickable card for role
@@ -325,7 +327,7 @@ fun ProfileScreen(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = userData.role,
+                        text = userData!!.role,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }

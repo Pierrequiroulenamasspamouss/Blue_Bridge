@@ -35,11 +35,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
@@ -163,7 +166,7 @@ fun AdMobScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Support BlueBridge") },
+                title = { Text(stringResource(R.string.support_bluebridge)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -319,6 +322,12 @@ fun AdMobScreen(navController: NavController) {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Button(onClick = { navController.navigate(Routes.LANGUAGE_SELECTION_SCREEN) }) {
+                Text(stringResource(R.string.select_language))
+            }
         }
     }
 } 

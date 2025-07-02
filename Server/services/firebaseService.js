@@ -2,6 +2,8 @@ const admin = require('firebase-admin');
 const dotenv = require('dotenv');
 dotenv.config();
 
+
+
 // Build service account object from environment variables
 const serviceAccount = {
     type: process.env.FIREBASE_TYPE,

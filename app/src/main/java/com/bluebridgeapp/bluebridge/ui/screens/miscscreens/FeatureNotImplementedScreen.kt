@@ -14,9 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bluebridgeapp.bluebridge.navigation.Routes.HOME_SCREEN
+import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes.HOME_SCREEN
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +36,7 @@ fun FeatureNotImplementedScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
             Text("This feature is not yet available.", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navController.navigate(HOME_SCREEN) }) { Text("Go Back to Home") }
+            Button(onClick = { navController.navigate(HOME_SCREEN) }) { Text(stringResource(R.string.go_back_home)) }
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
@@ -42,15 +43,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.BugReportRequest
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.UserEvent
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import com.bluebridgeapp.bluebridge.ui.components.SettingsItem
 import com.bluebridgeapp.bluebridge.ui.components.SettingsSection
@@ -88,6 +91,7 @@ fun SettingsScreen(
 
     // Get current theme preference directly from ViewModel's theme state
     val currentThemePreference by userViewModel.currentTheme.collectAsState()
+    val currentLanguagePreference by userViewModel.currentLanguage.collectAsState()
 
     //Get the role's value for easy permissions
     LaunchedEffect(Unit) {
@@ -98,10 +102,10 @@ fun SettingsScreen(
 
     // Log userData state for debugging
     val isGuest = userData == null
-    Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData.email}"}")
+    Log.d("SettingsScreen", "UserData state: ${if (isGuest) "Guest/Null" else "Logged in as ${userData!!.email}"}")
 
     // Default values for guest mode
-    val displayName = if (isGuest) "Guest" else "${userData.firstName} ${userData.lastName}"
+    val displayName = if (isGuest) "Guest" else "${userData!!.firstName} ${userData.lastName}"
     val email = userData?.email ?: "Not logged in"
     val role = userData?.role?.replaceFirstChar { it.uppercase() } ?: "Guest"
     val latitude = userData?.location?.latitude ?: 0.0
@@ -116,7 +120,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -131,10 +135,10 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // Profile Section
-            SettingsSection(title = "Profile") {
+            SettingsSection(title = stringResource(R.string.profile)) {
                 SettingsItem(
                     icon = Icons.Default.Person,
-                    title = "Account",
+                    title = stringResource(R.string.account),
                     subtitle = displayName,
                     onClick = {
                         if (isGuest) {
@@ -147,13 +151,13 @@ fun SettingsScreen(
 
                 SettingsItem(
                     icon = Icons.Default.Email,
-                    title = "Email",
+                    title = stringResource(R.string.email),
                     subtitle = email
                 )
 
                 SettingsItem(
                     icon = Icons.Default.Badge,
-                    title = "Role",
+                    title = stringResource(R.string.role),
                     subtitle = role,
                     onClick = {
                         easterCount++
@@ -180,16 +184,14 @@ fun SettingsScreen(
                 )
                 SettingsItem(
                     icon = Icons.Default.Info,
-                    title = "Register to notifications",
-                    subtitle = if (currentUserRole <= guestRole){ "Register with a proper E-mail address to receive notifications"}else "Send your firebase push notification loginToken to the server",
+                    title = stringResource(R.string.register_to_notifications),
+                    subtitle = if (currentUserRole <= guestRole){ stringResource(R.string.register_with_email_to_receive_notifications)}else stringResource(R.string.send_firebase_token_to_server),
                     onClick = {
                         if (currentUserRole > guestRole) {
                             showNotificationPermissionDialog = true
-
-                        }
-                        else {
+                        } else {
                             coroutineScope.launch {
-                                AppEventChannel.sendEvent(AppEvent.ShowInfo("You need to be registered to receive notifications"))
+                                AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.need_to_be_registered_to_receive_notifications)))
                             }
                         }
                     }
@@ -197,41 +199,49 @@ fun SettingsScreen(
             }
 
             // Appearance Section
-            SettingsSection(title = "Appearance") {
+            SettingsSection(title = stringResource(R.string.appearance)) {
                 SettingsItem(
                     icon = Icons.Default.Palette,
-                    title = "Theme",
+                    title = stringResource(R.string.theme),
                     subtitle = when (currentThemePreference) {
-                        0 -> "System Default"
-                        1 -> "Light"
-                        2 -> "Dark"
-                        3 -> "Green"
-                        4 -> "Pink"
-                        5 -> "Red"
-                        6 -> "Purple"
-                        7 -> "Yellow"
-                        8 -> "Tan"
-                        9 -> "Orange"
-                        10 -> "Cyan"
-                        else -> "System Default"
+                        0 -> stringResource(R.string.system_default)
+                        1 -> stringResource(R.string.light)
+                        2 -> stringResource(R.string.dark)
+                        3 -> stringResource(R.string.green)
+                        4 -> stringResource(R.string.pink)
+                        5 -> stringResource(R.string.red)
+                        6 -> stringResource(R.string.purple)
+                        7 -> stringResource(R.string.yellow)
+                        8 -> stringResource(R.string.tan)
+                        9 -> stringResource(R.string.orange)
+                        10 -> stringResource(R.string.cyan)
+                        else -> stringResource(R.string.system_default)
                     },
                     onClick = { showThemeDialog = true }
                 )
+                SettingsItem(
+                    title = stringResource(R.string.language),
+                    icon = Icons.Default.Language,
+                    subtitle = stringResource(R.string.the_language_of_the_app),
+                    onClick = {
+                        navController.navigate(Routes.LANGUAGE_SELECTION_SCREEN)
+                    }
+                    )
             }
 
             if (currentUserRole > guestRole) {
                 // Location Section
-                SettingsSection(title = "Location") {
+                SettingsSection(title = stringResource(R.string.location_section)) {
                     SettingsItem(
                         icon = Icons.Default.LocationOn,
-                        title = "Current Location",
-                        subtitle = "Lat: $latitude, Lon: $longitude",
+                        title = stringResource(R.string.current_location),
+                        subtitle = stringResource(R.string.lat_lon, latitude.toString(), longitude.toString()),
                         onClick = { navController.navigate(Routes.PROFILE_SCREEN) }
                     )
                 }
 
                 // Water Needs Section
-                SettingsSection(title = "Water Needs") {
+                SettingsSection(title = stringResource(R.string.water_needs)) {
                     if (userData?.waterNeeds?.isNotEmpty() == true) {
                         userData.waterNeeds.forEach { need ->
                             SettingsItem(
@@ -243,8 +253,8 @@ fun SettingsScreen(
                     } else {
                         SettingsItem(
                             icon = Icons.Default.Opacity,
-                            title = "No water needs configured",
-                            subtitle = "Tap below to add your water needs"
+                            title = stringResource(R.string.no_water_needs_configured),
+                            subtitle = stringResource(R.string.tap_below_to_add_water_needs)
                         )
                     }
 
@@ -252,32 +262,32 @@ fun SettingsScreen(
                         onClick = { navController.navigate(Routes.EDIT_WATER_NEEDS_SCREEN) },
                         modifier = Modifier.padding(start = 16.dp)
                     ) {
-                        Text("Edit Water Needs")
+                        Text(stringResource(R.string.edit_water_needs))
                     }
                 }
 
             }
 
             // Support Section
-            SettingsSection(title = "Support") {
+            SettingsSection(title = stringResource(R.string.support)) {
                 SettingsItem(
                     icon = Icons.Default.MonetizationOn,
-                    title = "Support BlueBridge",
-                    subtitle = "Help us by viewing ads",
+                    title = stringResource(R.string.support_bluebridge),
+                    subtitle = stringResource(R.string.help_us_by_viewing_ads),
                     onClick = { navController.navigate(Routes.ADMOB_SCREEN) }
                 )
 
                 SettingsItem(
                     icon = Icons.Default.BugReport,
-                    title = "Send Bug Report",
-                    subtitle = "Report a bug or suggest an improvement",
+                    title = stringResource(R.string.send_bug_report),
+                    subtitle = stringResource(R.string.report_a_bug_or_suggest_improvement),
                     onClick = { showBugReportDialog = true }
                 )
 
                 SettingsItem(
                     icon = Icons.Default.Badge,
-                    title = "Credits",
-                    subtitle = "View app credits",
+                    title = stringResource(R.string.credits),
+                    subtitle = stringResource(R.string.view_app_credits),
                     onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
                 )
                 /*
@@ -293,27 +303,27 @@ fun SettingsScreen(
             }
 
             // Account Actions Section
-            SettingsSection(title = "Account Actions") {
+            SettingsSection(title = stringResource(R.string.account_actions_section)) {
                 if (isGuest) {
                     SettingsItem(
                         icon = Icons.Default.Login,
-                        title = "Login",
-                        subtitle = "Sign in to your account",
+                        title = stringResource(R.string.login),
+                        subtitle = stringResource(R.string.sign_in_to_your_account),
                         onClick = { navController.navigate(Routes.LOGIN_SCREEN) }
                     )
                 } else {
                     SettingsItem(
                         icon = Icons.Default.Logout,
-                        title = "Logout",
-                        subtitle = "Sign out of your account",
+                        title = stringResource(R.string.logout),
+                        subtitle = stringResource(R.string.sign_out_of_your_account),
                         onClick = { showLogoutDialog = true },
                         tint = MaterialTheme.colorScheme.error
                     )
 
                     SettingsItem(
                         icon = Icons.Default.Delete,
-                        title = "Delete Account",
-                        subtitle = "Permanently delete your account and all data",
+                        title = stringResource(R.string.delete_account),
+                        subtitle = stringResource(R.string.permanently_delete_account),
                         onClick = { showDeleteAccountDialog = true },
                         tint = MaterialTheme.colorScheme.error
                     )

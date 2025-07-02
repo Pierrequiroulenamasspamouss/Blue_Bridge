@@ -53,11 +53,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
-import com.bluebridgeapp.bluebridge.navigation.Routes
 import com.bluebridgeapp.bluebridge.ui.components.FeatureCard
 import com.bluebridgeapp.bluebridge.ui.components.OfflineBanner
 import com.bluebridgeapp.bluebridge.ui.components.WelcomeHeader
 import com.bluebridgeapp.bluebridge.ui.dialogs.LogoutConfirmationDialog
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.utils.isNetworkAvailable
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
@@ -101,7 +101,6 @@ fun HomeScreen(
 
     // Extract user data if logged in
     val userData = if (userState is UiState.Success) {
-        Log.d("HomeScreen", "User data is available")
         (userState as UiState.Success<UserData>).data
     } else null
 
@@ -111,7 +110,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            // Text(text = "Welcome to BlueBridge") //a balnk screen is better than nothing
+            // Text(text = "Welcome to BlueBridge") //a blank screen is better than nothing
         }
         return // Do not show the screen until loaded
     }
@@ -140,7 +139,7 @@ fun HomeScreen(
 
             // Feature cards section
             Text(
-                text = "Main Features",
+                text = stringResource(R.string.main_features),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp, bottom = 4.dp),
@@ -155,16 +154,16 @@ fun HomeScreen(
             ) {
                 FeatureCard(
                     icon = Icons.Default.WaterDrop,
-                    title = "Monitor Wells",
-                    description = "Track water levels and quality data",
+                    title = stringResource(R.string.monitor_wells),
+                    description = stringResource(R.string.track_water_levels),
                     onClick = { navController.navigate(Routes.MONITORING_SCREEN) },
                     modifier = Modifier.weight(1f)
                 )
 
                 FeatureCard(
                     icon = Icons.Default.Map,
-                    title = "Map View",
-                    description = "See nearby water resources",
+                    title = stringResource(R.string.map_view),
+                    description = stringResource(R.string.see_nearby_water_resources),
                     onClick = { navController.navigate(Routes.MAP_SCREEN) },
                     modifier = Modifier.weight(1f)
                 )
@@ -176,8 +175,8 @@ fun HomeScreen(
             ) {
                 FeatureCard(
                     icon = Icons.Outlined.ExploreOff,
-                    title = "Navigation",
-                    description = "Find your way to the nearest well",
+                    title = stringResource(R.string.navigation),
+                    description = stringResource(R.string.find_your_way_to_nearest_well),
                     onClick = { navController.navigate("${Routes.COMPASS_SCREEN}?lat=90&lon=0&name=North") },
                     modifier = Modifier.weight(1f)
                 )
@@ -185,8 +184,8 @@ fun HomeScreen(
                 if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
                     FeatureCard(
                         icon = Icons.Default.Cloud,
-                        title = "Weather",
-                        description = "Check upcoming weather forecast",
+                        title = stringResource(R.string.weather),
+                        description = stringResource(R.string.check_upcoming_weather_forecast),
                         onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
                         modifier = Modifier.weight(1f)
                     )
@@ -200,8 +199,8 @@ fun HomeScreen(
                 if (currentUserRole >= userRole) { // Show for logged-in users (user, well_owner, admin)
                     FeatureCard(
                         icon = Icons.Default.Visibility,
-                        title = "Nearby Users",
-                        description = "Find community members near you",
+                        title = stringResource(R.string.nearby_users),
+                        description = stringResource(R.string.find_community_members_near_you),
                         onClick = { navController.navigate(Routes.NEARBY_USERS_SCREEN) },
                         modifier = Modifier.weight(1f)
                     )
@@ -209,8 +208,8 @@ fun HomeScreen(
                     if (currentUserRole >= wellOwnerRole) { // Show urgent SMS only for well_owner and admin
                         FeatureCard(
                             icon = Icons.Default.Emergency,
-                            title = "Urgent SMS",
-                            description = "Send urgent messages to contacts",
+                            title = stringResource(R.string.urgent_sms),
+                            description = stringResource(R.string.send_urgent_messages_to_contacts),
                             onClick = { navController.navigate(Routes.URGENT_SMS_SCREEN) },
                             modifier = Modifier.weight(1f)
                         )
@@ -265,7 +264,7 @@ fun HomeScreen(
                         onClick = { navController.navigate(Routes.ADMOB_SCREEN) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Support with Ads")
+                        Text(stringResource(R.string.support_with_ads))
                     }
                 }
             }
@@ -326,7 +325,7 @@ fun HomeScreen(
                                 onClick = { navController.navigate(Routes.PROFILE_SCREEN) },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Edit Profile")
+                                Text(stringResource(R.string.edit_profile))
                             }
                         }
                             Spacer(modifier = Modifier.width(8.dp))
@@ -336,7 +335,7 @@ fun HomeScreen(
                                     showLogoutDialog = true },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Logout")
+                                Text(stringResource(R.string.logout))
                             }
 
                             if (showLogoutDialog) {
@@ -359,7 +358,7 @@ fun HomeScreen(
                             )
                         ) {
                             Icon(Icons.Filled.Settings, contentDescription = "Settings", modifier = Modifier.padding(end = 8.dp))
-                            Text("Settings")
+                            Text(stringResource(R.string.settings))
                         }
                     }
                 }
@@ -374,7 +373,7 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "Sign in to access more features",
+                            text = stringResource(R.string.sign_in_to_access_more_features),
                             style = MaterialTheme.typography.bodyLarge
                         )
 
@@ -386,7 +385,7 @@ fun HomeScreen(
                                 onClick = { navController.navigate(Routes.LOGIN_SCREEN) },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Login")
+                                Text(stringResource(R.string.login))
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
@@ -395,7 +394,7 @@ fun HomeScreen(
                                 onClick = { navController.navigate(Routes.REGISTER_SCREEN) },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Sign Up")
+                                Text(stringResource(R.string.sign_up))
                             }
                         }
 

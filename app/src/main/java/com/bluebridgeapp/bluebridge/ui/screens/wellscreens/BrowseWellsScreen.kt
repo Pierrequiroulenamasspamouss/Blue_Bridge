@@ -42,8 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.local.WellPreferences
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
@@ -53,7 +55,7 @@ import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import com.bluebridgeapp.bluebridge.ui.components.EnhancedWellCard
 import com.bluebridgeapp.bluebridge.ui.components.FiltersSection
@@ -176,7 +178,7 @@ fun BrowseWellsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Browse Wells") },
+                title = { Text(stringResource(R.string.browse_wells)) },
                 actions = {
                     IconButton(onClick = { showMap = !showMap }) {
                         Icon(
@@ -198,7 +200,7 @@ fun BrowseWellsScreen(
                 ExtendedFloatingActionButton(
                     onClick = { navController.navigate(Routes.WELL_CONFIG_NEW) },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                    text = { Text("Add New Well") }
+                    text = { Text(stringResource(R.string.add_new_well)) }
                 )
             }
         },
@@ -210,7 +212,7 @@ fun BrowseWellsScreen(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth(),
-                placeholder = { Text("Search well by name or description") },
+                placeholder = { Text(stringResource(R.string.search_well)) },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = {

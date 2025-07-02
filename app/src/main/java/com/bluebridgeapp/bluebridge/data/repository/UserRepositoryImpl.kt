@@ -145,7 +145,7 @@ class UserRepositoryImpl(
     // 2. User Data Methods
     // ============================================================================================
 
-    override suspend fun getUserData(): Flow<UserData?> = preferences.getUserData()
+    override suspend fun getUserData(): Flow<UserData?> = preferences.getUserData()!!
     override suspend fun saveUserData(userData: UserData) = preferences.saveUserData(userData)
     override suspend fun clearUserData() = preferences.clearUserData()
 
@@ -176,7 +176,9 @@ class UserRepositoryImpl(
     // ============================================================================================
 
     override suspend fun getUserWaterNeeds(): String? = getUserData().firstOrNull()?.waterNeeds.toString()
-    override suspend fun setUserWaterNeeds(waterNeeds: String) = preferences.setUserWaterNeeds(waterNeeds)
+    override suspend fun setUserWaterNeeds(waterNeeds: List<WaterNeed>) = preferences.setUserWaterNeeds(
+        waterNeeds.toString()
+    )
 
     override suspend fun updateWaterNeedsOnServer(waterNeeds: List<WaterNeed>): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -247,6 +249,10 @@ class UserRepositoryImpl(
     // ============================================================================================
 
     override suspend fun getTheme(): Int = getUserData().firstOrNull()?.themePreference ?: 0
+    override suspend fun getLanguage(): String {
+        return preferences.getLanguage().toString()
+    }
+
     override suspend fun saveThemePreference(theme: Int) = preferences.saveThemePreference(theme)
 
     // ============================================================================================
@@ -312,4 +318,9 @@ class UserRepositoryImpl(
             return@withContext false
         }
     }
+
+    override suspend fun setLanguage(language: String) = preferences.setLanguage(language)
+
+
+
 }

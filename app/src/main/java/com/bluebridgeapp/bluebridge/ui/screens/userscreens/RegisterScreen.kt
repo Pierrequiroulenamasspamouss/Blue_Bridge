@@ -41,9 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.RegisterRequest
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
@@ -56,7 +58,7 @@ import com.bluebridgeapp.bluebridge.ui.components.PasswordField
 import com.bluebridgeapp.bluebridge.ui.components.PhoneField
 import com.bluebridgeapp.bluebridge.ui.components.WaterNeedsSection
 import com.bluebridgeapp.bluebridge.ui.dialogs.ScrollableEULADialog
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.utils.encryptPassword
 import com.bluebridgeapp.bluebridge.utils.getPasswordStrength
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
@@ -154,32 +156,32 @@ fun RegisterScreen(
             Text("Create Account", style = MaterialTheme.typography.headlineMedium)
 
             // Required fields
-            SectionTitle("Required Information")
+            SectionTitle(stringResource(R.string.required_information))
             EmailField(email) { email = it }
             //Password field (with strength)
             PasswordField(
-                password, { password = it }, "Password",
+                password, { password = it }, stringResource(R.string.password),
                 isVisible = isPasswordVisible,
                 onVisibilityChange = { isPasswordVisible = !isPasswordVisible },
                 passwordStrength = getPasswordStrength(password)
             )
             //confirmation Password field (without strength)
             PasswordField(
-                confirmPassword, { confirmPassword = it }, "Confirm Password",
+                confirmPassword, { confirmPassword = it }, stringResource(R.string.confirm_password),
                 isVisible = isConfirmPasswordVisible,
                 onVisibilityChange = { isConfirmPasswordVisible = !isConfirmPasswordVisible }
             )
 
-            NameField(firstName, { firstName = it }, "First Name")
-            NameField(lastName, { lastName = it }, "Last Name")
+            NameField(firstName, { firstName = it }, stringResource(R.string.first_name))
+            NameField(lastName, { lastName = it }, stringResource(R.string.last_name))
 
             // Optional fields
-            SectionTitle("Optional Information")
-            NameField(username, { username = it }, "Username")
+            SectionTitle(stringResource(R.string.optional_information))
+            NameField(username, { username = it }, stringResource(R.string.username))
             PhoneField(phoneNumber) { phoneNumber = it }
 
             // Location
-            Text("Your Location", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.your_location), style = MaterialTheme.typography.titleSmall)
             MiniMap(
                 currentLocation = currentLocation,
                 onLocationSelected = { selectedLocation = it },
@@ -216,7 +218,7 @@ fun RegisterScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Are you a well owner?")
+                Text(stringResource(R.string.are_you_well_owner))
                 Switch(
                     checked = isWellOwner,
                     onCheckedChange = { isWellOwner = it }
@@ -253,7 +255,7 @@ fun RegisterScreen(
                 enabled = !isLoading
             ) {
                 if (isLoading) CircularProgressIndicator(Modifier.size(24.dp))
-                else Text("Sign Up")
+                else Text(stringResource(R.string.sign_up))
             }
             if (showEULADialog && pendingRegistrationRequest != null) {
                 ScrollableEULADialog(
@@ -269,7 +271,7 @@ fun RegisterScreen(
                 onClick = { navController.navigate(Routes.LOGIN_SCREEN) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Already have an account? Login")
+                Text(stringResource(R.string.already_have_account))
             }
         }
     }

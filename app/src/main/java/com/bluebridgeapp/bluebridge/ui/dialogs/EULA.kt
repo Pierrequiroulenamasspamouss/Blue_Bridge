@@ -18,9 +18,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.bluebridgeapp.bluebridge.R
 
 @Composable
 fun ScrollableEULADialog(
@@ -45,17 +47,17 @@ fun ScrollableEULADialog(
                         .weight(1f, false)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text("1. Agreement terms...")
+                    Text(stringResource(R.string.agreement_terms))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("2. Data Privacy and Usage:")
+                    Text(stringResource(R.string.data_privacy_usage))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("   a. We are committed to protecting your privacy. We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information.")
+                    Text(stringResource(R.string.privacy_commitment))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("   b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.")
+                    Text(stringResource(R.string.data_collection))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("   c. Any data collected is stored securely and handled in accordance with applicable data protection laws.")
+                    Text(stringResource(R.string.data_storage))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("   c. When using this app you agree to share your location with other users. You can change this anytime in the settings. But your defined location will be available for anyone to see. This is not your real-time location but one you chose to make public. ")
+                    Text(stringResource(R.string.location_sharing))
                     // More content...
                 }
 
@@ -65,11 +67,11 @@ fun ScrollableEULADialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = onAccept) {
-                        Text("I Agree")
+                        Text(stringResource(R.string.i_agree))
                     }
                 }
             }

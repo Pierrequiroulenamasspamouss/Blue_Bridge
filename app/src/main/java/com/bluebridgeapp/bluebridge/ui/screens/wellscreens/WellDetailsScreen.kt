@@ -42,9 +42,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
@@ -52,7 +54,7 @@ import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.data.model.hasValidCoordinates
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
-import com.bluebridgeapp.bluebridge.navigation.Routes
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
@@ -193,10 +195,10 @@ private fun WellNotFound(wellId: Int, onRetry: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Well with ID $wellId was not found")
-            Text("or error loading data", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.well_not_found, wellId))
+            Text(stringResource(R.string.error_loading_data), style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onRetry) { Text("Retry") }
+            Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
         }
     }
 }

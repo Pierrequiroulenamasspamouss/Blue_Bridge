@@ -2,6 +2,7 @@ package com.bluebridgeapp.bluebridge
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -26,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -37,6 +39,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -46,10 +50,10 @@ import com.bluebridgeapp.bluebridge.data.model.ValidateAuthTokenRequest
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.UserEvent
-import com.bluebridgeapp.bluebridge.navigation.NavigationGraph
-import com.bluebridgeapp.bluebridge.navigation.Routes
 import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import com.bluebridgeapp.bluebridge.ui.dialogs.BugReportDialog
+import com.bluebridgeapp.bluebridge.ui.navigation.NavigationGraph
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.ui.theme.getCyanColorScheme
 import com.bluebridgeapp.bluebridge.ui.theme.getGreenColorScheme
 import com.bluebridgeapp.bluebridge.ui.theme.getOrangeColorScheme
@@ -66,106 +70,133 @@ import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-
+import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
-    val navController = rememberNavController()
+    // Get the context and configuration
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+
+    // ViewModels
+    val userViewModel: UserViewModel = viewModel(factory = viewModelFactory)
+
+    // Language preference state
+    val languagePreference by userViewModel.currentLanguage.collectAsState(initial = "system")
+
+    // Apply language preference
+    val currentLocale = remember(languagePreference) {
+        if (languagePreference == "system") {
+            Locale.getDefault()
+        } else {
+            Locale(languagePreference)
+        }
+    }
+
+    // Create a new configuration with the selected locale
+    val updatedConfig = remember(configuration, currentLocale) {
+        Configuration(configuration).apply {
+            setLocale(currentLocale)
+        }
+    }
+
+    // Create a new context with the updated configuration
+    val localizedContext = remember(updatedConfig) {
+        context.createConfigurationContext(updatedConfig)
+    }
+
+    // Wrap the app in a CompositionLocalProvider to provide the localized context
+    CompositionLocalProvider(
+        LocalContext provides localizedContext
+    ) {
+        AppContent(viewModelFactory, localizedContext, userViewModel)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun AppContent(
+    viewModelFactory: ViewModelProvider.Factory,
+    context: Context,
+    userViewModel: UserViewModel
+) {
+    // Rest of your app implementation...
+    val navController = rememberNavController()
     val isOnline by rememberNetworkState(context)
-    val role = remember {mutableStateOf("")}
+    val role = remember { mutableStateOf("") }
     val showBugReportDialog = remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val api = RetrofitBuilder.getServerApi(context)
-
+    // String resources, remembered to avoid recomposition issues
+    val sessionExpiredText = stringResource(R.string.session_expired)
+    val pleaseLoginAgainText = stringResource(R.string.please_login_again)
+    val authenticationErrorText = stringResource(R.string.authentication_error)
+    val networkErrorText = stringResource(R.string.network_error)
     // ViewModels
-    val userViewModel: UserViewModel = viewModel(factory = viewModelFactory)
     val wellViewModel: WellViewModel = viewModel(factory = viewModelFactory)
     val nearbyUsersViewModel: NearbyUsersViewModel = viewModel(factory = viewModelFactory)
     val serverViewModel: ServerViewModel = viewModel(factory = viewModelFactory)
 
-    // Theme handling
+    // Theme handling (same as before)
     val isSystemDark = isSystemInDarkTheme()
     val themePreference by userViewModel.currentTheme.collectAsState()
-    Log.d("BlueBridgeApp", "Theme preference: $themePreference")
+
     val colorScheme = when (themePreference) {
-        0 -> if (isSystemDark) darkColorScheme() else lightColorScheme() // System default
-        1 -> lightColorScheme() // Light
-        2 -> darkColorScheme() // Dark
-        3 -> getGreenColorScheme(isSystemDark) // Green
-        4 -> getPinkColorScheme(isSystemDark) // Pink
-        5 -> getRedColorScheme(isSystemDark) // Red
-        6 -> getPurpleColorScheme(isSystemDark) // Purple
-        7 -> getYellowColorScheme(isSystemDark) // Yellow
-        8 -> getTanColorScheme(isSystemDark) // Tan
-        9 -> getOrangeColorScheme(isSystemDark) // Orange
-        10 -> getCyanColorScheme(isSystemDark) // Cyan
-        else -> if (isSystemDark) darkColorScheme() else lightColorScheme() // Fallback
+        0 -> if (isSystemDark) darkColorScheme() else lightColorScheme()
+        1 -> lightColorScheme()
+        2 -> darkColorScheme()
+        3 -> getGreenColorScheme(isSystemDark)
+        4 -> getPinkColorScheme(isSystemDark)
+        5 -> getRedColorScheme(isSystemDark)
+        6 -> getPurpleColorScheme(isSystemDark)
+        7 -> getYellowColorScheme(isSystemDark)
+        8 -> getTanColorScheme(isSystemDark)
+        9 -> getOrangeColorScheme(isSystemDark)
+        10 -> getCyanColorScheme(isSystemDark)
+        else -> if (isSystemDark) darkColorScheme() else lightColorScheme()
     }
 
-    // Authenticate on startup
+
+    // Authentication and initial setup
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
                 if (isOnline) {
-                    // Validate token with a dedicated endpoint
                     val token = userViewModel.getLoginToken()
-                    val role = userViewModel.getRole()
-                    if (token != null && role != "guest" ) {
+                    val currentRole = userViewModel.getRole()
+                    role.value = currentRole ?: ""
+
+                    if (token != null && currentRole != "guest") {
                         val request = ValidateAuthTokenRequest(
-                            token = token.toString(),
+                            token = token,
                             userId = userViewModel.getUserId().toString()
                         )
                         val authResponse = api.validateAuthToken(request)
-                        Log.d("Auth", "Token validation response: ${authResponse.body()}")
 
                         when {
                             authResponse.isSuccessful && authResponse.body()?.status == "success" -> {
-                                // Token is valid, continue with app
+                                // Token valid, proceed
                             }
                             authResponse.code() == 401 -> {
-                                // Specific handling for unauthorized (401) responses
-                                val errorMessage = authResponse.body()?.message ?: "Session expired"
-                                AppEventChannel.sendEvent(
-                                    AppEvent.ShowError("$errorMessage. Please log in again.")
-                                )
+                                val errorMessage = authResponse.body()?.message ?: sessionExpiredText
+                                AppEventChannel.sendEvent(AppEvent.ShowError("$errorMessage $pleaseLoginAgainText"))
                                 userViewModel.logout()
-                                //navController.navigate(Routes.LOGIN_SCREEN) {
-                                //    popUpTo(0) { inclusive = true }
-                                //}
                             }
                             else -> {
-                                // Handle other error cases
-                                val errorBody = authResponse.errorBody()?.string()
-                                val errorMessage = if (errorBody != null) {
-                                    // Try to parse the error body if it exists
-                                    try {
-                                        val json = JSONObject(errorBody)
-                                        json.getString("message")
-                                    } catch (e: Exception) {
-                                        authResponse.message()
-                                    }
-                                } else {
-                                    authResponse.message()
+                                val errorMessage = try {
+                                    JSONObject(authResponse.errorBody()?.string() ?: "").getString("message")
+                                } catch (e: Exception) {
+                                    authResponse.message() ?: "Unknown error"
                                 }
-
-                                AppEventChannel.sendEvent(
-                                    AppEvent.ShowError("Authentication error: $errorMessage")
-                                )
+                                AppEventChannel.sendEvent(AppEvent.ShowError("$authenticationErrorText: $errorMessage"))
                             }
                         }
                     }
-                    else{
-                        //Ignore and do nothing to try and log in
-                    }
-
                 }
             } catch (e: Exception) {
                 Log.e("Auth", "Token validation failed", e)
-                AppEventChannel.sendEvent(
-                    AppEvent.ShowError("Network error: ${e.message}")
-                )
+                AppEventChannel.sendEvent(AppEvent.ShowError("$networkErrorText: ${e.message}"))
                 userViewModel.logout()
                 navController.navigate(Routes.LOGIN_SCREEN) {
                     popUpTo(0) { inclusive = true }
@@ -174,30 +205,27 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
         }
     }
 
-    // Effects
+    // Load user data if logged in
     LaunchedEffect(Unit) {
-        userViewModel.repository.getUserId().takeIf { userViewModel.repository.isLoggedIn() }
-            ?.let { userViewModel.handleEvent(UserEvent.LoadUser(it.toString())) }
+        userViewModel.repository.getUserId()
+            .takeIf { userViewModel.repository.isLoggedIn() }
+            ?.let { userViewModel.handleEvent(UserEvent.LoadUser(it)) }
     }
 
-    LaunchedEffect(isOnline) { if (isOnline) serverViewModel.getServerStatus() }
-
-    LaunchedEffect(role) {
-        coroutineScope.launch {
-            role.value = userViewModel.getRole().toString()
-            Log.d("Role", "User role: ${role.value}")
-        }
+    // Check server status when online
+    LaunchedEffect(isOnline) {
+        if (isOnline) serverViewModel.getServerStatus()
     }
-    // UI
+
+    // UI Composition
     MaterialTheme(colorScheme = colorScheme) {
         Scaffold(
+
             floatingActionButton = {
-                // Only show bug report FAB for admin users
-
-
                 if (role.value == "admin") {
                     FloatingActionButton(onClick = { showBugReportDialog.value = true }) {
-                        Icon(Icons.Default.BugReport, contentDescription = "Report a Bug")
+                        val reportBugText = stringResource(R.string.report_bug)
+                        Icon(Icons.Default.BugReport, contentDescription = reportBugText)
                     }
                 }
             },
@@ -217,14 +245,15 @@ fun BlueBridgeApp(viewModelFactory: ViewModelProvider.Factory) {
             ServerStatusDialogs(serverViewModel)
 
             if (showBugReportDialog.value) {
+                val bugReportThankYouText = stringResource(R.string.bug_report_thank_you)
                 BugReportDialog(
                     showDialog = showBugReportDialog.value,
                     onDismiss = { showBugReportDialog.value = false },
                     onSubmit = { name, description, category, extra ->
                         coroutineScope.launch {
-                            val bugreport = BugReportRequest(name, description, category, extra)
-                            api.submitBugReport(bugreport)
-                            snackbarHostState.showSnackbar("Bug report sent! Thank you.")
+                            val bugReport = BugReportRequest(name, description, category, extra)
+                            api.submitBugReport(bugReport) // Consider handling response
+                            snackbarHostState.showSnackbar(bugReportThankYouText)
                         }
                         showBugReportDialog.value = false
                     }
@@ -245,9 +274,12 @@ private fun rememberNetworkState(context: Context): State<Boolean> {
             override fun onLost(network: Network) { isOnline.value = isNetworkAvailable(context) }
         }
 
-        cm.registerNetworkCallback(NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build(), callback)
+        cm.registerNetworkCallback(
+            NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build(),
+            callback
+        )
 
         onDispose { cm.unregisterNetworkCallback(callback) }
     }
@@ -256,11 +288,23 @@ private fun rememberNetworkState(context: Context): State<Boolean> {
 }
 
 @Composable
-private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
+private fun ServerStatusDialogs(
+    serverViewModel: ServerViewModel
+) {
     val serverState by serverViewModel.serverState.collectAsState()
     var showServerUnreachableDialog by remember { mutableStateOf(serverState is ServerState.Error) }
-    val context = LocalContext.current
     val needsUpdate by serverViewModel.needsUpdate.collectAsState()
+    val context = LocalContext.current
+
+    // Remember string resources
+    val serverUnreachableTitle = stringResource(R.string.server_unreachable)
+    val serverUnavailableMessage = stringResource(R.string.server_unavailable_message)
+    val okText = stringResource(R.string.ok)
+    val updateAvailableTitle = stringResource(R.string.update_available)
+    val updateAvailableMessage = stringResource(R.string.update_available_message)
+    val updateText = stringResource(R.string.update)
+    val laterText = stringResource(R.string.later)
+    val updateUrl = stringResource(R.string.update_url)
 
     LaunchedEffect(serverState) {
         showServerUnreachableDialog = serverState is ServerState.Error
@@ -269,26 +313,36 @@ private fun ServerStatusDialogs(serverViewModel: ServerViewModel) {
     if (showServerUnreachableDialog) {
         AlertDialog(
             onDismissRequest = { showServerUnreachableDialog = false },
-            title = { Text("Server Unreachable") },
-            text = { Text("The server is currently unavailable. Please try again later.") },
-            confirmButton = { Button({ showServerUnreachableDialog = false }) { Text("OK") } }
+            title = { Text(serverUnreachableTitle) },
+            text = { Text(serverUnavailableMessage) },
+            confirmButton = {
+                Button({ showServerUnreachableDialog = false }) {
+                    Text(okText)
+                }
+            }
         )
     }
 
     if (needsUpdate) {
         AlertDialog(
             onDismissRequest = { serverViewModel.resetUpdateState() },
-            title = { Text("Update Available") },
-            text = { Text("A new version is available. Would you like to update?") },
+            title = { Text(updateAvailableTitle) },
+            text = { Text(updateAvailableMessage) },
             confirmButton = {
                 Button({
-                    val intent = Intent(Intent.ACTION_VIEW,
-                        "http://bluebridge.homeonthewater.com/home".toUri())
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        updateUrl.toUri()
+                    )
                     context.startActivity(intent)
                     serverViewModel.resetUpdateState()
-                }) { Text("Update") }
+                }) { Text(updateText) }
             },
-            dismissButton = { TextButton({ serverViewModel.resetUpdateState() }) { Text("Later") } }
+            dismissButton = {
+                TextButton({ serverViewModel.resetUpdateState() }) {
+                    Text(laterText)
+                }
+            }
         )
     }
 }

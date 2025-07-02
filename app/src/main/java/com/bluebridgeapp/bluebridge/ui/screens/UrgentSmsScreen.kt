@@ -33,8 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.network.Location
@@ -138,12 +140,12 @@ fun UrgentSmsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Emergency Services",
+            text = stringResource(R.string.emergency_services),
             style = MaterialTheme.typography.headlineMedium
         )
 
         Text(
-            text = "Use these buttons to request emergency assistance or find the nearest water source.",
+            text = stringResource(R.string.use_these_buttons_to_request_emergency_assistance_or_find_the_nearest_water_source),
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -164,10 +166,10 @@ fun UrgentSmsScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.WaterDrop,
-                contentDescription = "Get Nearest Water"
+                contentDescription = stringResource(R.string.get_nearest_water)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Find Nearest Water Source")
+            Text(stringResource(R.string.find_nearest_water_source))
         }
 
         // Send Help Button
@@ -187,10 +189,10 @@ fun UrgentSmsScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.Emergency,
-                contentDescription = "Send Help"
+                contentDescription = stringResource(R.string.send_help)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Request Emergency Assistance")
+            Text(stringResource(R.string.request_emergency_assistance))
         }
     }
 
@@ -198,8 +200,8 @@ fun UrgentSmsScreen(
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },
-            title = { Text("Permission Required") },
-            text = { Text("SMS permission is required to send emergency messages. Please enable it in Settings.") },
+            title = { Text(stringResource(R.string.permission_required)) },
+            text = { Text(stringResource(R.string.sms_permission_required)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -210,12 +212,12 @@ fun UrgentSmsScreen(
                         context.startActivity(intent)
                     }
                 ) {
-                    Text("Open Settings")
+                    Text(stringResource(R.string.open_settings))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showPermissionDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

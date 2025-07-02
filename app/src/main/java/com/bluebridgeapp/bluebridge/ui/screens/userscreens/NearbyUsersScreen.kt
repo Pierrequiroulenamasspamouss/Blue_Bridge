@@ -38,9 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.NearbyUser
 import com.bluebridgeapp.bluebridge.data.model.NearbyUsersState
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -157,7 +159,7 @@ fun NearbyUsersScreen(
     if (showLargeRadiusDialog) {
         AlertDialog(
             onDismissRequest = { showLargeRadiusDialog = false },
-            title = { Text("Large Search Radius") },
+            title = { Text(stringResource(R.string.large_search_radius)) },
             text = {
                 Text("You're searching a very large area (${radius}km). " +
                         "This may return too much data for your device to handle. " +
@@ -172,14 +174,14 @@ fun NearbyUsersScreen(
                         }
                     }
                 ) {
-                    Text("Proceed")
+                    Text(stringResource(R.string.proceed))
                 }
             },
             dismissButton = {
                 Button(
                     onClick = { showLargeRadiusDialog = false }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -238,7 +240,7 @@ private fun SearchControls(
             OutlinedTextField(
                 value = radiusText,
                 onValueChange = onRadiusChange,
-                label = { Text("Radius (km)") },
+                label = { Text(stringResource(R.string.radius_km)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
@@ -253,7 +255,7 @@ private fun SearchControls(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Search")
+                    Text(stringResource(R.string.search))
                 }
             }
 
@@ -273,7 +275,7 @@ private fun LoadingState() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Finding nearby users...")
+            Text(stringResource(R.string.finding_nearby_users))
         }
     }
 }
@@ -308,7 +310,7 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
                 onClick = onRetry,
                 modifier = Modifier.padding(top = 16.dp)
             ) {
-                Text("Retry")
+                Text(stringResource(R.string.retry))
             }
         }
     }

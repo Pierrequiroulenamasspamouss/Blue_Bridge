@@ -33,10 +33,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
 import com.bluebridgeapp.bluebridge.data.repository.WaterNeedsManager
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -91,7 +93,7 @@ fun EditWaterNeedsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Water Needs") },
+                title = { Text(stringResource(R.string.edit_water_needs_title)) },
                 colors = topAppBarColors(
                     containerColor = colorScheme.primaryContainer,
                     titleContentColor = colorScheme.onPrimaryContainer
@@ -238,7 +240,7 @@ private fun ActionButtons(
                 contentDescription = "Add",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Add Water Need")
+            Text(stringResource(R.string.add_water_need))
         }
 
         Button(
@@ -252,7 +254,7 @@ private fun ActionButtons(
                 contentDescription = "Save",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Save All")
+            Text(stringResource(R.string.save_all))
         }
     }
 }

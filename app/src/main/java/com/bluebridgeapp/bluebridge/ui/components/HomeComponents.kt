@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.ui.components
 
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -51,7 +53,7 @@ fun WelcomeHeader(userData: UserData?, isLoggedIn: Boolean) {
             ) {
                 Icon(
                     imageVector = Icons.Default.WaterDrop,
-                    contentDescription = "App Logo",
+                    contentDescription = stringResource(R.string.app_logo_description),
                     modifier = Modifier.size(36.dp),
                     tint = Color.White
                 )
@@ -60,15 +62,17 @@ fun WelcomeHeader(userData: UserData?, isLoggedIn: Boolean) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "BlueBridge",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
             Text(
-                text = if (isLoggedIn) "Welcome back, ${userData?.firstName}!" else "Welcome to BlueBridge!",
-                style = MaterialTheme.typography.bodyLarge,
+
+                text = if (isLoggedIn) stringResource(R.string.welcome_back_user, userData?.firstName ?: "")
+                else stringResource(R.string.welcome_to_app),
+                               style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.padding(top = 4.dp)
             )

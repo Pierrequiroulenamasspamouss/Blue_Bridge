@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
@@ -32,13 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.ui.components.EmptyWeatherState
 import com.bluebridgeapp.bluebridge.ui.components.WeatherContent
-import com.bluebridgeapp.bluebridge.navigation.Routes.LOGIN_SCREEN
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes.LOGIN_SCREEN
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WeatherViewModel
@@ -87,7 +88,7 @@ fun WeatherScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Weather Forecast") },
+                title = { Text(stringResource(R.string.weather_forecast)) },
                 colors = topAppBarColors(
                     containerColor = colorScheme.primaryContainer,
                     titleContentColor = colorScheme.onPrimaryContainer
@@ -114,7 +115,7 @@ fun WeatherScreen(
                     ) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Loading weather data...")
+                        Text(stringResource(R.string.loading_weather))
                     }
                 }
                 
@@ -156,7 +157,7 @@ fun WeatherScreen(
                                 contentDescription = "Retry",
                                 modifier = Modifier.padding(end = 8.dp)
                             )
-                            Text("Retry")
+                            Text(stringResource(R.string.retry))
                         }
 
                         if (weatherState.message.contains("Invalid loginToken")) {
@@ -176,15 +177,15 @@ fun WeatherScreen(
                                         }
                                     }
                                 },
-                                title = { Text("Session Expired") },
-                                text = { Text("You have been logged out. This might be because you logged in on another device.") },
+                                title = { Text(stringResource(R.string.session_expired)) },
+                                text = { Text(stringResource(R.string.logged_out)) },
                                 confirmButton = {
                                     Button(onClick = {
                                         showInvalidTokenDialog = false
                                         navController.navigate(LOGIN_SCREEN) {
                                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                         }
-                                    }) { Text("OK") }
+                                    }) { Text(stringResource(R.string.ok)) }
                                 }
                             )
                         }
@@ -218,7 +219,7 @@ fun WeatherScreen(
                                 contentDescription = "Load",
                                 modifier = Modifier.padding(end = 8.dp)
                             )
-                            Text("Load Weather")
+                            Text(stringResource(R.string.load_weather))
                         }
                     }
                 }
