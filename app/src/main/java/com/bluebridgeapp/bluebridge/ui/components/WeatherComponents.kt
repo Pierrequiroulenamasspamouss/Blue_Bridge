@@ -29,11 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.data.model.WeatherData
 import java.text.SimpleDateFormat
@@ -49,7 +52,7 @@ fun EmptyWeatherState(onRefresh: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "No weather data available",
+            stringResource(id = R.string.no_weather_data_available),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -57,10 +60,10 @@ fun EmptyWeatherState(onRefresh: () -> Unit) {
         Button(onClick = onRefresh) {
             Icon(
                 Icons.Default.Refresh,
-                contentDescription = "Load",
+                contentDescription = stringResource(id = R.string.load_weather_content_description),
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Load Weather")
+            Text(stringResource(id = R.string.load_weather))
         }
     }
 }
@@ -106,15 +109,16 @@ fun LocationCard(userData: UserData?) {
         ) {
             Icon(
                 Icons.Default.LocationOn,
-                contentDescription = "Location",
+                contentDescription = stringResource(id = R.string.location_icon_content_description),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+            val context = LocalContext.current
             Text(
                 text = if (userData != null) {
-                    "Weather for ${userData.username}'s location"
+                    context.getString(R.string.weather_for_user_location, userData.username)
                 } else {
-                    "Current location"
+                    stringResource(id = R.string.current_location)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -125,15 +129,16 @@ fun LocationCard(userData: UserData?) {
 
 @Composable
 fun DayForecast(date: String, weatherItems: List<WeatherData>) {
+    val context = LocalContext.current
     // Parse the date for display
     val displayDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val displayFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
+        val dateFormatter = java.time.format.DateTimeFormatter.ofPattern(context.getString(R.string.date_format_yyyy_mm_dd))
+        val displayFormatter = java.time.format.DateTimeFormatter.ofPattern(context.getString(R.string.date_format_eeee_mmmm_d), Locale.getDefault())
         val parsedDate = java.time.LocalDate.parse(date, dateFormatter)
         parsedDate.format(displayFormatter)
     } else {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+        val inputFormat = SimpleDateFormat(context.getString(R.string.date_format_yyyy_mm_dd), Locale.getDefault())
+        val outputFormat = SimpleDateFormat(context.getString(R.string.date_format_eeee_mmmm_d), Locale.getDefault())
         val parsedDate = inputFormat.parse(date)
         parsedDate?.let { outputFormat.format(it) } ?: date
     }
@@ -189,12 +194,12 @@ fun DayForecast(date: String, weatherItems: List<WeatherData>) {
 
                         Row {
                             Text(
-                                text = "Min: ${minTemp.toInt()}°C",
+                                text = stringResource(id = R.string.min_temp, minTemp.toInt()),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
                             Text(
-                                text = "Max: ${maxTemp.toInt()}°C",
+                                text = stringResource(id = R.string.max_temp, maxTemp.toInt()),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -204,11 +209,11 @@ fun DayForecast(date: String, weatherItems: List<WeatherData>) {
                         ) {
                             Icon(
                                 Icons.Default.WaterDrop,
-                                contentDescription = "Humidity",
+                                contentDescription = stringResource(id = R.string.humidity_icon_content_description),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "${weather.humidity}%",
+                                text = stringResource(id = R.string.humidity_value, weather.humidity),
                                 style = MaterialTheme.typography.bodySmall
                             )
 
@@ -216,11 +221,11 @@ fun DayForecast(date: String, weatherItems: List<WeatherData>) {
 
                             Icon(
                                 Icons.Default.Air,
-                                contentDescription = "Wind",
+                                contentDescription = stringResource(id = R.string.wind_icon_content_description),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "${weather.windSpeed} m/s",
+                                text = stringResource(id = R.string.wind_speed_value, weather.windSpeed),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -232,7 +237,7 @@ fun DayForecast(date: String, weatherItems: List<WeatherData>) {
 
             // Hourly forecast
             Text(
-                text = "Hourly Forecast",
+                text = stringResource(id = R.string.hourly_forecast),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -280,7 +285,7 @@ fun HourlyWeatherItem(weather: WeatherData) {
             )
 
             Text(
-                text = "${weather.temperature.toInt()}°C",
+                text = stringResource(id = R.string.temperature_value_degrees_celsius, weather.temperature.toInt()),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -291,12 +296,12 @@ fun HourlyWeatherItem(weather: WeatherData) {
                 ) {
                     Icon(
                         Icons.Default.WaterDrop,
-                        contentDescription = "Rain",
+                        contentDescription = stringResource(id = R.string.rain_icon_content_description),
                         modifier = Modifier.size(12.dp),
                         tint = Color(0xFF4FC3F7)
                     )
                     Text(
-                        text = "${weather.rainAmount}mm",
+                        text = stringResource(id = R.string.rain_amount_mm, weather.rainAmount),
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 10.sp
                     )

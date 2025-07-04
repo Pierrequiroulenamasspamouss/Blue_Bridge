@@ -70,7 +70,7 @@ fun WelcomeHeader(userData: UserData?, isLoggedIn: Boolean) {
 
             Text(
 
-                text = if (isLoggedIn) stringResource(R.string.welcome_back_user, userData?.firstName ?: "")
+                text = if (isLoggedIn) stringResource(R.string.welcome_back_user, userData?.firstName ?: stringResource(id = R.string.empty_string))
                 else stringResource(R.string.welcome_to_app),
                                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -102,7 +102,7 @@ fun FeatureCard(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = stringResource(id = R.string.feature_icon_description, title),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )

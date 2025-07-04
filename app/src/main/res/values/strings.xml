@@ -207,4 +207,130 @@
     <string name="selected">Selected</string>
     <string name="back">Back</string>
 
+    <!-- Well Status and Filters -->
+    <string name="clean">Clean</string>
+    <string name="grey">Grey</string>
+    <string name="active">Active</string>
+    <string name="maintenance">Maintenance</string>
+    <string name="inactive">Inactive</string>
+    <string name="capacity_range_label">Capacity Range</string>
+    <string name="show_only_nearby_wells">Show only nearby wells</string>
+    <string name="status_label">Status</string>
+    <string name="quality_label">Quality</string>
+    <string name="type_label">Type</string>
+
+    <!-- Well Details -->
+    <string name="water_level_liters" translatable="false">%1$s L</string>
+    <string name="water_level_percentage" translatable="false">%1$s%%</string>
+    <string name="never">Never</string>
+    <string name="last_refreshed_label">Last refreshed</string>
+    <string name="last_update_label">Last updated</string>
+    <string name="details">Details</string>
+    <string name="go_button">Go</string>
+    <string name="navigate_there">Navigate</string>
+    <string name="location_coordinates">Coordinates</string>
+    <string name="capacity_liters">Capacity: %1$s L</string>
+    <string name="water_level_percentage_label">Water Level: %1$s%%</string>
+
+    <!-- Navigation -->
+    <string name="navigate">Navigate</string>
+    <string name="openstreetmap_base_url" translatable="false">https://www.openstreetmap.org</string>
+
+    <!-- Water Needs -->
+    <string name="hide_water_needs">Hide Water Needs</string>
+    <string name="add_water_needs_optional">Add Water Needs (Optional)</string>
+    <string name="your_water_needs">Your Water Needs</string>
+    <string name="type_usage">Type/Usage</string>
+    <string name="priority_p">Priority: %1$s</string>
+    <string name="description_desc">Description</string>
+    <string name="absolute_emergency">Absolute Emergency</string>
+    <string name="medical">Medical</string>
+    <string name="drinking">Drinking</string>
+    <string name="farming">Farming</string>
+    <string name="industry">Industry</string>
+    <string name="other">Other</string>
+    <string name="usage_type">Usage Type</string>
+    <string name="priority_for_other_type">Priority for %1$s</string>
+    <string name="p_priority" translatable="false">P%1$s</string>
+    <string name="water_drop_icon_desc" translatable="false">Water drop icon</string>
+    <string name="ellipsis" translatable="false">...</string>
+    <string name="water_need_liters_usage_type">%1$sL - %2$s</string>
+    <string name="priority_label">Priority</string>
+    <string name="edit_button_desc">Edit</string>
+    <string name="delete_button_desc">Delete</string>
+
+    <!-- Nearby Users -->
+    <string name="distance_away">%1$s away</string>
+    <string name="water_needs_label">Water Needs</string>
+    <string name="water_need_format">%1$sL %2$s</string>
+    <string name="priority_chip_text" translatable="false">P%1$s</string>
+    <string name="no_nearby_users">No nearby users found</string>
+    <string name="location_permission_required">Location permission required to find nearby users</string>
+
+    <!-- Weather -->
+    <string name="no_weather_data_available">No weather data available</string>
+    <string name="load_weather_content_description">Load weather</string>
+    <string name="location_icon_content_description" translatable="false">Location</string>
+    <string name="weather_for_user_location">Weather for your location</string>
+    <string name="date_format_yyyy_mm_dd" translatable="false">yyyy-MM-dd</string>
+    <string name="date_format_eeee_mmmm_d" translatable="false">EEEE, MMMM d</string>
+    <string name="min_temp" translatable="false">Min: %1$s°C</string>
+    <string name="max_temp" translatable="false">Max: %1$s°C</string>
+    <string name="humidity_icon_content_description">Humidity</string>
+    <string name="humidity_value" translatable="false">%1$s%%</string>
+    <string name="wind_icon_content_description">Wind</string>
+    <string name="wind_speed_value">%1$s km/h</string>
+    <string name="hourly_forecast">Hourly Forecast</string>
+    <string name="temperature_value_degrees_celsius" translatable="false">%1$s°C</string>
+    <string name="rain_icon_content_description">Rain</string>
+    <string name="rain_amount_mm" translatable="false">%1$s mm</string>
+
+    <!-- Advanced UI Components -->
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+    <string name="password_strength_very_weak">Very Weak</string>
+    <string name="password_strength_weak">Weak</string>
+    <string name="password_strength_medium">Medium</string>
+    <string name="password_strength_strong">Strong</string>
+    <string name="password_strength_very_strong">Very Strong</string>
+    <string name="email_label">Email</string>
+    <string name="phone_number_label">Phone Number</string>
+    <string name="selected_location">Selected Location</string>
+    <string name="offline_icon_description">Offline</string>
+    <string name="offline_banner_message">You are currently offline</string>
+
+    <!-- General -->
+    <string name="empty_string" translatable="false"></string>
+    <string name="feature_icon_description" translatable="false">Feature icon</string>
+    <string name="filters" translatable="false">Filters</string>
+    <string name="change_language">Change the language</string>
+    <!-- For WaterNeedDialog -->
+    <string name="delete_water_need_title">Delete Water Need</string>
+    <string name="delete_water_need_message">Are you sure you want to delete this water need?</string>
+    <string name="liters">liters</string>
+    <string name="liters_per_day">L/day</string>
+
+
+
+    <!-- For LogoutConfirmationDialog -->
+    <string name="logout_confirmation_title">Confirm Logout</string>
+    <string name="logout_confirmation_message">Are you sure you want to sign out?</string>
+
+    <!-- For DeleteAccountDialog -->
+    <string name="delete_account_password_prompt">To delete your account, please enter your password. This action is permanent and cannot be undone.</string>
+    <string name="delete_account_final_warning">⚠️ WARNING: This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you absolutely sure?</string>
+    <string name="continue_text">Continue</string>
+
+    <!-- For BugReportDialog -->
+    <string name="bug_category_major">Major Bug</string>
+    <string name="bug_category_minor">Minor Bug</string>
+    <string name="bug_category_edge_case">Edge Case</string>
+    <string name="bug_category_enhancement">Enhancement</string>
+    <string name="your_name">Your Name</string>
+    <string name="bug_description">Bug Description</string>
+    <string name="category">Category</string>
+    <string name="extra_info_optional">Extra Info (optional, key1:value1,key2:value2)</string>
+    <string name="send">Send</string>
+    <string name="confirm">Confirm</string>
+
 </resources>

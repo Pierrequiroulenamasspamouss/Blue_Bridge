@@ -24,9 +24,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
 
 @Composable
@@ -45,12 +47,19 @@ fun WaterNeedsSection(
     customType: String,
     onCustomTypeChange: (String) -> Unit
 ) {
+    val absoluteEmergency = stringResource(R.string.absolute_emergency)
+    val medical = stringResource(R.string.medical)
+    val drinking = stringResource(R.string.drinking)
+    val farming = stringResource(R.string.farming)
+    val industry = stringResource(R.string.industry)
+    val other = stringResource(R.string.other)
+
     Column {
         Button(
             onClick = onToggle,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (showWaterNeeds) "Hide Water Needs" else "Add Water Needs (Optional)")
+            Text(if (showWaterNeeds) stringResource(R.string.hide_water_needs) else stringResource(R.string.add_water_needs_optional))
         }
 
         if (showWaterNeeds) {
@@ -81,7 +90,7 @@ fun WaterNeedsSection(
                 OutlinedTextField(
                     value = desc,
                     onValueChange = onDescChange,
-                    label = { Text("Description (Optional)") },
+                    label = { Text(stringResource(R.string.description_optional)) },
                     singleLine = false,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -91,24 +100,14 @@ fun WaterNeedsSection(
                         val amountValue = amount.toIntOrNull()
                         if (amountValue != null && amountValue > 0) {
                             when (type) {
-                                "Absolute emergency" -> 0
-                                "Medical" -> 1
-                                "Drinking" -> 2
-                                "Farming" -> 3
-                                "Industry" -> 4
+                                absoluteEmergency -> 0
+                                medical -> 1
+                                drinking -> 2
+                                farming -> 3
+                                industry -> 4
                                 else -> priority
                             }
-                            /*
-                            val newNeed = finalPriority?.let {
-                                WaterNeed(
-                                    amount = amountValue,
-                                    usageType = if (type == "Other") customType else type,
-                                    description = desc,
-                                    priority = it
-                                )
-                            }
 
-                             */
 
                             onAmountChange("")
                             onTypeChange("")
@@ -119,14 +118,14 @@ fun WaterNeedsSection(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add Water Need")
+                    Text(stringResource(R.string.add_water_need))
                 }
             }
         }
 
         if (waterNeeds.isNotEmpty()) {
             Text(
-                text = "Your Water Needs",
+                text = stringResource(R.string.your_water_needs),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -138,11 +137,11 @@ fun WaterNeedsSection(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
-                            Text("Amount: ${need.amount} liters", style = MaterialTheme.typography.bodyMedium)
-                            Text("Type: ${need.usageType}", style = MaterialTheme.typography.bodySmall)
-                            Text("Priority: P${need.priority}", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.amount_liters, need.amount), style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.type_usage, need.usageType), style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.priority_p, need.priority), style = MaterialTheme.typography.bodySmall)
                             if (need.description.isNotBlank()) {
-                                Text("Description: ${need.description}", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.description_desc, need.description), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -162,7 +161,17 @@ fun WaterUsageTypeSelector(
     customType: String,
     onCustomTypeChange: (String) -> Unit
 ) {
-    val usageTypes = listOf("Absolute emergency", "Medical", "Drinking", "Farming", "Industry", "Other")
+    val absoluteEmergency = stringResource(R.string.absolute_emergency)
+    val medical = stringResource(R.string.medical)
+    val drinking = stringResource(R.string.drinking)
+    val farming = stringResource(R.string.farming)
+    val industry = stringResource(R.string.industry)
+    val other = stringResource(R.string.other)
+
+    val usageTypes = listOf(
+        absoluteEmergency, medical, drinking, farming, industry, other
+    )
+
     var expanded by remember { mutableStateOf(false) }
     var showPrioritySelector by remember { mutableStateOf(false) }
 
@@ -171,7 +180,7 @@ fun WaterUsageTypeSelector(
             OutlinedTextField(
                 value = currentWaterNeedType,
                 onValueChange = {},
-                label = { Text("Usage Type") },
+                label = { Text(stringResource(R.string.usage_type)) },
                 readOnly = true,
                 modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
                 trailingIcon = {
@@ -190,28 +199,27 @@ fun WaterUsageTypeSelector(
                             onWaterNeedTypeChange(usageType)
                             // Automatically set priority based on type
                             val priority = when (usageType) {
-                                "Absolute emergency" -> 0
-                                "Medical" -> 1
-                                "Drinking" -> 2
-                                "Farming" -> 3
-                                "Industry" -> 4
+                                absoluteEmergency -> 0
+                                medical -> 1
+                                drinking -> 2
+                                farming -> 3
+                                industry -> 4
                                 else -> 6 // Default for "Other"
                             }
                             onPriorityChange(priority)
-                            showPrioritySelector = usageType == "Other"
+                            showPrioritySelector = usageType == other
                             expanded = false
                         }
                     )
                 }
             }
         }
-
         // If "Other" is selected, show custom type field and priority selector
-        if (currentWaterNeedType == "Other") {
+        if (currentWaterNeedType == other) {
             OutlinedTextField(
                 value = customType,
                 onValueChange = { onCustomTypeChange(it) },
-                label = { Text("Custom Usage Type") },
+                label = { Text(stringResource(R.string.custom_usage_type)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -233,7 +241,7 @@ fun PrioritySelector(
 ) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(
-            text = "Priority for Other Type",
+            text = stringResource(R.string.priority_for_other_type),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(bottom = 4.dp)
         )
@@ -246,7 +254,7 @@ fun PrioritySelector(
                 FilterChip(
                     selected = currentPriority == priority,
                     onClick = { onPriorityChange(priority) },
-                    label = { Text("P$priority") },
+                    label = { Text(stringResource(R.string.p_priority, priority)) },
                     modifier = Modifier.padding(end = 4.dp)
                 )
             }

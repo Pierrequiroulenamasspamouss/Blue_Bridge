@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.ExploreOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -419,6 +420,18 @@ fun HomeScreen(
                         ) {
                             Text(stringResource(R.string.login_as_guest))
                         }
+                        Button(
+                            onClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Icon(Icons.Outlined.Language, contentDescription = "Change Language", modifier = Modifier.padding(end = 8.dp))
+                            Text(stringResource(R.string.change_language))
+                        }
+
+
                     }
                 }
             }

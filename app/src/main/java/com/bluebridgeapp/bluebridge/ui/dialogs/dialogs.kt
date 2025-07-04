@@ -58,13 +58,12 @@ import com.bluebridgeapp.bluebridge.ui.components.ThemeOption
 import com.bluebridgeapp.bluebridge.ui.components.calculateWaterLevelProgress
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 
-
 @Composable
 fun BasicConfirmationDialog(
     title: String,
     message: String,
-    confirmText: String = "Confirm",
-    dismissText: String = "Cancel",
+    confirmText: String = stringResource(R.string.confirm),
+    dismissText: String = stringResource(R.string.cancel),
     confirmButtonColor: androidx.compose.ui.graphics.Color = colorScheme.primary,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -92,15 +91,14 @@ fun DeleteWaterNeedDialog(
     onDismiss: () -> Unit
 ) {
     BasicConfirmationDialog(
-        title = "Delete Water Need",
-        message = "Are you sure you want to delete this water need?",
-        confirmText = "Delete",
+        title = stringResource(R.string.delete_water_need_title),
+        message = stringResource(R.string.delete_water_need_message),
+        confirmText = stringResource(R.string.delete),
         confirmButtonColor = colorScheme.error,
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,9 +108,24 @@ fun WaterNeedDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val usageTypes = listOf("Absolute emergency", "Medical", "Drinking", "Farming", "Industry", "Other")
-    var expanded by remember { mutableStateOf(false) }
+    val absoluteEmergency = stringResource(R.string.absolute_emergency)
+    val medical = stringResource(R.string.medical)
+    val drinking = stringResource(R.string.drinking)
+    val farming = stringResource(R.string.farming)
+    val industry = stringResource(R.string.industry)
+    val other = stringResource(R.string.other)
 
+    val usageTypes = remember {
+        listOf(
+            absoluteEmergency,
+            medical,
+            drinking,
+            farming,
+            industry,
+            other
+        )
+    }
+    var expanded by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -127,7 +140,7 @@ fun WaterNeedDialog(
                 Spacer(Modifier.height(4.dp))
 
                 Text(
-                    "${state.newAmountSlider.toInt()} liters",
+                    "${state.newAmountSlider.toInt()} ${stringResource(R.string.liters)}",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                     color = colorScheme.primary,
@@ -183,13 +196,13 @@ fun WaterNeedDialog(
                                 onClick = {
                                     state.newUsageType = type
                                     expanded = false
-                                    if (type != "Other") {
+                                    if (type != other) {
                                         state.newPriority = when (type) {
-                                            "Absolute emergency" -> 0
-                                            "Medical" -> 1
-                                            "Drinking" -> 2
-                                            "Farming" -> 3
-                                            "Industry" -> 4
+                                            absoluteEmergency -> 0
+                                            medical -> 1
+                                            drinking -> 2
+                                            farming -> 3
+                                            industry -> 4
                                             else -> 3
                                         }
                                     }
@@ -199,7 +212,7 @@ fun WaterNeedDialog(
                     }
                 }
 
-                if (state.newUsageType == "Other") {
+                if (state.newUsageType == other) {
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.customType,
@@ -222,7 +235,7 @@ fun WaterNeedDialog(
                         FilterChip(
                             selected = state.newPriority == p,
                             onClick = { state.newPriority = p },
-                            label = { Text("P$p") }
+                            label = { Text(stringResource(R.string.p_priority, p)) }
                         )
                     }
                 }
@@ -259,8 +272,6 @@ fun LocationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
         if (isGranted) {
             onAllow()
         } else {
-            // Optionally, show a message explaining why the permission is needed
-            // and provide an option to open app settings manually.
             onDismiss()
         }
     }
@@ -270,9 +281,15 @@ fun LocationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
         title = { Text(stringResource(R.string.location_permission)) },
         text = { Text(stringResource(R.string.location_permission_message)) },
         confirmButton = {
-            Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) { Text(stringResource(R.string.allow)) }
+            Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) {
+                Text(stringResource(R.string.allow))
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
     )
 }
 
@@ -287,7 +304,6 @@ fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
         if (isGranted) {
             onAllow()
         } else {
-            var showDialog = true
             onDismiss()
         }
     }
@@ -297,9 +313,15 @@ fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
             title = { Text(stringResource(R.string.notification_permission)) },
             text = { Text(stringResource(R.string.enable_notifications)) },
             confirmButton = {
-                Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text(stringResource(R.string.allow)) }
+                Button(onClick = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
+                    Text(stringResource(R.string.allow))
+                }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.later)) } }
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.later))
+                }
+            }
         )
     }
 }
@@ -321,26 +343,28 @@ fun EnhancedWellDetailsDialog(
         text = {
             Column {
                 if (well.wellOwner.isNotBlank()) {
-                    Text("Owner: ${well.wellOwner}", style = MaterialTheme.typography.bodyMedium)
+                    Text("${stringResource(R.string.well_owner)}: ${well.wellOwner}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(8.dp))
                 }
-                Text("Location: ${well.wellLocation}", style = MaterialTheme.typography.bodyMedium)
+                Text("${stringResource(R.string.location)}: ${well.wellLocation}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
-                Text("Type: ${well.wellWaterType}", style = MaterialTheme.typography.bodyMedium)
+                Text("${stringResource(R.string.type_label)}: ${well.wellWaterType}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 if (well.wellCapacity.isNotBlank()) {
-                    Text("Capacity: ${well.wellCapacity}L", style = MaterialTheme.typography.bodyMedium)
+                    Text("${stringResource(R.string.well_capacity)}: ${well.wellCapacity}${stringResource(R.string.liters)}",
+                        style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(8.dp))
                 }
                 if (well.wellStatus.isNotBlank()) {
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                        Text("Status:", style = MaterialTheme.typography.bodyMedium)
+                        Text("${stringResource(R.string.status_label)}:", style = MaterialTheme.typography.bodyMedium)
                         StatusIndicator(well.wellStatus)
                     }
                 }
                 if (well.wellWaterLevel.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Water Level: ${well.wellWaterLevel}L", style = MaterialTheme.typography.bodyMedium)
+                    Text("${stringResource(R.string.water_level)}: ${well.wellWaterLevel}${stringResource(R.string.liters)}",
+                        style = MaterialTheme.typography.bodyMedium)
                     waterLevelProgress?.let {
                         LinearProgressIndicator(
                             progress = { it },
@@ -352,22 +376,28 @@ fun EnhancedWellDetailsDialog(
                 }
                 if (well.wellWaterConsumption.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Consumption: ${well.wellWaterConsumption}L/day", style = MaterialTheme.typography.bodyMedium)
+                    Text("${stringResource(R.string.daily_consumption)}: ${well.wellWaterConsumption}${stringResource(R.string.liters_per_day)}",
+                        style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onAdd) { Text(stringResource(R.string.add_to_my_wells)) }
+            Button(onClick = onAdd) {
+                Text(stringResource(R.string.add_to_my_wells))
+            }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                TextButton(onClick = onMoreDetails) { Text("More details") }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(onClick = onMoreDetails) {
+                    Text(stringResource(R.string.details))
+                }
             }
         }
     )
 }
-
 
 @Composable
 fun WellDetailsDialog(
@@ -381,17 +411,24 @@ fun WellDetailsDialog(
         title = { Text(well.wellName) },
         text = {
             Column {
-                Text("Status: ${well.wellStatus}")
-                if (well.wellWaterLevel.isNotBlank()) Text("Water Level: ${well.wellWaterLevel}L")
-                if (well.wellCapacity.isNotBlank()) Text("Capacity: ${well.wellCapacity}L")
-                if (well.wellWaterType.isNotBlank()) Text("Water Type: ${well.wellWaterType}")
+                Text("${stringResource(R.string.status_label)}: ${well.wellStatus}")
+                if (well.wellWaterLevel.isNotBlank()) Text("${stringResource(R.string.water_level)}: ${well.wellWaterLevel}${stringResource(R.string.liters)}")
+                if (well.wellCapacity.isNotBlank()) Text("${stringResource(R.string.well_capacity)}: ${well.wellCapacity}${stringResource(R.string.liters)}")
+                if (well.wellWaterType.isNotBlank()) Text("${stringResource(R.string.water_type)}: ${well.wellWaterType}")
             }
         },
-        confirmButton = { Button(onClick = onNavigateToDetails) { Text("Details") } },
-        dismissButton = { TextButton(onClick = onNavigateToDirections) { Text("Directions") } }
+        confirmButton = {
+            Button(onClick = onNavigateToDetails) {
+                Text(stringResource(R.string.details))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onNavigateToDirections) {
+                Text(stringResource(R.string.navigate_there))
+            }
+        }
     )
 }
-
 
 @Composable
 fun ThemeSelectionDialog(
@@ -401,14 +438,23 @@ fun ThemeSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val themes = listOf(
-        "System Default" to 0, "Light" to 1, "Dark" to 2, "Green" to 3, "Pink" to 4,
-        "Red" to 5, "Purple" to 6, "Yellow" to 7, "Tan" to 8, "Orange" to 9, "Cyan" to 10
+        stringResource(R.string.system_default) to 0,
+        stringResource(R.string.light) to 1,
+        stringResource(R.string.dark) to 2,
+        stringResource(R.string.green) to 3,
+        stringResource(R.string.pink) to 4,
+        stringResource(R.string.red) to 5,
+        stringResource(R.string.purple) to 6,
+        stringResource(R.string.yellow) to 7,
+        stringResource(R.string.tan) to 8,
+        stringResource(R.string.orange) to 9,
+        stringResource(R.string.cyan) to 10
     )
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Select Theme") },
+            title = { Text(stringResource(R.string.theme)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     themes.forEach { (label, value) ->
@@ -424,7 +470,9 @@ fun ThemeSelectionDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
@@ -433,16 +481,14 @@ fun ThemeSelectionDialog(
 @Composable
 fun LogoutConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     BasicConfirmationDialog(
-        title = "Confirm Logout",
-        message = "Are you sure you want to sign out?",
-        confirmText = "Logout",
+        title = stringResource(R.string.logout_confirmation_title),
+        message = stringResource(R.string.logout_confirmation_message),
+        confirmText = stringResource(R.string.logout),
         confirmButtonColor = colorScheme.error,
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )
 }
-
-
 
 @Composable
 fun DeleteAccountDialog(
@@ -457,19 +503,19 @@ fun DeleteAccountDialog(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Delete Account") },
+            title = { Text(stringResource(R.string.delete_account)) },
             text = {
                 Column {
                     if (!confirmed) {
                         Text(
-                            "To delete your account, please enter your password. This action is permanent and cannot be undone.",
+                            stringResource(R.string.delete_account_password_prompt),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Password") },
+                            label = { Text(stringResource(R.string.password)) },
                             singleLine = true,
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -477,7 +523,7 @@ fun DeleteAccountDialog(
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(
                                         imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                        contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                                     )
                                 }
                             },
@@ -485,7 +531,7 @@ fun DeleteAccountDialog(
                         )
                     } else {
                         Text(
-                            "⚠️ WARNING: This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you absolutely sure?",
+                            stringResource(R.string.delete_account_final_warning),
                             color = colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -493,7 +539,7 @@ fun DeleteAccountDialog(
                 }
             },
             confirmButton = {
-                val buttonText = if (confirmed) "Delete Account" else "Continue"
+                val buttonText = if (confirmed) stringResource(R.string.delete_account) else stringResource(R.string.continue_text)
                 val buttonColor = if (confirmed) colorScheme.error else colorScheme.primary
 
                 TextButton(
@@ -510,7 +556,7 @@ fun DeleteAccountDialog(
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -526,7 +572,13 @@ fun BugReportDialog(
 ) {
     if (!showDialog) return
 
-    val categories = listOf("Major Bug", "Minor Bug", "Edge Case", "Enhancement", "Other")
+    val categories = listOf(
+        stringResource(R.string.bug_category_major),
+        stringResource(R.string.bug_category_minor),
+        stringResource(R.string.bug_category_edge_case),
+        stringResource(R.string.bug_category_enhancement),
+        stringResource(R.string.other)
+    )
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(categories.first()) }
@@ -535,13 +587,13 @@ fun BugReportDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Submit Bug Report") },
+        title = { Text(stringResource(R.string.send_bug_report)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()).wrapContentHeight()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Your Name") },
+                    label = { Text(stringResource(R.string.your_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -549,7 +601,7 @@ fun BugReportDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Bug Description") },
+                    label = { Text(stringResource(R.string.bug_description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
@@ -561,7 +613,7 @@ fun BugReportDialog(
                         value = category,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Category") },
+                        label = { Text(stringResource(R.string.category)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
@@ -584,7 +636,7 @@ fun BugReportDialog(
                 OutlinedTextField(
                     value = extra,
                     onValueChange = { extra = it },
-                    label = { Text("Extra Info (optional, key1:value1,key2:value2)") },
+                    label = { Text(stringResource(R.string.extra_info_optional)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -599,12 +651,10 @@ fun BugReportDialog(
                     onSubmit(name, description, category, extraMap)
                 },
                 enabled = name.isNotBlank() && description.isNotBlank()
-            ) { Text("Send") }
+            ) { Text(stringResource(R.string.send)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
-
-

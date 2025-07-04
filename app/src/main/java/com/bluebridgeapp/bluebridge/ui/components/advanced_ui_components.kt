@@ -116,7 +116,7 @@ fun PasswordField(
             IconButton(onClick = onVisibilityChange) {
                 Icon(
                     imageVector = if (isVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (isVisible) "Hide password" else "Show password"
+                    contentDescription = if (isVisible) stringResource(id = R.string.hide_password) else stringResource(id = R.string.show_password)
                 )
             }
         },
@@ -128,15 +128,15 @@ fun PasswordField(
         if (value.isNotEmpty()) {
             LinearProgressIndicator(
                 progress = when (it.strength) {
-                    "Very Weak" -> 0.2f
-                    "Weak" -> 0.4f
-                    "Medium" -> 0.6f
-                    "Strong" -> 0.8f
-                    "Very Strong" -> 1f
+                    stringResource(id = R.string.password_strength_very_weak) -> 0.2f
+                    stringResource(id = R.string.password_strength_weak) -> 0.4f
+                    stringResource(id = R.string.password_strength_medium) -> 0.6f
+                    stringResource(id = R.string.password_strength_strong) -> 0.8f
+                    stringResource(id = R.string.password_strength_very_strong) -> 1f
                     else -> 0f
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                color = it.color,
+                color = it.color
             )
             Text(
                 text = "${it.strength}: ${it.message}",
@@ -166,7 +166,7 @@ fun EmailField(value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text("Email *") },
+        label = { Text(stringResource(id = R.string.email_label) + " *") },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(
@@ -181,7 +181,7 @@ fun PhoneField(value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = { if (it.all { c -> c.isDigit() || c == '+' }) onValueChange(it) },
-        label = { Text("Phone number") },
+        label = { Text(stringResource(id = R.string.phone_number_label)) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(
@@ -226,7 +226,7 @@ fun MiniMap(
                             Marker(this).apply {
                                 position = GeoPoint(loc.latitude, loc.longitude)
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                                title = "Your Location"
+                                title = context.getString(R.string.your_location)
                                 icon = context.getDrawable(R.drawable.ic_location_pin)?.let { drawable ->
                                     val bitmap = createBitmap(
                                         drawable.intrinsicWidth,
@@ -261,11 +261,11 @@ fun MiniMap(
                 },
                 update = { mapView ->
                     selectedLocation?.let { loc ->
-                        mapView.overlays.removeIf { it is Marker && it.title == "Selected" }
+                        mapView.overlays.removeIf { it is Marker && it.title == context.getString(R.string.selected_location) }
                         Marker(mapView).apply {
                             position = GeoPoint(loc.latitude, loc.longitude)
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            title = "Selected"
+                            title = context.getString(R.string.selected_location)
                             icon = context.getDrawable(R.drawable.ic_location_pin)?.let { drawable ->
                                 val bitmap = createBitmap(
                                     drawable.intrinsicWidth,
@@ -295,7 +295,7 @@ fun MiniMap(
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer
             ) {
-                Icon(Icons.Default.LocationOn, "Current Location")
+                Icon(Icons.Default.LocationOn, stringResource(id = R.string.current_location))
             }
         }
     }
@@ -394,13 +394,13 @@ fun OfflineBanner() {
         ) {
             Icon(
                 imageVector = Icons.Default.SignalWifiOff,
-                contentDescription = "Offline",
+                contentDescription = stringResource(id = R.string.offline_icon_description),
                 tint = MaterialTheme.colorScheme.onErrorContainer
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                "You are currently offline. Some features may be limited.",
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                stringResource(id = R.string.offline_banner_message),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )

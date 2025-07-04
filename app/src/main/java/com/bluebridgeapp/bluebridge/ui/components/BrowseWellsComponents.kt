@@ -27,8 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import kotlinx.coroutines.Job
@@ -41,6 +44,10 @@ fun MapView(
     wells: List<ShortenedWellData>,
     userLocation: Location?
 ) {
+    val context = LocalContext.current
+    val navigateButtonText = stringResource(id = R.string.navigate)
+    val detailsButtonText = stringResource(id = R.string.details)
+    val yourLocationText = stringResource(id = R.string.your_location)
     var webView: WebView? = null
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -62,7 +69,7 @@ fun MapView(
                             """
                             L.marker([${lat}, ${lon}], {title: "${well.wellName}"})
                               .addTo(map)
-                              .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>Navigate</button><button onclick='viewWellDetails(\"${well.espId}\")'>Details</button>");
+                              .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>$navigateButtonText</button><button onclick='viewWellDetails(\"${well.espId}\")'>$detailsButtonText</button>");
                             """
                         } else null
                     }.joinToString("\n")
@@ -79,7 +86,7 @@ fun MapView(
                                 className: 'user-location',
                                 html: '<div style="background-color:blue;width:15px;height:15px;border-radius:50%;"></div>'
                             })
-                        }).addTo(map).bindPopup("Your location");
+                        }).addTo(map).bindPopup("$yourLocationText");
                         """
                     } else ""
 
@@ -121,21 +128,8 @@ fun MapView(
                     </html>
                     """.trimIndent()
 
-                    // Set up JavaScript interface for callback from WebView
-//                    addJavascriptInterface(object : Any() {
-//                        @JavascriptInterface
-//                        fun onWellSelected(espId: String) {
-//                            val well = wells.find { it.espId == espId }
-//                            well?.let { onWellClicked(it as ShortenedWellData) }
-//                        }
-
-//                        @JavascriptInterface
-//                        fun navigateToWell(lat: Double, lon: Double, name: String) {
-//                            onNavigateToWell(lat, lon, name)
-//                        }
-//                    }, "AndroidInterface")
-
-                    loadDataWithBaseURL("https://openstreetmap.org", html, "text/html", "UTF-8", null)
+                    val baseUrl = context.getString(R.string.openstreetmap_base_url)
+                    loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
                     webView = this
                 }
             },
@@ -187,22 +181,31 @@ fun FiltersSection(
     onNearbyOnlyChange: (Boolean) -> Unit
 ) {
     // Convert capacityRange to a float range for the RangeSlider
+    val filtersText = stringResource(id = R.string.filters)
+    val cleanText = stringResource(id = R.string.clean)
+    val greyText = stringResource(id = R.string.grey)
+    val activeText = stringResource(id = R.string.active)
+    val maintenanceText = stringResource(id = R.string.maintenance)
+    val inactiveText = stringResource(id = R.string.inactive)
+    val capacityRangeText = stringResource(id = R.string.capacity_range_label)
+    val showOnlyNearbyWellsText = stringResource(id = R.string.show_only_nearby_wells)
+
     val floatCapacityRange = capacityRange?.let { it.start.toFloat()..it.endInclusive.toFloat() } ?: 0f..0f
     Column(Modifier.padding(8.dp)) {
-        Text("Filters", style = MaterialTheme.typography.titleMedium)
+        Text(filtersText, style = MaterialTheme.typography.titleMedium)
         // Water Type filters
         Row(Modifier.padding(vertical = 4.dp)) {
             FilterChip(
                 selected = selectedWaterType == "Clean",
                 onClick = { onWaterTypeSelected(if (selectedWaterType != "Clean") "Clean" else null)
                 },
-                label = { Text("Clean") }
+                label = { Text(cleanText) }
             )
             Spacer(Modifier.width(4.dp))
             FilterChip(
                 selected = selectedWaterType == "Grey",
                 onClick = { onWaterTypeSelected(if (selectedWaterType != "Grey") "Grey" else null) },
-                label = { Text("Grey") }
+                label = { Text(greyText) }
             )
         }
 
@@ -211,32 +214,31 @@ fun FiltersSection(
             FilterChip(
                 selected = selectedStatus == "Active",
                 onClick = { onStatusSelected(if (selectedStatus != "Active") "Active" else null) },
-                label = { Text("Active") }
+                label = { Text(activeText) }
             )
             Spacer(Modifier.width(4.dp))
             FilterChip(
                 selected = selectedStatus == "Maintenance",
                 onClick = { onStatusSelected(if (selectedStatus != "Maintenance") "Maintenance" else null) },
-                label = { Text("Maintenance") }
+                label = { Text(maintenanceText) }
             )
             Spacer(Modifier.width(4.dp))
             FilterChip(
                 selected = selectedStatus == "Inactive",
                 onClick = { onStatusSelected(if (selectedStatus != "Inactive") "Inactive" else null) },
-                label = { Text("Inactive") }
+                label = { Text(inactiveText) }
             )
         }
 
         //TODO: fix this: horrible type mismatch: fix
         // Capacity range
-        Text("Capacity Range: ${capacityRange?.start?.toInt()} - ${capacityRange?.endInclusive?.toInt()}")
+        Text("$capacityRangeText: ${capacityRange?.start?.toInt()} - ${capacityRange?.endInclusive?.toInt()}")
         RangeSlider(
             value = floatCapacityRange,
             onValueChange = { newRange -> onCapacityRangeChange(newRange.start.toInt()..newRange.endInclusive.toInt()) },
             valueRange = 0f..10000f, // Define the total possible range
             steps = 20
         )
-
         // Nearby filter
         Row(
             Modifier.fillMaxWidth(),
@@ -246,7 +248,7 @@ fun FiltersSection(
                 checked = showNearbyOnly,
                 onCheckedChange = onNearbyOnlyChange
             )
-            Text("Show only nearby wells")
+            Text(showOnlyNearbyWellsText)
         }
     }
 }
@@ -254,12 +256,17 @@ fun FiltersSection(
 @Composable
 fun StatusIndicator(status: String) {
     val color = when (status) {
-        "Active" -> Color.Green
-        "Maintenance" -> Color.Yellow
-        "Inactive" -> Color.Red
+        stringResource(id = R.string.active) -> Color.Green
+        stringResource(id = R.string.maintenance) -> Color.Yellow
+        stringResource(id = R.string.inactive) -> Color.Red
         else -> Color.Gray
     }
-
+    val statusText = when (status) {
+        "Active" -> stringResource(id = R.string.active)
+        "Maintenance" -> stringResource(id = R.string.maintenance)
+        "Inactive" -> stringResource(id = R.string.inactive)
+        else -> status // Fallback to the original string if not matched
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier

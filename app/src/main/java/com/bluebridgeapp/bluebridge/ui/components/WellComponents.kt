@@ -29,8 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,7 +76,7 @@ fun WellCard(
                             IconButton(onClick = onEdit) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Well"
+                                    contentDescription = stringResource(R.string.edit_well)
                                 )
                             }
                         }
@@ -82,7 +84,7 @@ fun WellCard(
                         IconButton(onClick = onDeleteClick) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Well",
+                                contentDescription = stringResource(R.string.delete_well),
                                 tint = if (showAdminActions) MaterialTheme.colorScheme.error else LocalContentColor.current
                             )
                         }
@@ -95,13 +97,13 @@ fun WellCard(
 
             well.wellStatus?.let {
                 Text(
-                    text = "Status: $it",
+                    text = stringResource(R.string.status_label, it),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } ?: run {
                 Text(
-                    text = "Quality: ${well.waterQuality}",
+                    text = stringResource(R.string.quality_label, well.waterQuality),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -129,11 +131,11 @@ fun WellCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${well.wellWaterLevel} L",
+                    text = stringResource(R.string.water_level_liters, well.wellWaterLevel),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "$waterLevelPercentage%",
+                    text = stringResource(R.string.water_level_percentage, waterLevelPercentage),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -145,18 +147,19 @@ fun WellCard(
                     val lastRefreshText = if (well.lastRefreshTime > 0) {
                         val date = Date(well.lastRefreshTime)
                         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date)
-                    } else {
-                        "Never"
-                    }
-                    Text(text = "Last Refreshed: $lastRefreshText",
+                    } else stringResource(R.string.never)
+                    Text(
+                        text = stringResource(R.string.last_refreshed_label, lastRefreshText),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (showLastUpdate) {
+                    val lastUpdateText = well.lastUpdated?.let { formatDateTime(it) }
+                        ?: stringResource(R.string.never)
                     Text(
-                        text = "Last Update: ${well.lastUpdated?.let { formatDateTime(it) } ?: "Never"}",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = stringResource(R.string.last_update_label, lastUpdateText),
+                        style = MaterialTheme.typography.bodySmall, // Ensure style is applied
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -170,10 +173,10 @@ fun WellCard(
             ) {
                 Icon(
                     Icons.Default.Navigation,
-                    contentDescription = "Details"
+                    contentDescription = stringResource(R.string.details)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("GO")
+                Text(stringResource(R.string.go_button))
             }
         }
     }
@@ -205,16 +208,22 @@ fun EnhancedWellCard(
                 StatusIndicator(well.wellStatus)
             }
 
-            Text(text = "Latitude: ${well.wellLocation.latitude}\n Longitude: ${well.wellLocation.longitude}" , style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = stringResource(
+                    R.string.location_coordinates,
+                    well.wellLocation.latitude,
+                    well.wellLocation.longitude
+                ), style = MaterialTheme.typography.bodySmall
+            )
 
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Type: ${well.wellWaterType}", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.type_label, well.wellWaterType), style = MaterialTheme.typography.bodySmall)
 
                 if (well.wellCapacity.isNotBlank()) {
-                    Text("Capacity: ${well.wellCapacity}L", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.capacity_liters, well.wellCapacity), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -231,7 +240,7 @@ fun EnhancedWellCard(
                         else -> Color.Red
                     }
                 )
-                Text("Water Level: $percentage%", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.water_level_percentage_label, percentage), style = MaterialTheme.typography.bodySmall)
             }
 
             // Navigate button
@@ -239,7 +248,7 @@ fun EnhancedWellCard(
                 onClick = onNavigateClick,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text("Navigate there")
+                Text(stringResource(R.string.navigate_there))
             }
         }
     }
@@ -257,7 +266,7 @@ private fun formatDateTime(dateTime: String): String {
         outputFormat.timeZone = java.util.TimeZone.getDefault() // Format to local time zone
         date?.let { outputFormat.format(it) } ?: dateTime
     } catch (e: Exception) {
-        Log.e("DateTimeFormat", "Error formatting date: $dateTime", e)
+        Log.e("DateTimeFormat", "Error formatting date: $dateTime", e) // Log with specific error message
         dateTime
     }
 }

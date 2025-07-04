@@ -24,19 +24,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.NearbyUser
 
 // Helper function to format doubles with specified decimal places
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
-@SuppressLint("DefaultLocale")
+@SuppressLint("DefaultLocale", "StringFormatMatches")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NearbyUserCard(
     user: NearbyUser,
 ) {
+    val context = LocalContext.current
     // Calculate if user is online based on lastActive timestamp
     val isUserOnline = remember(user.lastActive) {
         if (user.lastActive.isBlank()) {
@@ -86,7 +89,7 @@ fun NearbyUserCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${String.format("%.2f", user.distance)} km away",
+                            text = context.getString(R.string.distance_away, String.format("%.2f", user.distance)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -98,7 +101,7 @@ fun NearbyUserCard(
             if (user.waterNeeds.isNotEmpty()) {
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
                 Text(
-                    text = "Water Needs:",
+                    text = context.getString(R.string.water_needs_label),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -109,7 +112,7 @@ fun NearbyUserCard(
                 ) {
                     user.waterNeeds.forEach { need ->
                         Text(
-                            text = "${need.usageType}: ${need.amount}L",
+                            text = context.getString(R.string.water_need_format, need.usageType, need.amount),
                             style = MaterialTheme.typography.bodySmall
                         )
                         PriorityChip(priority = need.priority)
@@ -120,8 +123,10 @@ fun NearbyUserCard(
     }
 }
 
+@SuppressLint("StringFormatMatches")
 @Composable
 fun PriorityChip(priority: Int) {
+    val context = LocalContext.current
     val color = when (priority) {
         0 -> Color(red = 1.0f, green = 0.2f, blue = 0.2f)
         1 -> Color(red = 0.6f, green = 0.2f, blue = 0.2f)
@@ -138,7 +143,7 @@ fun PriorityChip(priority: Int) {
         modifier = Modifier.padding(4.dp)
     ) {
         Text(
-            text = "P$priority",
+            text = context.getString(R.string.priority_chip_text, priority),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             color = color,
             style = MaterialTheme.typography.labelMedium
@@ -148,12 +153,13 @@ fun PriorityChip(priority: Int) {
 
 @Composable
 fun EmptyState() {
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "No nearby users found",
+            text = context.getString(R.string.no_nearby_users),
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -161,12 +167,13 @@ fun EmptyState() {
 
 @Composable
 fun LocationPermissionDeniedMessage() {
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Location permission is required to find nearby users",
+            text = context.getString(R.string.location_permission_required),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.error
         )

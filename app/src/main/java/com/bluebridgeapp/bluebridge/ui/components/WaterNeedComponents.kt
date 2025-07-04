@@ -20,9 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
 
 
@@ -53,7 +55,7 @@ fun WaterNeedCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.WaterDrop,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.water_drop_icon_desc),
                         tint = colorScheme.primary,
                         modifier = Modifier.padding(end = 8.dp)
                     )
@@ -61,13 +63,13 @@ fun WaterNeedCard(
                     Column(modifier = Modifier.weight(1f)) {
                         // Truncate long titles
                         val displayUsageType = if (waterNeed.usageType.length > 15) {
-                            waterNeed.usageType.take(15) + "..."
+                            waterNeed.usageType.take(15) + stringResource(R.string.ellipsis)
                         } else {
                             waterNeed.usageType
                         }
 
                         Text(
-                            text = "${waterNeed.amount} liters - $displayUsageType",
+                            text = stringResource(R.string.water_need_liters_usage_type, waterNeed.amount, displayUsageType),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -75,7 +77,7 @@ fun WaterNeedCard(
                         )
 
                         Text(
-                            text = "Priority: P${waterNeed.priority}",
+                            text = stringResource(R.string.priority_label, waterNeed.priority),
                             style = MaterialTheme.typography.bodyMedium
                         )
 
@@ -99,7 +101,7 @@ fun WaterNeedCard(
                     IconButton(onClick = onEdit) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = stringResource(R.string.edit_button_desc),
                             tint = colorScheme.primary
                         )
                     }
@@ -107,7 +109,7 @@ fun WaterNeedCard(
                     IconButton(onClick = onDelete) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
+                            contentDescription = stringResource(R.string.delete_button_desc),
                             tint = colorScheme.error
                         )
                     }
