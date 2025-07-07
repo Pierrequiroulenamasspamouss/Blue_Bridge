@@ -3,6 +3,13 @@
 ## Overview
 This document provides comprehensive documentation for the BlueBridge server API, including all endpoints, request/response models, and data structures used by the Android mobile application.
 
+
+## HOW TO UPDATE THE SERVER EASILY:
+- Run sudo ./update_latest.sh
+
+- Try chmod +x update_latest.sh if there is a permissions issue. 
+
+
 ## Base URL
 - **Development**: `http://localhost:80`
 - **Production**: `http://bluebridge.homeonthewater.com`
@@ -652,6 +659,10 @@ The application also supports SMS-based communication for basic commands:
 - **Example**: `SH 40.7128,-74.0060`
 
 ## Notes
+SMS server API requests and response: 
+adb shell am start -a android.intent.action.SENDTO -d sms:+32491142936 --es sms_body "Automatic_message2" --ez exit_on_sent true &&adb shell input tap 960 2170
+(to use with a phone connected to the server) 
+
 
 1. **Authentication**: Most endpoints require a valid `loginToken` and `userId` pair
 2. **Location Data**: All location data uses decimal degrees format
