@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.data.model.BasicRequest
 import com.bluebridgeapp.bluebridge.data.model.BugReportRequest
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -89,6 +91,7 @@ fun SettingsScreen(
     var currentUserRole by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
 
+    var showLocationSharingDialog by remember { mutableStateOf(false) }
     // Get current theme preference directly from ViewModel's theme state
     val currentThemePreference by userViewModel.currentTheme.collectAsState()
     val currentLanguagePreference by userViewModel.currentLanguage.collectAsState()
@@ -196,6 +199,14 @@ fun SettingsScreen(
                         }
                     }
                 )
+                SettingsItem(
+                    icon = Icons.Default.Badge,
+                    title = stringResource(R.string.location_sharing),
+                    subtitle = stringResource(R.string.location_sharing_info),
+                    onClick = {
+                        showLocationSharingDialog = true
+                    }
+                )
             }
 
             // Appearance Section
@@ -290,6 +301,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.view_app_credits),
                     onClick = { navController.navigate(Routes.CREDITS_SCREEN) }
                 )
+
                 /*
                 //EULA
                 SettingsItem(
@@ -362,10 +374,16 @@ fun SettingsScreen(
             onConfirmFinal = { password ->
                 coroutineScope.launch {
                     val encrypted = encryptPassword(password)
-                    userViewModel.deleteAccount(userData?.email ?: "", encrypted)
-                    // TODO: Handle deletion result
-                    showDeleteAccountDialog = false
-                    navController.navigate(Routes.HOME_SCREEN)
+                    val success = userViewModel.deleteAccount(userData?.email ?: "", encrypted)
+                    if (success) {
+                        showDeleteAccountDialog = false
+                        navController.navigate(Routes.HOME_SCREEN)
+                    }
+                    else{
+                        AppEventChannel.sendEvent(AppEvent.ShowError("Failed to delete account"))
+                        showDeleteAccountDialog = true
+                        showDeleteAccountDialog = false //reset the deleteAccount dialog
+                    }
                 }
             }
         )
@@ -412,4 +430,45 @@ fun SettingsScreen(
         )
     }
 
+    if (showLocationSharingDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationSharingDialog = false },
+            title = { Text(stringResource(R.string.location_sharing)) },
+            text = { Text(stringResource(R.string.choose_location_sharing_preference)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        val api = RetrofitBuilder.getServerApi(context)
+                        val response = api.doNotShareLocation(
+                            BasicRequest(
+                                message = "true", // Public
+                                loginToken = userData?.loginToken ?: ""
+                            )
+                        )
+                        if (response.isSuccessful) {
+                            AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.location_sharing_set_to_public)))
+                        } else {
+                            AppEventChannel.sendEvent(AppEvent.ShowError(context.getString(R.string.location_not_available)))
+                        }
+                    }
+                    showLocationSharingDialog = false
+                }) {
+                    Text(stringResource(R.string.public_location))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        // For private, you might want to send "false" or handle it differently on the backend
+                        // For this example, let's assume not calling the API or calling with "false" means private.
+                        // Here, we'll just show a message.
+                        AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.location_sharing_set_to_private)))
+                    }
+                    showLocationSharingDialog = false
+                }) {
+                    Text(stringResource(R.string.private_location))
+                }
+            }
+        )
+    }
 }

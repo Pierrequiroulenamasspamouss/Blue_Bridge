@@ -4,10 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BasicRequest(
-    val status: String,
+    val userId: String? = null,
     val message: String,
-    val email: String? = null,
-    val timestamp: String,
     val loginToken: String? = null,
 )
 
@@ -83,27 +81,27 @@ data class LoginResponse(
 
 @Serializable
 data class UpdateLocationRequest(
-    val email: String,
+    val userId: String,
     val latitude: Double,
     val longitude: Double,
-    val token: String? = null
+    val loginToken: String? = null
 )
 
 @Serializable
 data class UpdateWaterNeedsRequest(
-    val email: String,
+    val userId: String,
     val waterNeeds: List<WaterNeed>,
-    val token: String
+    val loginToken: String
 )
 
 @Serializable
 data class UpdateProfileRequest(
-    val email: String,
+    val userId: String,
     val firstName: String,
     val lastName: String,
     val username: String,
     val location: Location,
-    val token: String
+    val loginToken: String
 )
 
 /**
@@ -113,7 +111,7 @@ data class UpdateProfileRequest(
 data class DeleteAccountRequest(
     val email: String,
     val password: String,
-    val token: String
+    val loginToken: String
 )
 
 /**

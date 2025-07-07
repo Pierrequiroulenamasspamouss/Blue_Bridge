@@ -1,12 +1,12 @@
 <resources>
 
     <string name="support_bluebridge">Supportez Bluebridge</string>
-    <string name="agreement_terms">1. Conditions d\'utilisation...</string>
-    <string name="data_privacy_usage">2. Confidentialité et utilisation des données :</string>
-    <string name="privacy_commitment">a. Nous nous engageons à protéger votre vie privée. Nous ne vendons, n\'échangeons ni ne transférons vos informations personnelles à des tiers.</string>
-    <string name="data_collection">b. Nous ne collectons et stockons que les données nécessaires au bon fonctionnement de l\'application et à l\'amélioration de votre expérience utilisateur. Cela peut inclure des statistiques d\'utilisation anonymisées et des préférences.</string>
-    <string name="data_storage">c. Toutes les données collectées sont stockées en toute sécurité et traitées conformément aux lois applicables sur la protection des données.</string>
-    <string name="location_sharing">c. En utilisant cette application, vous acceptez de partager votre position avec d\'autres utilisateurs. Vous pouvez modifier cela à tout moment dans les paramètres. Mais votre position définie sera visible par tous. Ceci est nécessaire pour le fonctionnement de l\'application.</string>
+    <string name="agreement_terms_EULA">1. Conditions d\'utilisation...</string>
+    <string name="data_privacy_usage_EULA">2. Confidentialité et utilisation des données :</string>
+    <string name="privacy_commitment_EULA">a. Nous nous engageons à protéger votre vie privée. Nous ne vendons, n\'échangeons ni ne transférons vos informations personnelles à des tiers.</string>
+    <string name="data_collection_EULA">b. Nous ne collectons et stockons que les données nécessaires au bon fonctionnement de l\'application et à l\'amélioration de votre expérience utilisateur. Cela peut inclure des statistiques d\'utilisation anonymisées et des préférences.</string>
+    <string name="data_storage_EULA">c. Toutes les données collectées sont stockées en toute sécurité et traitées conformément aux lois applicables sur la protection des données.</string>
+    <string name="location_sharing_EULA">c. En utilisant cette application, vous acceptez de partager votre position avec d\'autres utilisateurs. Vous pouvez modifier cela à tout moment dans les paramètres. Mais votre position définie sera visible par tous. Ceci est nécessaire pour le fonctionnement de l\'application.</string>
     <string name="cancel">Annuler</string>
     <string name="i_agree">J\'accepte</string>
     <string name="go_back_home">Retour à l\'accueil</string>
@@ -272,6 +272,7 @@
     <string name="extra_info_optional">"Informations supplémentaires ( optionnel) "</string>
     <string name="send">Envoyer</string>
     <string name="confirm">Confirmer</string>
+    <string name="location_sharing">Location sharing</string>
 
 </resources>
 

@@ -54,7 +54,7 @@ const getUsersWithLocations = async (excludeEmail) => {
             email: { [Op.ne]: excludeEmail },
             location: { [Op.ne]: null }
         },
-        attributes: [
+        attributes: [ // Ensure you fetch allowLocationSharing here
             'userId', 'username', 'firstName', 'lastName',
             'email', 'waterNeeds', 'location'
         ],
@@ -62,8 +62,15 @@ const getUsersWithLocations = async (excludeEmail) => {
     });
 };
 
-const processUserLocation = (user, centerLat, centerLon) => {
+const processUserLocation = async (user, centerLat, centerLon) => {
     try {
+        // Fetch the full user data to check allowLocationSharing
+        const fullUser = await User.findByPk(user.userId, {
+            attributes: ['allowLocationSharing', 'location', 'waterNeeds', 'userId', 'username', 'firstName', 'lastName', 'email']
+        });
+
+        if (!fullUser || !fullUser.allowLocationSharing) return null;
+
         const location = cleanAndParseLocation(user.location);
         if (!location || !location.latitude || !location.longitude) {
             return null;
@@ -77,12 +84,12 @@ const processUserLocation = (user, centerLat, centerLon) => {
         );
 
         return {
-            ...user,
+            ...fullUser.get({ plain: true }), // Use plain object from Sequelize
             distance: parseFloat(distance.toFixed(2)),
             latitude: location.latitude,
             longitude: location.longitude,
-            waterNeeds: parseWaterNeeds(user.waterNeeds),
-            lastActive: new Date().toISOString()
+            waterNeeds: parseWaterNeeds(fullUser.waterNeeds),
+            lastActive: new Date().toISOString() // This might need to come from user.lastActive if available
         };
     } catch (error) {
         console.error(`Error processing user ${user.userId}:`, error);
@@ -114,10 +121,12 @@ router.post('/', validateToken, async (req, res) => {
         }
 
         const users = await getUsersWithLocations(req.user.email);
+        const processedUsersPromises = users.map(user => processUserLocation(user, latitude, longitude));
+        const processedUsers = (await Promise.all(processedUsersPromises)).filter(user => user !== null);
 
-        const nearbyUsers = users
-            .map(user => processUserLocation(user, latitude, longitude))
-            .filter(user => user !== null && user.distance <= radius)
+
+        const nearbyUsers = processedUsers
+            .filter(user => user.distance <= radius)
             .sort((a, b) => a.distance - b.distance);
 
         res.json({
@@ -131,7 +140,9 @@ router.post('/', validateToken, async (req, res) => {
                 email: user.email,
                 waterNeeds: user.waterNeeds,
                 lastActive: user.lastActive,
-                distance: user.distance
+                distance: user.distance,
+                latitude: user.latitude, // Include if sharing is allowed
+                longitude: user.longitude // Include if sharing is allowed
             }))
         });
 

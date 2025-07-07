@@ -47,17 +47,17 @@ fun ScrollableEULADialog(
                         .weight(1f, false)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(stringResource(R.string.agreement_terms))
+                    Text(stringResource(R.string.agreement_terms_EULA))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(stringResource(R.string.data_privacy_usage))
+                    Text(stringResource(R.string.data_privacy_usage_EULA))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(stringResource(R.string.privacy_commitment))
+                    Text(stringResource(R.string.privacy_commitment_EULA))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(stringResource(R.string.data_collection))
+                    Text(stringResource(R.string.data_collection_EULA))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(stringResource(R.string.data_storage))
+                    Text(stringResource(R.string.data_storage_EULA))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(stringResource(R.string.location_sharing))
+                    Text(stringResource(R.string.location_sharing_EULA))
                     // More content...
                 }
 

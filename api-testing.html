@@ -492,6 +492,23 @@
             <button onclick="testUpdateProfile()">Update Profile</button>
             <div class="response" id="updateProfileResponse"></div>
         </div>
+        <div class="api-section">
+            <h2>Send Private Location Message</h2>
+            <div class="form-group">
+                <label for="privateLocationMessage">Message:</label>
+                <input type="text" id="privateLocationMessage" value="Here is my location!">
+            </div>
+            <div class="form-group">
+                <label for="privateLocationUserId">User ID (Recipient):</label>
+                <input type="text" id="privateLocationUserId" value="">
+            </div>
+            <div class="form-group">
+                <label for="privateLocationLoginToken">Login Token (Sender):</label>
+                <input type="text" id="privateLocationLoginToken" value="">
+            </div>
+            <button onclick="testSendPrivateLocation()">Send Private Location</button>
+            <div class="response" id="privateLocationResponse"></div>
+        </div>
     </div>
 
     <!-- Notifications Tab -->
@@ -907,6 +924,16 @@
             displayResponse('updateProfileResponse', response);
         }
         
+        async function testSendPrivateLocation() {
+            const request = {
+                message: document.getElementById('privateLocationMessage').value,
+                userId: document.getElementById('privateLocationUserId').value, // This field was missing
+                loginToken: document.getElementById('privateLocationLoginToken').value,
+
+            };
+            const response = await callApi('/api/users/private-location', 'POST', request);
+            displayResponse('privateLocationResponse', response);
+        }
         async function testRegisterNotificationToken() {
             const request = {
                 userId: document.getElementById('registerTokenUserId').value,

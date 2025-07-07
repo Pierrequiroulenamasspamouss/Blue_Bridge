@@ -42,7 +42,7 @@ const authenticate = async (req, res, next) => {
 // Add this to your auth routes (replace the existing delete endpoint)
 router.post('/delete-account', async (req, res) => {
   try {
-    const { email, password, token } = req.body;
+    const { email, password, loginToken } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -57,7 +57,7 @@ router.post('/delete-account', async (req, res) => {
     });
 
     // Verify password and token
-    if (!user || user.password !== password || user.loginToken !== token) {
+    if (!user || user.password !== password || user.loginToken !== loginToken) {
       return res.status(401).json({
         status: 'error',
         message: 'Invalid credentials'
@@ -125,7 +125,7 @@ router.post('/register', async (req, res) => {
     if (deviceToken) {
       await DeviceToken.create({
         userId: user.userId,
-        token: deviceToken,
+        deviceToken: deviceToken,
         deviceType: 'android'
       });
     }
@@ -201,10 +201,10 @@ router.post('/weather', authenticate, async (req, res) => {
 // Update user profile
 router.post('/update-profile', async (req, res) => {
     try {
-        const { email, token, firstName, lastName, username, location } = req.body;
+        const { email, loginToken, firstName, lastName, username, location } = req.body;
 
         // Validate required fields
-        if (!email || !token) {
+        if (!email || !loginToken) {
             return res.status(400).json({
                 status: 'error',
                 message: 'Email and token are required'
@@ -215,7 +215,7 @@ router.post('/update-profile', async (req, res) => {
         const user = await User.findOne({
             where: {
                 email: email.toLowerCase().trim(),
-                loginToken: token
+                loginToken: loginToken
             }
         });
 
@@ -268,5 +268,88 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
+router.post('/update-location', authenticate, async (req, res) => {
+    try {
+        const { userId, loginToken, latitude, longitude } = req.body;
+
+        // Validate required fields
+        if (!userId || !loginToken || latitude === undefined || longitude === undefined) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'userId, token, latitude, and longitude are required'
+            });
+        }
+
+        // The 'authenticate' middleware already finds and verifies the user
+        // and attaches it to req.user. We just need to ensure the userId matches.
+        if (req.user.userId !== userId || req.user.loginToken !== loginToken) {
+             return res.status(401).json({
+                status: 'error',
+                message: 'Invalid credentials or token mismatch'
+            });
+        }
+
+        const user = req.user;
+        if (!user) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'Invalid credentials'
+            }); // Should be caught by authenticate middleware, but good practice
+        }
+
+        // Prepare location update
+        const locationUpdate = {
+            location: JSON.stringify({
+                latitude: parseFloat(location.latitude),
+                longitude: parseFloat(location.longitude),
+                lastUpdated: new Date().toISOString()
+            })
+        };
+
+        // Update user location
+        await user.update(locationUpdate);
+
+        return res.json({ status: 'success', message: 'Location updated successfully' });
+
+    } catch (error) {
+        handleError(res, error, 'Failed to update location');
+    }
+});
+
+router.post('/private-location', authenticate, async (req, res) => {
+  try {
+    const { userId, message, loginToken } = req.body;
+
+    // The authenticate middleware already verified userId and loginToken
+    // and set req.user
+
+    if (message === undefined) { // Check if message exists, even if it's null
+      return res.status(400).json({ status: 'error', message: 'Message field is required' });
+    }
+
+    let allowLocationSharing;
+    if (typeof message === 'string') {
+      const lowerCaseMessage = message.toLowerCase();
+      if (lowerCaseMessage === 'true') {
+        allowLocationSharing = true;
+      } else if (lowerCaseMessage === 'false') {
+        allowLocationSharing = false;
+      } else {
+        return res.status(400).json({ status: 'error', message: "Invalid message value. Must be 'true' or 'false'." });
+      }
+    } else {
+      return res.status(400).json({ status: 'error', message: "Invalid message type. Must be a string 'true' or 'false'." });
+    }
+
+    await req.user.update({ allowLocationSharing });
+
+    return res.json({
+      status: 'success',
+      message: `Location sharing preference updated to ${allowLocationSharing}.`,
+    });
+  } catch (error) {
+    handleError(res, error, 'Failed to update location sharing preference');
+  }
+});
 
 module.exports = router;

@@ -276,12 +276,8 @@ class UserViewModel(
         }
     }
 
-    /**
-     * Deletes the user's account
-     * @param email The email of the account to delete
-     * @param password The password for verification
-     */
-    fun deleteAccount(email: String, password: String) {
+
+    suspend fun deleteAccount(email: String, password: String):Boolean {
         viewModelScope.launch {
             _state.value = UiState.Loading
             try {
@@ -294,7 +290,7 @@ class UserViewModel(
                 val deleteRequest = DeleteAccountRequest(
                     email = email,
                     password = password,
-                    token = token
+                    loginToken = token
                 )
 
                 // Unregister from notifications if they were enabled
@@ -310,16 +306,21 @@ class UserViewModel(
                     // Clear local user data after successful deletion
                     repository.logout()
                     _state.value = UiState.Empty
+                    //return true // Removed as it's inside a launch block
                 } else {
                     Log.e("UserViewModel", "Failed to delete account for: $email")
                     _state.value =
                         UiState.Error("Account deletion failed. Please check your credentials and try again.")
+                    //return false // Removed as it's inside a launch block
                 }
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Account deletion error: ${e.message}", e)
                 _state.value = UiState.Error("Account deletion error: ${e.message}")
+                //return false // Removed as it's inside a launch block
             }
-        }
+        }.join() // Wait for the coroutine to complete
+
+        return _state.value is UiState.Empty // Return true if deletion was successful (state is Empty)
     }
 
     private fun updateProfile(userData: UserData) {
@@ -536,7 +537,8 @@ class UserViewModel(
     suspend fun getRole(): String? {
         return repository.getRole()
     }
-    suspend fun setLanguage(language: String) {
-        return repository.setLanguage(language)
+    suspend fun locationSharing(value: Boolean) {
+
+
     }
 }

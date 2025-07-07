@@ -35,6 +35,10 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       defaultValue: null
     },
+    allowLocationSharing:{
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+      },
     waterNeeds: {
       type: DataTypes.JSON,
       defaultValue: []
@@ -66,7 +70,8 @@ module.exports = (sequelize) => {
     isWellOwner: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-    }
+    },
+
   }, {
     tableName: 'users',
     timestamps: true,

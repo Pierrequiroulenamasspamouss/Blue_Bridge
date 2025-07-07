@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.log
 
 
 class UserRepositoryImpl(
@@ -182,13 +183,13 @@ class UserRepositoryImpl(
 
     override suspend fun updateWaterNeedsOnServer(waterNeeds: List<WaterNeed>): Boolean = withContext(Dispatchers.IO) {
         try {
-            val email = getUserEmail() ?: return@withContext false
             val token = getLoginToken() ?: ""
+            val userId = getUserId()
 
             val request = UpdateWaterNeedsRequest(
-                email = email,
+                userId = userId,
                 waterNeeds = waterNeeds,
-                token = token
+                loginToken = token
             )
 
             val response = api.updateWaterNeeds(request)
@@ -218,15 +219,13 @@ class UserRepositoryImpl(
 
     override suspend fun updateProfileOnServer(userData: UserData): Boolean = withContext(Dispatchers.IO) {
         try {
-            val token = getLoginToken() ?: ""
-
             val request = UpdateProfileRequest(
-                email = userData.email,
+                userId = userData.userId,
                 firstName = userData.firstName,
                 lastName = userData.lastName,
                 username = userData.username,
                 location = userData.location,
-                token = token
+                loginToken = userData.loginToken?: ""
             )
 
             val response = api.updateProfile(request)

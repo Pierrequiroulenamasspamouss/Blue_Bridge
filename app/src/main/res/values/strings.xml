@@ -23,12 +23,12 @@
     <string name="sms_server_number" translatable="false">+32491142936</string>
 
     <string name="support_bluebridge">Support BlueBridge</string>
-    <string name="agreement_terms">1. Agreement terms...</string>
-    <string name="data_privacy_usage">2. Data Privacy and Usage:</string>
-    <string name="privacy_commitment">a. We are committed to protecting your privacy. We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information.</string>
-    <string name="data_collection">b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.</string>
-    <string name="data_storage">c. Any data collected is stored securely and handled in accordance with applicable data protection laws.</string>
-    <string name="location_sharing">c. When using this app you agree to share your location with other users. You can change this anytime in the settings. But your defined location will be available for anyone to see. This is necessary for the app\'s core functionality.</string>
+    <string name="agreement_terms_EULA">1. Agreement terms...</string>
+    <string name="data_privacy_usage_EULA">2. Data Privacy and Usage:</string>
+    <string name="privacy_commitment_EULA">a. We are committed to protecting your privacy. We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information.</string>
+    <string name="data_collection_EULA">b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.</string>
+    <string name="data_storage_EULA">c. Any data collected is stored securely and handled in accordance with applicable data protection laws.</string>
+    <string name="location_sharing_EULA">c. When using this app you agree to share your location with other users. You can change this anytime in the settings. But your defined location will be available for anyone to see. This is necessary for the app\'s core functionality.</string>
     <string name="cancel">Cancel</string>
     <string name="i_agree">I Agree</string>
     <string name="go_back_home">Go Back to Home</string>
@@ -332,5 +332,13 @@
     <string name="extra_info_optional">Extra Info (optional, key1:value1,key2:value2)</string>
     <string name="send">Send</string>
     <string name="confirm">Confirm</string>
+    <string name="location_sharing">Location sharing</string>
+    <string name="location_sharing_info">Allow or disallow to share the refion you set to other users</string>
+    <string name="choose_location_sharing_preference">Would you agree to share your location preferences with other people ? If you allow it, they can more easily contact you or help you if you get lost\n</string>
+    <string name="location_sharing_set_to_public">Your region is now visible by anyone</string>
+    <string name="location_not_available">There was an issue requesting the activation of your location\'s sharing. Contact an admin to fix this problem\n</string>
+    <string name="public_location">"Everyone can know about you and your region now"</string>
+    <string name="private_location">"Only you and the server will know about your location. "</string>
+    <string name="location_sharing_set_to_private">Your location is et to private.Only the server will know your region in order to send you weather notifications</string>
 
 </resources>

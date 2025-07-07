@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.network
 
+import com.bluebridgeapp.bluebridge.data.model.BasicRequest
 import com.bluebridgeapp.bluebridge.data.model.BasicResponse
 import com.bluebridgeapp.bluebridge.data.model.BugReportRequest
 import com.bluebridgeapp.bluebridge.data.model.CertificateResponse
@@ -127,6 +128,11 @@ interface ServerApi {
     suspend fun getWeather(
         @Body request: WeatherRequest
     ): Response<WeatherResponse>
+
+    @POST("/api/users/private-location")
+    suspend fun doNotShareLocation(
+        @Body request: BasicRequest
+    ): Response<BasicResponse>
 
     @GET("/status")
     suspend fun getServerStatus(): Response<ServerStatusResponse>
