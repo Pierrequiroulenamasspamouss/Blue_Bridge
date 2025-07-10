@@ -109,6 +109,7 @@ data class UpdateProfileRequest(
  */
 @Serializable
 data class DeleteAccountRequest(
+    val userId: String,
     val email: String,
     val password: String,
     val loginToken: String

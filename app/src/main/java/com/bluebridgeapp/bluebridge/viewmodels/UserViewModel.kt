@@ -288,8 +288,9 @@ class UserViewModel(
 
                 // Create delete request
                 val deleteRequest = DeleteAccountRequest(
-                    email = email,
+                    userId = repository.getUserId() ?: "",
                     password = password,
+                    email = email,
                     loginToken = token
                 )
 
