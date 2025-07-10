@@ -8,6 +8,7 @@ const isDev = process.env.NODE_ENV ;
 const appLatestVersion = process.env.APP_LATEST_VERSION ;
 const serverVersion = process.env.SERVER_VERSION;
 
+
 // Helper function to read HTML files
 const readHtmlFile = (filename) => {
     return fs.readFileSync(path.join(__dirname, '../html', `${filename}.html`), 'utf8');
