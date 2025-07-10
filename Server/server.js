@@ -4,19 +4,6 @@
  * defines routes, and starts the server.
  */
 
-
-
-
-// ======================
-// Configuration Constants
-// ======================
-const appLatestVersion = '0.1.4.7   ';
-const serverVersion = '0.1.3.4';
-
-const isDev = process.env.NODE_ENV === 'development' || true;
-const PORT = process.env.PORT || 80;
-const httpsPort = process.env.HTTPS_PORT || 443;
-
 // =============
 // Dependencies
 // =============
@@ -34,6 +21,17 @@ const path = require('path');
 dotenv.config();
 const app = express();
 
+
+// ======================
+// Configuration Constants
+// ======================
+
+
+const isDev = process.env.NODE_ENV === 'development' || true;
+const PORT = process.env.HTTP_PORT ;
+const httpsPort = process.env.HTTPS_PORT ;
+
+
 // =============
 // Database Setup
 // =============
@@ -43,9 +41,9 @@ const models = require('./models');
 // ===============
 // Route Imports
 // ===============
-const routes = require('./routes');
-const { listenerCount } = require('process');
-const { log } = require('console');
+const apiRouter = require('./routes/api');
+const webappRouter = require('./routes/webapp');
+const mainRouter = require('./routes/main');
 
 // =================
 // Helper Functions
@@ -64,7 +62,7 @@ const readHtmlFile = (filename) => {
 // ==============
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'html')));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'assets')));
 
 // Request logging middleware
@@ -106,119 +104,11 @@ app.use((req, res, next) => {
 });
 
 // ===========
-// Routes
+// Route Mounting
 // ===========
-// Static file routes
-app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'assets', 'favicon.ico')));
-app.get('/', (req, res) => res.redirect('/home'));
-app.get('/home', (req, res) => res.send(readHtmlFile('welcomePage')));
-app.get('/about', (req, res) => res.send(readHtmlFile('about')));
-app.get('/services', (req, res) => res.send(readHtmlFile('services')));
-app.get('/send-notifications', (req, res) => res.send(readHtmlFile('send-notifications')));
-app.get('/support', (req, res) => res.send(readHtmlFile('support')));
-
-// API status route
-app.get('/status', (req, res) => {
-    res.apiSuccess({
-        message: 'Welcome to the BlueBridge API',
-        mode: isDev ? 'Development' : 'Production',
-        status: 'Online',
-        timestamp: new Date().toISOString(),
-        versions: {
-            server: serverVersion,
-            mobile: appLatestVersion
-        }
-    });
-});
-
-// APK download route
-app.get('/download', (req, res) => {
-    const apkDir = path.join(__dirname, 'APK');
-    const files = fs.readdirSync(apkDir);
-    const apkFile = files.find(file => file.endsWith('.apk'));
-
-    res.download(
-        path.join(apkDir, apkFile),
-        `BlueBridge_v${appLatestVersion}.apk`
-    );
-});
-
-// API routes
-app.use('/api', routes);
-
-// API documentation route
-app.get('/tree', (req, res) => {
-    // Extract routes from the app
-    const extractRoutes = (stack, parentPath = '') => {
-        const routes = new Set();
-        
-        stack.forEach(layer => {
-            if (layer.route) {
-                const routePath = layer.route.path;
-                const fullPath = path.posix.join(parentPath, routePath);
-                const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
-                methods.forEach(method => {
-                    routes.add(JSON.stringify({ method, path: fullPath }));
-                });
-            } else if (layer.name === 'router' && layer.handle.stack) {
-                const match = layer.regexp.toString().match(/\\\/([^\\\/\(\)\?\:]+)(?=\\\/|\(\?:|\?|\\\/\)|$)/);
-                const subPath = match ? `/${match[1]}` : '';
-                const newParentPath = path.posix.join(parentPath, subPath);
-                const subRoutes = extractRoutes(layer.handle.stack, newParentPath);
-                subRoutes.forEach(route => routes.add(route));
-            }
-        });
-        
-        return routes;
-    };
-
-    // Process routes into HTML
-    const routes = Array.from(extractRoutes(app._router.stack))
-        .map(route => JSON.parse(route))
-        .sort((a, b) => a.path.localeCompare(b.path));
-
-    // Group routes by prefix
-    const grouped = {};
-    for (const { method, path } of routes) {
-        const section = path.split('/')[1] || '/';
-        grouped[section] = grouped[section] || [];
-        grouped[section].push({ method, path });
-    }
-
-    // Generate routes HTML content
-    let routesContent = '';
-    for (const section of Object.keys(grouped).sort()) {
-        routesContent += `
-            <div class="route-group">
-                <h2>/${section}</h2>
-                <table class="route-table">
-                    <tr>
-                        <th>Method</th>
-                        <th>Path</th>
-                    </tr>`;
-    
-                
-        for (const { method, path } of grouped[section]) {
-            const link = method === 'GET' ? `<a href="${path}" target="_blank">${path}</a>` : path;
-            routesContent += `
-                <tr>
-                    <td><span class="method ${method}">${method}</span></td>
-                    <td class="route-path">${link}</td>
-                </tr>`;
-        }
-        
-        routesContent += `
-                </table>
-            </div>`;
-    }
-
-    // Read template and replace placeholders
-    const apiTreeHtml = readHtmlFile('apiTree')
-        .replace('{{routesContent}}', routesContent)
-        .replace('{{generationTime}}', new Date().toLocaleString());
-    
-    res.send(apiTreeHtml);
-});
+app.use('/api', apiRouter);          // All API endpoints
+app.use('/webapp', webappRouter);    // Web application routes //NOT AVAILABLE RIGHT NOW, STILL A WIP
+app.use('/', mainRouter);            // Main website routes (HTML pages, etc.)
 
 // ===================
 // Error Handling
@@ -272,8 +162,6 @@ async function startServer() {
     }
 }
 
-
-
 // ===================
 // Process Handlers
 // ===================
@@ -288,4 +176,3 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start the server
 startServer();
-

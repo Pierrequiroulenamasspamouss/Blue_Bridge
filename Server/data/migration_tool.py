@@ -11,6 +11,13 @@ from typing import List, Dict, Optional
 import argparse
 import sys
 from pathlib import Path
+import re
+
+# Add a helper for validating table/column names
+SAFE_NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
+
+def is_safe_name(name):
+    return bool(SAFE_NAME_RE.match(name))
 
 class DatabaseMigrator:
     def __init__(self, db_path: str):
@@ -20,12 +27,16 @@ class DatabaseMigrator:
 
     def get_table_info(self, table_name: str) -> List[Dict]:
         """Get schema information for a table"""
+        if not is_safe_name(table_name):
+            raise ValueError(f"Unsafe table name: {table_name}")
         cursor = self.conn.cursor()
         cursor.execute(f"PRAGMA table_info({table_name})")
         return [dict(row) for row in cursor.fetchall()]
 
     def column_exists(self, table_name: str, column_name: str) -> bool:
         """Check if a column exists in a table"""
+        if not is_safe_name(table_name) or not is_safe_name(column_name):
+            raise ValueError(f"Unsafe table/column name: {table_name}, {column_name}")
         columns = self.get_table_info(table_name)
         return any(col['name'] == column_name for col in columns)
 
@@ -42,6 +53,8 @@ class DatabaseMigrator:
         Returns:
             True if column was added, False if it already existed
         """
+        if not is_safe_name(table_name) or not is_safe_name(column_name):
+            raise ValueError(f"Unsafe table/column name: {table_name}, {column_name}")
         if self.column_exists(table_name, column_name):
             print(f"Column '{column_name}' already exists in table '{table_name}'")
             return False

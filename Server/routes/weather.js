@@ -3,9 +3,19 @@ const router = express.Router();
 const { getWeatherData } = require('../services/weatherService');
 const { validateToken } = require('../middleware/auth');
 const { User } = require('../models');
+const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 
 // Get weather data by location
-router.post('/', validateToken, async (req, res) => {
+router.post('/', [
+    body('location').isObject(),
+    body('userId').isString().trim().escape(),
+    body('loginToken').isString().trim().escape()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
     try {
         const { location, userId, loginToken } = req.body;
         

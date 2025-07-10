@@ -46,7 +46,7 @@
 
         .content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(2, 1fr); /* Changed to 2 columns */
             gap: 2rem;
             margin-bottom: 3rem;
         }
@@ -61,6 +61,7 @@
             text-decoration: none;
             color: var(--text-color);
             display: block;
+            text-align: center; /* Center align text in cards */
         }
 
         .card:hover {
@@ -142,20 +143,28 @@
         </div>
 
         <div class="content">
-            <a href="/about" class="card">
-                <h2>Our Mission</h2>
-                <p>BlueBridge is dedicated to connecting communities with clean water resources through innovative technology and sustainable solutions.</p>
-            </a>
+            <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+                <a href="/about" class="card">
+                    <h2>Our Mission</h2>
+                    <p>BlueBridge is dedicated to connecting communities with clean water resources through innovative technology and sustainable solutions.</p>
+                </a>
 
-            <a href="/services" class="card">
-                <h2>What We Do</h2>
-                <p>We provide real-time monitoring of water resources, connect communities with water sources, and help manage water distribution efficiently.</p>
-            </a>
+                <a href="/services" class="card">
+                    <h2>What We Do</h2>
+                    <p>We provide real-time monitoring of water resources, connect communities with water sources, and help manage water distribution efficiently.</p>
+                </a>
+            </div>
 
-            <a href="/download" class="card">
-                <h2>Get Started</h2>
-                <p>Download our mobile app to start monitoring water resources in your area and connect with your community.</p>
-            </a>
+            <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+                <a href="/download" class="card">
+                    <h2>Get Started</h2>
+                    <p>Download our mobile app to start monitoring water resources in your area and connect with your community.</p>
+                </a>
+                <a href="/webapp" class="card">
+                    <h2>Use our webApp instead</h2>
+                    <p>Try out our webapp with limited functionnality</p>
+                </a>
+            </div>
         </div>
 
         <div class="donation-section">

@@ -3,9 +3,19 @@ const router = express.Router();
 const db = require('../models');
 const { User, DeviceToken } = db;
 const { sendPushNotification, sendMulticastPushNotification } = require('../services/firebaseService');
+const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 
 // Register device token
-router.post('/register', async (req, res) => {
+router.post('/register', [
+    body('userId').isString().trim().escape(),
+    body('loginToken').isString().trim().escape(),
+    body('deviceToken').isString().trim().escape()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
   const { userId, loginToken, deviceToken } = req.body;
 
   try {

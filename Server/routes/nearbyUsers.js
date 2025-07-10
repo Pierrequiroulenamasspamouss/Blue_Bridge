@@ -3,6 +3,8 @@ const router = express.Router();
 const { User } = require('../models');
 const { validateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 
 // Helper functions
 const cleanAndParseLocation = (locationString) => {
@@ -109,7 +111,16 @@ router.get('/debug-users', async (req, res) => {
     })));
 });
 
-router.post('/', validateToken, async (req, res) => {
+router.post('/', [
+    validateToken,
+    body('latitude').isFloat({ min: -90, max: 90 }),
+    body('longitude').isFloat({ min: -180, max: 180 }),
+    body('radius').optional().isInt({ min: 1, max: 1000 })
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
     try {
         const { latitude, longitude, radius = 50 } = req.body;
 
@@ -120,10 +131,16 @@ router.post('/', validateToken, async (req, res) => {
             });
         }
 
+        if (!req.user || !req.user.email) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'Authentication failed: user not found or token invalid.'
+            });
+        }
+
         const users = await getUsersWithLocations(req.user.email);
         const processedUsersPromises = users.map(user => processUserLocation(user, latitude, longitude));
         const processedUsers = (await Promise.all(processedUsersPromises)).filter(user => user !== null);
-
 
         const nearbyUsers = processedUsers
             .filter(user => user.distance <= radius)

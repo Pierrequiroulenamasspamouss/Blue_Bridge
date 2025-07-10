@@ -4,6 +4,8 @@ const db = require('../models');
 const { Well } = db;
 const { Op } = require('sequelize'); // Import Sequelize operators
 const { validateToken } = require('../middleware/auth');
+const { body, param, query, validationResult } = require('express-validator');
+const validator = require('validator');
 
 function mapToShortenedWellData(well) {
     // Extract latitude/longitude from wellLocation JSON if present
@@ -121,7 +123,43 @@ router.get('/', async (req, res) => {
 
 
 // Create new well - Authentication required
-router.post('/', validateToken, async (req, res) => {
+router.post('/', [
+    body('wellName').isString().trim().escape(),
+    body('espId').isString().trim().escape(),
+    body('wellLocation').optional().custom(value => {
+        if (typeof value === 'string') {
+            const [lat, lon] = value.split(',').map(Number);
+            if (isNaN(lat) || isNaN(lon)) throw new Error('Invalid coordinates');
+        } else if (typeof value === 'object') {
+            if (typeof value.latitude !== 'number' || typeof value.longitude !== 'number') throw new Error('Invalid coordinates');
+        }
+        return true;
+    }),
+    body('wellWaterType').optional().isString().trim().escape(),
+    body('wellStatus').optional().isString().trim().escape(),
+    body('wellOwner').optional().isString().trim().escape(),
+    body('wellCapacity').optional().isNumeric(),
+    body('wellWaterLevel').optional().isNumeric(),
+    body('wellWaterConsumption').optional().isNumeric(),
+    body('waterQuality').optional().custom(value => {
+        if (typeof value === 'string') {
+            try { JSON.parse(value); } catch { throw new Error('Invalid JSON'); }
+        } else if (typeof value !== 'object') {
+            throw new Error('Invalid waterQuality');
+        }
+        return true;
+    }),
+    body('extraData').optional().custom(value => {
+        if (typeof value === 'string') {
+            try { JSON.parse(value); } catch { throw new Error('Invalid JSON'); }
+        }
+        return true;
+    })
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
     try {
         const {
             wellName, wellLocation, wellWaterType, espId, wellStatus, wellOwner, wellCapacity, wellWaterLevel, wellWaterConsumption, waterQuality, extraData

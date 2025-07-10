@@ -1,60 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Website In Progress</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueBridge Services</title>
     <style>
         body {
-          font-family: 'Arial', sans-serif;
-          background-color: #2c3e50; /* Dark blue-grey background */
-          color: #ecf0f1; /* Light grey text */
-          margin: 0;
-          padding: 0;
-          display: flex;
-          flex-direction: column; /* Stack elements vertically */
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-          text-align: center;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
         }
-
+        header {
+            background-color: #1a6fc9;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
         .container {
-          padding: 20px;
-          border-radius: 10px;
-          background-color: #34495e; /* Slightly lighter blue-grey */
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
         }
-
-        h1 {
-          font-size: 3em; /* Larger heading */
-          color: #e74c3c; /* Contrasting red color for heading */
-          margin-bottom: 0.5em;
-          animation: fadeInDown 1s ease-out;
+        h1, h2 {
+            color: #1a6fc9;
         }
-
-        p {
-          font-size: 1.2em;
-          line-height: 1.6;
-          margin-bottom: 1em;
-          animation: fadeInUp 1s ease-out 0.5s;
-          animation-fill-mode: backwards; /* Start animation from hidden state */
+        .service {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border-left: 4px solid #1a6fc9;
         }
-
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
+        .features {
+            background-color: #f0f8ff;
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
         }
-
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body>
+<header>
+    <h1>BlueBridge Services</h1>
+    <p>Innovative Solutions for Water Resource Management</p>
+</header>
+
 <div class="container">
-    <h1>🚧 Website In Progress 🚧</h1>
-    <p>We're working hard to bring you something amazing. Stay tuned!</p>
-    <p>This page is currently under construction.</p>
+    <div class="features">
+        <h2>Our Core Features</h2>
+        <ul>
+            <li>A mobile application that works even with limited connectivity</li>
+            <li>A system for collecting hydrological data by users (water levels, incidents, quality, visual observations)</li>
+            <li>An interactive map locating water resources and reports</li>
+            <li>Simple dashboards to visualize local conditions</li>
+            <li>Practical advice tools adapted to community uses and water source protection</li>
+            <li>A multilingual, intuitive interface with clear icons for populations with low literacy</li>
+            <li>A web platform linked to the application for researchers and communities</li>
+        </ul>
+    </div>
+
+    <div class="service">
+        <h2>Community Water Monitoring</h2>
+        <p>Empower local communities to track and report on their water resources through an intuitive mobile interface. Our system works offline and syncs when connectivity is available, making it ideal for remote areas.</p>
+    </div>
+
+    <div class="service">
+        <h2>Data Collection & Analysis</h2>
+        <p>Collect essential hydrological data including water levels, quality measurements, and visual observations. Our platform aggregates this data for analysis and visualization, helping communities and researchers understand water trends.</p>
+    </div>
+
+    <div class="service">
+        <h2>Early Warning System</h2>
+        <p>Identify potential water crises before they occur by monitoring trends in water availability and quality. Our system can alert communities and authorities to emerging issues like drought conditions or contamination.</p>
+    </div>
+
+    <div class="service">
+        <h2>Capacity Building</h2>
+        <p>We provide training and support to local communities, helping them understand and use water data effectively. Our approach emphasizes local ownership and sustainable water management practices.</p>
+    </div>
+
+    <div class="service">
+        <h2>Research & Policy Support</h2>
+        <p>Our aggregated data provides valuable insights for researchers studying hydrology and climate change, as well as policymakers developing water management strategies.</p>
+    </div>
+
+    <h2>Who Benefits From Our Services</h2>
+    <ul>
+        <li><strong>Rural and semi-urban communities</strong> facing water tensions</li>
+        <li><strong>Municipal agents</strong> and water infrastructure managers</li>
+        <li><strong>Humanitarian organizations</strong> and NGOs working in water and climate resilience</li>
+        <li><strong>Students, universities,</strong> and researchers in hydrology, geography, and environment</li>
+        <li><strong>Development programs</strong> and international cooperation initiatives</li>
+    </ul>
 </div>
+
+<footer>
+    <p>&copy; 2025 BlueBridge. All rights reserved.</p>
+</footer>
 </body>
 </html>

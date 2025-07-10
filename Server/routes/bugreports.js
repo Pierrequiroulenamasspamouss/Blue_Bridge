@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 
 const BUGREPORTS_PATH = path.join(__dirname, '../data/bugreports.json');
 
@@ -12,7 +14,16 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // POST /api/bugreports
-router.post('/', (req, res) => {
+router.post('/', [
+    body('name').isString().trim().escape(),
+    body('description').isString().trim().escape(),
+    body('category').isString().trim().escape(),
+    body('extra').optional().isObject()
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
     const { name, description, category, extra } = req.body;
     if (!name || !description || !category) {
         return res.status(400).json({ status: 'error', message: 'Missing required fields: name, description, category' });

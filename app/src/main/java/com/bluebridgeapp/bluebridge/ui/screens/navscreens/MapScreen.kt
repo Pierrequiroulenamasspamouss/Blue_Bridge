@@ -2,16 +2,21 @@
 
 package com.bluebridgeapp.bluebridge.ui.screens.navscreens
 
+import OfflineMapDownloader
 import android.os.Build
 import android.preference.PreferenceManager
+import android.util.Log
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -23,6 +28,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,10 +46,11 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.data.model.hasValidCoordinates
-import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.ui.dialogs.WellDetailsDialog
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -65,8 +72,10 @@ fun MapScreen(
     targetLat: Double? = null,
     targetLon: Double? = null
 ) {
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     val wellsState = wellViewModel.wellsListState.value
     val wells = remember { wellsState.dataOrEmpty() }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
@@ -93,7 +102,7 @@ fun MapScreen(
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
             // Map View
             AndroidView(
@@ -101,7 +110,6 @@ fun MapScreen(
                     MapView(ctx).apply {
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
                         setTileSource(TileSourceFactory.MAPNIK)
@@ -134,14 +142,9 @@ fun MapScreen(
                         // Add compass overlay for orientation
                         val compassOverlay = CompassOverlay(context, this)
                         compassOverlay.enableCompass()
-                        // Optionally, customize the compass appearance
-                        // compassOverlay.setCompassCenter(35f, 35f) // Example: Set compass position
-                        // compassOverlay.setCompassMode(CompassOverlay.CompassMode.ROTATES_WITH_MAP) // Example: Set compass mode
                         overlays.add(compassOverlay)
 
-
                         // Center map on user location if available, otherwise on target or first well
-                        // The follow location will handle centering if enabled.
                         if (userLat != null && userLon != null) {
                             controller.setCenter(GeoPoint(userLat, userLon))
                         } else if (targetLat != null && targetLon != null) {
@@ -173,22 +176,64 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
+            // Location FAB
             FloatingActionButton(
                 onClick = {
                     userLat?.let { lat ->
                         userLon?.let { lon ->
                             mapViewRef?.controller?.animateTo(GeoPoint(lat, lon))
-                            mapViewRef?.controller?.setZoom(15.0)
                         }
                     }
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(innerPadding)
-                    .padding(16.dp), // Additional padding for FAB
+                    .padding(16.dp),
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.MyLocation, contentDescription = "Focus on my location", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(Icons.Default.MyLocation, contentDescription = "Focus on my location")
+            }
+
+            // Download FAB - positioned above the location FAB
+            FloatingActionButton(
+                onClick = {
+
+                    userLat?.let { lat ->
+                        userLon?.let { lon ->
+                            mapViewRef?.let { mapView ->
+                                isDownloading = true
+                                downloadProgress = 0
+                                Log.d("MapScreen", "Downloading map for location: $lat, $lon")
+                                coroutineScope.launch {
+                                    val downloader = OfflineMapDownloader(context, mapView)
+                                    downloader.downloadArea(
+                                        center = GeoPoint(lat, lon),
+                                        radiusKm = 10,
+                                        minZoom = 12,
+                                        maxZoom = 18,
+                                        onProgress = { progress ->
+                                            downloadProgress = progress
+                                        }
+                                    )
+                                    isDownloading = false
+                                }
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 80.dp, end = 16.dp),
+                containerColor = MaterialTheme.colorScheme.secondary
+            ) {
+                if (isDownloading) {
+                    CircularProgressIndicator(
+                        progress = { downloadProgress.toFloat() / 100f },
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
+                } else {
+                    Icon(Icons.Default.CloudDownload, contentDescription = "Download offline map")
+                }
             }
         }
     }

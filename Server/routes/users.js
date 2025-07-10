@@ -3,6 +3,8 @@ const router = express.Router();
 const { User, DeviceToken } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const { sendWelcomeEmail } = require('../services/emailService');
+const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 
 // Helper functions
 const handleError = (res, error, message = 'Operation failed') => {
@@ -94,8 +96,18 @@ router.post('/delete-account', async (req, res) => {
 
 
 // User Registration
-router.post('/register', async (req, res) => {
-  try {
+router.post('/register', [
+    body('email').isEmail().normalizeEmail(),
+    body('password').isLength({ min: 6 }).trim().escape(),
+    body('firstName').isString().trim().escape(),
+    body('lastName').isString().trim().escape(),
+    body('deviceToken').optional().isString().trim().escape(),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
+    try {
     const requiredFields = {
       email: 'Email is required',
       password: 'Password is required',

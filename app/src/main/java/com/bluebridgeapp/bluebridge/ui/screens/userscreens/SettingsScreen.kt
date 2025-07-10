@@ -90,7 +90,7 @@ fun SettingsScreen(
     var easterCount by remember { mutableIntStateOf(0) }
     var currentUserRole by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-
+    val api = RetrofitBuilder.getServerApi(context)
     var showLocationSharingDialog by remember { mutableStateOf(false) }
     // Get current theme preference directly from ViewModel's theme state
     val currentThemePreference by userViewModel.currentTheme.collectAsState()
@@ -438,9 +438,10 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     coroutineScope.launch {
-                        val api = RetrofitBuilder.getServerApi(context)
+
                         val response = api.doNotShareLocation(
                             BasicRequest(
+                                userId = userData?.userId ?: "",
                                 message = "true", // Public
                                 loginToken = userData?.loginToken ?: ""
                             )
@@ -459,10 +460,16 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = {
                     coroutineScope.launch {
-                        // For private, you might want to send "false" or handle it differently on the backend
-                        // For this example, let's assume not calling the API or calling with "false" means private.
-                        // Here, we'll just show a message.
-                        AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.location_sharing_set_to_private)))
+                        val response = api.doNotShareLocation(
+                            BasicRequest(
+                                userId = userData?.userId ?: "",
+                                message = "false", // Private
+                                loginToken = userData?.loginToken ?: ""
+                            )
+                        )
+                        if(response.isSuccessful){AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.location_sharing_set_to_private)))}
+                        else{AppEventChannel.sendEvent(AppEvent.ShowError(context.getString(R.string.location_not_available)))}
+
                     }
                     showLocationSharingDialog = false
                 }) {
