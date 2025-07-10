@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-
+const isDev = process.env.NODE_ENV ;
 const appLatestVersion = process.env.APP_LATEST_VERSION ;
 const serverVersion = process.env.SERVER_VERSION;
 
@@ -108,6 +108,21 @@ router.get('/tree', (req, res) => {
         .replace('{{generationTime}}', new Date().toLocaleString());
 
     res.send(apiTreeHtml);
+});
+
+// API status endpoint
+
+router.get('/status', (req, res) => {
+    res.apiSuccess({
+        message: 'Welcome to the BlueBridge API',
+        mode: isDev ? 'Development' : 'Production',
+        status: 'Online',
+        timestamp: new Date().toISOString(),
+        versions: {
+            server: serverVersion,
+            mobile: appLatestVersion
+        }
+    });
 });
 
 module.exports = router;

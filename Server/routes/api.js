@@ -15,9 +15,7 @@ const nearbyUsersRouter = require('./nearbyUsers');
 const weatherRouter = require('./weather');
 const wellStatisticsRouter = require('./wellStatistics');
 const bugReportsRouter = require('./bugreports');
-const isDev = process.env.NODE_ENV ;
-const appLatestVersion = process.env.APP_LATEST_VERSION ;
-const serverVersion = process.env.SERVER_LATEST_VERSION;
+
 
 // Mount all API routers
 router.use('/wells', wellsRouter);
@@ -30,19 +28,9 @@ router.use('/weather', weatherRouter);
 router.use('/well-statistics', wellStatisticsRouter);
 router.use('/bugreports', bugReportsRouter);
 
-// API status endpoint
-router.get('/status', (req, res) => {
-    res.apiSuccess({
-        message: 'Welcome to the BlueBridge API',
-        mode: isDev ? 'Development' : 'Production',
-        status: 'Online',
-        timestamp: new Date().toISOString(),
-        versions: {
-            server: serverVersion,
-            mobile: appLatestVersion
-        }
-    });
-});
+
+
+
 
 router.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../documentation', 'API_DOCUMENTATION.md'));
