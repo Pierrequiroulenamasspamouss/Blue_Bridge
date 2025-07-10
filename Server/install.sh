@@ -124,6 +124,71 @@ case "\$1" in
   *) echo "Usage: \$0 {start|stop|restart|status}" ; exit 1 ;;
 esac
 EOL
+
+# --- rclone Setup ---
+echo -e "${YELLOW}Checking rclone installation...${NC}"
+if ! command -v rclone &> /dev/null; then
+    echo -e "${YELLOW}Installing rclone...${NC}"
+    curl https://rclone.org/install.sh | bash
+else
+    echo -e "${GREEN}rclone is already installed.${NC}"
+fi
+
+# Guide the user through rclone config (manual step if not done)
+if [ ! -f "/root/.config/rclone/rclone.conf" ] && [ ! -f "/home/$SERVICE_USER/.config/rclone/rclone.conf" ]; then
+    echo -e "${RED}rclone is not yet configured.${NC}"
+    echo -e "${YELLOW}Please run: ${NC}sudo -u $SERVICE_USER rclone config"
+    echo -e "Then set up a remote named '${GREEN}gdrive${NC}' pointing to your Google Drive account."
+    echo -e "${YELLOW}Skipping backup setup until rclone is configured.${NC}"
+else
+    echo -e "${GREEN}rclone is already configured. Proceeding with backup setup...${NC}"
+
+    # Install cron job for backups
+    CRON_JOB="0 2 * * * $DEST_DIR/scripts/backup.sh >> /var/log/bluebridge_backup.log 2>&1"
+    (crontab -u $SERVICE_USER -l 2>/dev/null | grep -v 'backup.sh'; echo "$CRON_JOB") | crontab -u $SERVICE_USER -
+    echo -e "${GREEN}Backup cron job installed for 02:00 daily.${NC}"
+fi
+
+# --- Write Backup Script ---
+echo -e "${YELLOW}Creating backup script at $DEST_DIR/scripts/backup.sh...${NC}"
+mkdir -p "$DEST_DIR/scripts"
+
+cat > "$DEST_DIR/scripts/backup.sh" << 'EOF'
+#!/bin/bash
+
+# Paths to DBs
+DB_PATH="/opt/bluebridge/data/users.sqlite"
+BACKUP_DIR="/opt/bluebridge/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+FILENAME="database_$DATE.sqlite"
+COMPRESSED="$BACKUP_DIR/$FILENAME.gz"
+
+# Google Drive (rclone remote)
+RCLONE_REMOTE="gdrive:bluebridge_backups"
+MAX_BACKUPS=10
+
+# Ensure backup dir exists
+mkdir -p "$BACKUP_DIR"
+
+# Create local backup
+cp "$DB_PATH" "$BACKUP_DIR/$FILENAME"
+gzip "$BACKUP_DIR/$FILENAME"
+
+# Upload to Google Drive
+rclone copy "$COMPRESSED" "$RCLONE_REMOTE"
+
+# Keep only last 10 backups in Drive
+rclone ls "$RCLONE_REMOTE" | sort -k2 | head -n -$MAX_BACKUPS | awk '{print $2 }' | while read -r old; do
+    rclone delete "$RCLONE_REMOTE/$old"
+done
+
+# Fix permissions
+chown -R bluebridge:bluebridge "$BACKUP_DIR"
+chmod -R 644 "$BACKUP_DIR"/*.gz
+EOF
+
+chmod +x "$DEST_DIR/scripts/backup.sh"
+
 sudo chmod +x /etc/init.d/bluebridge
 sudo setcap 'cap_net_bind_service=+ep' $(which node)
 # --- Final Steps ---

@@ -2,31 +2,41 @@
 
 # Configuration
 USER_DB_PATH="/opt/bluebridge/database.sqlite"
-WELLS_DB_PATH="/opt/bluebridge/wells.sqlite"
-TOKENS_DB_PATH="/opt/bluebridge/tokens.sqlite"
-
 BACKUP_DIR="/opt/bluebridge/backups"
-MAX_BACKUPS=7  # Keep a week's worth of backups
 DATE=$(date +%Y%m%d_%H%M%S)
+FILENAME="database_$DATE.sqlite"
+BACKUP_FILE="$BACKUP_DIR/$FILENAME"
+COMPRESSED_FILE="$BACKUP_FILE.gz"
+
+# Google Drive configuration
+RCLONE_REMOTE="gdrive:bluebridge_backups"  # 'bluebridge_backups' is the folder in your Drive
+MAX_CLOUD_BACKUPS=10
 
 # Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
 
-# Create backup
+# Create local backup
 echo "Creating backup of database..."
-cp "$DB_PATH" "$BACKUP_DIR/database_$DATE.sqlite"
-gzip "$BACKUP_DIR/database_$DATE.sqlite"
+cp "$USER_DB_PATH" "$BACKUP_FILE"
+gzip "$BACKUP_FILE"
 
-# Remove old backups (keep only the last MAX_BACKUPS files)
-echo "Cleaning up old backups..."
-ls -t "$BACKUP_DIR"/database_*.sqlite.gz | tail -n +$((MAX_BACKUPS + 1)) | xargs -r rm
+# Upload to Google Drive
+echo "Uploading to Google Drive..."
+rclone copy "$COMPRESSED_FILE" "$RCLONE_REMOTE"
 
-# Set proper permissions
+# Clean up old cloud backups (keep only the last $MAX_CLOUD_BACKUPS)
+echo "Pruning old backups from Google Drive..."
+rclone ls "$RCLONE_REMOTE" | sort -k2 | head -n -"$MAX_CLOUD_BACKUPS" | awk '{print $2}' | while read -r file; do
+    echo "Deleting $file from Google Drive..."
+    rclone delete "$RCLONE_REMOTE/$file"
+done
+
+# Set permissions for local backup
 chown -R bluebridge:bluebridge "$BACKUP_DIR"
 chmod -R 644 "$BACKUP_DIR"/*.gz
 
-echo "Backup completed: database_$DATE.sqlite.gz"
+echo "Backup completed: $(basename "$COMPRESSED_FILE")"
 
-# List current backups
-echo "Current backups:"
-ls -lh "$BACKUP_DIR" 
+# List local backups
+echo "Local backups:"
+ls -lh "$BACKUP_DIR"

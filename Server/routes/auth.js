@@ -224,5 +224,30 @@ router.post('/validate', async (req, res) => {
     }
 });
 
+// Delete Account Endpoint
+router.post('/delete-account', validateToken, async (req, res) => {
+    const { userId } = req.body; // userId is from the request body, validated by validateToken
+
+    if (req.user.userId !== userId) {
+        return jsonResponse(res, 403, { status: 'error', message: 'Forbidden: You can only delete your own account.' });
+    }
+
+    try {
+        // First, delete related data, like DeviceTokens
+        await DeviceToken.destroy({ where: { userId } });
+
+        // Then, delete the user
+        const deletedUserCount = await User.destroy({ where: { userId } });
+
+        if (deletedUserCount === 0) {
+            return jsonResponse(res, 404, { status: 'error', message: 'User not found' });
+        }
+
+        jsonResponse(res, 200, { status: 'success', message: 'Account deleted successfully' });
+    } catch (error) {
+        console.error('Delete account error:', error);
+        jsonResponse(res, 500, { status: 'error', message: 'Failed to delete account' });
+    }
+});
 
 module.exports = router;

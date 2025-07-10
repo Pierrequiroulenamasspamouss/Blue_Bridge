@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,22 +58,25 @@ class MainActivity : ComponentActivity() {
             AppEventChannel.initialize(appEventHandler)
 
             MaterialTheme {
-                // Box container to position Snackbar at top
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // Your main content
-                    Scaffold { padding ->
-                        Surface(Modifier.fillMaxSize().padding(padding)) {
-                            BlueBridgeApp(viewModelFactory)
+                // Provide ActivityResultRegistryOwner to all composables
+                CompositionLocalProvider(LocalActivityResultRegistryOwner provides this) {
+                    // Box container to position Snackbar at top
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // Your main content
+                        Scaffold { padding ->
+                            Surface(Modifier.fillMaxSize().padding(padding)) {
+                                BlueBridgeApp(viewModelFactory)
+                            }
                         }
-                    }
 
-                    // Custom SnackbarHost at top
-                    SnackbarHost(
-                        hostState = snackbarHostState,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 48.dp) // Add some top padding if needed
-                    )
+                        // Custom SnackbarHost at top
+                        SnackbarHost(
+                            hostState = snackbarHostState,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 48.dp) // Add some top padding if needed
+                        )
+                    }
                 }
             }
         }

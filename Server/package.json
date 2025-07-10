@@ -23,6 +23,7 @@
     "greenlock-express": "^4.0.3",
     "node": "^24.2.0",
     "node-cache": "^5.1.2",
+    "rclone.js": "^2.0.2",
     "nodemailer": "^6.9.7",
     "selfsigned": "^2.4.1",
     "sequelize": "^6.31.0",
