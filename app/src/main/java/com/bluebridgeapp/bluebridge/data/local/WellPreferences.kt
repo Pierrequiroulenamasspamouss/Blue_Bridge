@@ -16,7 +16,6 @@ import kotlinx.serialization.json.Json
 val Context.wellDataStore: DataStore<Preferences> by preferencesDataStore(name = "well_preferences")
 class WellPreferences(val context: Context) {
     companion object {
-        val FAVORITE_WELLS_KEY = stringPreferencesKey("favorite_wells")
         val WELLS_KEY = stringPreferencesKey("wells_list")
     }
     
@@ -43,7 +42,6 @@ class WellPreferences(val context: Context) {
         saveWellList(updated)
     }
 
-
     suspend fun updateWell(wellData: WellData) {
         val current = wellListFlow.first().toMutableList()
         val index = current.indexOfFirst { it.id == wellData.id }
@@ -52,7 +50,6 @@ class WellPreferences(val context: Context) {
             saveWellList(current)
         }
     }
-
 
     suspend fun deleteWell(wellId: String) {
         val current = wellListFlow.first()

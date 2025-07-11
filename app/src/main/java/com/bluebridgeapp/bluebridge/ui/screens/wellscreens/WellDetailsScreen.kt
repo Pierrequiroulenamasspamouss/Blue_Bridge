@@ -23,8 +23,8 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +64,6 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WellDetailsScreen(
     navController: NavController,
@@ -196,7 +195,10 @@ private fun WellNotFound(wellId: Int, onRetry: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.well_not_found, wellId))
-            Text(stringResource(R.string.error_loading_data), style = MaterialTheme.typography.bodySmall)
+            Text(
+                stringResource(R.string.error_loading_data),
+                style = MaterialTheme.typography.bodySmall
+            )
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
         }
@@ -230,7 +232,11 @@ private fun WellDetails(
 private fun WellBasicInfoCard(well: WellData) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            Text(well.wellName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(
+                well.wellName,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(Modifier.height(8.dp))
             InfoRow("Owner:", well.wellOwner.ifBlank { "Not specified" })
             InfoRow("Status:", well.wellStatus)
@@ -244,9 +250,18 @@ private fun WellWaterSpecsCard(well: WellData) {
         Column(Modifier.padding(16.dp)) {
             SectionTitle("Water Specifications")
             InfoRow("Water Type:", well.wellWaterType.ifBlank { "Not specified" })
-            InfoRow("Water Level:", if (well.wellWaterLevel.isBlank()) "Not specified" else "${well.wellWaterLevel}L")
-            InfoRow("Capacity:", if (well.wellCapacity.isBlank()) "Not specified" else "${well.wellCapacity}L")
-            InfoRow("Consumption:", if (well.wellWaterConsumption.isBlank()) "Not specified" else "${well.wellWaterConsumption}L/day")
+            InfoRow(
+                "Water Level:",
+                if (well.wellWaterLevel.isBlank()) "Not specified" else "${well.wellWaterLevel}L"
+            )
+            InfoRow(
+                "Capacity:",
+                if (well.wellCapacity.isBlank()) "Not specified" else "${well.wellCapacity}L"
+            )
+            InfoRow(
+                "Consumption:",
+                if (well.wellWaterConsumption.isBlank()) "Not specified" else "${well.wellWaterConsumption}L/day"
+            )
         }
     }
 }
@@ -296,7 +311,7 @@ private fun WellLocationCard(
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    Divider(modifier = Modifier.padding(vertical = 8.dp))
+    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 }
 
 @Composable
@@ -334,12 +349,8 @@ private fun navigateToCompass(well: WellData, navController: NavController, scop
 
     val lat = well.getLatitude()
     val lon = well.getLongitude()
-    if (lat != null && lon != null) {
-        val encodedName = URLEncoder.encode(well.wellName, StandardCharsets.UTF_8.toString())
-        navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
-    } else {
-        scope.launch { AppEventChannel.sendEvent(AppEvent.ShowError("Invalid coordinates")) }
-    }
+    val encodedName = URLEncoder.encode(well.wellName, StandardCharsets.UTF_8.toString())
+    navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -351,9 +362,5 @@ private fun navigateToMap(well: WellData, navController: NavController, scope: C
 
     val lat = well.getLatitude()
     val lon = well.getLongitude()
-    if (lat != null && lon != null) {
-        navController.navigate("${Routes.MAP_SCREEN}?targetLat=$lat&targetLon=$lon")
-    } else {
-        scope.launch { AppEventChannel.sendEvent(AppEvent.ShowError("Invalid coordinates")) }
-    }
+    navController.navigate("${Routes.MAP_SCREEN}?targetLat=$lat&targetLon=$lon")
 }

@@ -17,7 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.bluebridgeapp.bluebridge.data.model.UserData
-import com.bluebridgeapp.bluebridge.ui.screens.CompassScreen
+import com.bluebridgeapp.bluebridge.ui.screens.navscreens.CompassScreen
 import com.bluebridgeapp.bluebridge.ui.screens.HomeScreen
 import com.bluebridgeapp.bluebridge.ui.screens.UrgentSmsScreen
 import com.bluebridgeapp.bluebridge.ui.screens.WeatherScreen
@@ -27,6 +27,7 @@ import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LanguageSelectionScre
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.EasterEgg
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.FeatureNotImplementedScreen
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LoadingScreen
+import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapDownloadScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.EditWaterNeedsScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.LoginScreen
@@ -427,12 +428,30 @@ fun NavigationGraph(
         composable(Routes.LANGUAGE_SELECTION_SCREEN) {
             LanguageSelectionScreen(navController = navController, userViewModel)
         }
-
-
+        composable(Routes.LOADING_SCREEN) {
+            LoadingScreen()
+        }
+        composable(
+            route = "${Routes.MAP_DOWNLOADING_SCREEN}?userLat={userLat}&userLon={userLon}",
+            arguments = listOf(
+                navArgument("userLat") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("userLon") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val userLat = backStackEntry.arguments?.getString("userLat")?.toDoubleOrNull()?.coerceIn(-90.0, 90.0)
+            val userLon = backStackEntry.arguments?.getString("userLon")?.toDoubleOrNull()?.coerceIn(-180.0, 180.0)
+            MapDownloadScreen(
+                navController = navController,
+                userLat = userLat,
+                userLon = userLon            )
+        }
     }
-
 }
-
-
-
-

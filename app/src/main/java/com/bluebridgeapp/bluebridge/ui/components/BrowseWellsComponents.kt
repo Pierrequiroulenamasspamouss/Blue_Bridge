@@ -62,16 +62,14 @@ fun MapView(
                     webViewClient = WebViewClient()
 
                     // Load basic OpenStreetMap with markers for wells
-                    val wellMarkers = wells.mapNotNull { well ->
+                    val wellMarkers = wells.map { well ->
                         val lat = well.getLatitude()
                         val lon = well.getLongitude()
-                        if (lat != null && lon != null) {
-                            """
-                            L.marker([${lat}, ${lon}], {title: "${well.wellName}"})
-                              .addTo(map)
-                              .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>$navigateButtonText</button><button onclick='viewWellDetails(\"${well.espId}\")'>$detailsButtonText</button>");
-                            """
-                        } else null
+                        """
+                        L.marker([${lat}, ${lon}], {title: "${well.wellName}"})
+                          .addTo(map)
+                          .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>$navigateButtonText</button><button onclick='viewWellDetails(\"${well.espId}\")'>$detailsButtonText</button>");
+                        """
                     }.joinToString("\n")
 
                     // Center point based on user location or first well

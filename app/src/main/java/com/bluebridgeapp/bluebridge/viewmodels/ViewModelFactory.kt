@@ -42,7 +42,7 @@ class ViewModelFactory(
             }
 
             modelClass.isAssignableFrom(WellViewModel::class.java) -> {
-                WellViewModel(wellRepository ,context) as T
+                WellViewModel(wellRepository) as T
             }
 
             modelClass.isAssignableFrom(NearbyUsersViewModel::class.java) -> {

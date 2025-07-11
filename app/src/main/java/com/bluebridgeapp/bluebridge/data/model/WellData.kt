@@ -13,7 +13,7 @@ data class WellData(
     val wellWaterType: String = "",
     val wellCapacity: String = "",
     val wellWaterLevel: String = "",
-    var lastRefreshTime: Long = 0L, // Unix timestamp in millis --> local information
+    var lastRefreshTime: Long = 0L,
     val wellStatus: String = "Unknown",
     val waterQuality: WaterQuality = WaterQuality(),
     val extraData: Map<String, JsonElement> = emptyMap(),
@@ -24,15 +24,8 @@ data class WellData(
     val wellOwner: String
 )
 
-fun WellData.getLatitude(): Double {
-    return wellLocation.latitude
-}
-
-fun WellData.getLongitude(): Double {
-    return wellLocation.longitude
-}
-
-
+fun WellData.getLatitude(): Double = wellLocation.latitude
+fun WellData.getLongitude(): Double = wellLocation.longitude
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun WellData.hasValidCoordinates(): Boolean {
@@ -50,12 +43,8 @@ data class ShortenedWellData(
     val wellWaterLevel: String = "0",
     val espId: String = "0"
 ) {
-    fun getLatitude(): Double {
-        return wellLocation.latitude
-    }
-    fun getLongitude(): Double {
-        return wellLocation.longitude
-    }
+    fun getLatitude(): Double = wellLocation.latitude
+    fun getLongitude(): Double = wellLocation.longitude
 }
 
 @Serializable

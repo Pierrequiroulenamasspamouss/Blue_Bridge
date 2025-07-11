@@ -1,9 +1,10 @@
 package com.bluebridgeapp.bluebridge.network
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.bluebridgeapp.bluebridge.R
-import com.bluebridgeapp.bluebridge.data.model.*
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -31,8 +32,11 @@ object RetrofitBuilder {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        val trustManager = object : X509TrustManager {
+        val trustManager = @SuppressLint("CustomX509TrustManager")
+        object : X509TrustManager {
+            @SuppressLint("TrustAllX509TrustManager")
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+            @SuppressLint("TrustAllX509TrustManager")
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
             override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
         }
@@ -49,6 +53,7 @@ object RetrofitBuilder {
             .build()
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private fun createRetrofit(baseUrl: String, client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(baseUrl)

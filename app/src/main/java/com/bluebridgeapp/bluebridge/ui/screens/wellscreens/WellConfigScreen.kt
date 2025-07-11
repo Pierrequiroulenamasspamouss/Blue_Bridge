@@ -31,8 +31,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -417,7 +417,7 @@ fun WellConfigScreen(
                             keyId = wellData.id,
                             onValueChange = { newEspId ->
                                 scope.launch {
-                                    val isUnique = wellViewModel.repository.isEspIdUnique(newEspId)
+                                    val isUnique = wellViewModel.isEspIdUnique(newEspId)
                                     if (isUnique) {
                                         wellViewModel.handleEvent(WellEvents.EspIdEntered(newEspId))
                                     } else {
@@ -444,7 +444,7 @@ fun WellConfigScreen(
                         scope.launch {
                             isSaving = true
                             try {
-                                val isUnique = wellViewModel.repository.isEspIdUnique(wellData.espId)
+                                val isUnique = wellViewModel.isEspIdUnique(wellData.espId)
                                 if (!isUnique && wellId == -1) {
                                     AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use by another well"))
                                     isSaving = false
@@ -564,7 +564,7 @@ fun SectionHeader(title: String, icon: ImageVector) {
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )
-        Divider(
+        HorizontalDivider(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 8.dp),

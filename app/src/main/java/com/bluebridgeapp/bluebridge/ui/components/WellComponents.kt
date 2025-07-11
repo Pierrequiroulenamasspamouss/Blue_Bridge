@@ -230,7 +230,7 @@ fun EnhancedWellCard(
             // Water level indicator using pre-calculated values
             waterLevelInfo?.let { (progress, percentage) ->
                 LinearProgressIndicator(
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -238,9 +238,12 @@ fun EnhancedWellCard(
                         percentage > 70 -> Color.Green
                         percentage > 30 -> Color.Yellow
                         else -> Color.Red
-                    }
+                    },
                 )
-                Text(stringResource(R.string.water_level_percentage_label, percentage), style = MaterialTheme.typography.bodySmall)
+                Text(
+                    stringResource(R.string.water_level_percentage_label, percentage),
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             // Navigate button

@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Blue Bridge</string>
     <string name="app_dev" translatable="false">Pierre Sluse</string>
     <string name="app_designer" translatable="false">Joel Wandege</string>
@@ -23,7 +23,7 @@
     <string name="sms_server_number" translatable="false">+32491142936</string>
 
     <string name="support_bluebridge">Support BlueBridge</string>
-    <string name="agreement_terms_EULA">1. Agreement terms...</string>
+    <string name="agreement_terms_EULA">1. Agreement terms…</string>
     <string name="data_privacy_usage_EULA">2. Data Privacy and Usage:</string>
     <string name="privacy_commitment_EULA">a. We are committed to protecting your privacy. We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information.</string>
     <string name="data_collection_EULA">b. We only collect and store data that is necessary for the proper functioning of the application and to improve your user experience. This may include anonymized usage statistics and preferences.</string>
@@ -35,7 +35,7 @@
     <string name="play_again">Play Again</string>
     <string name="reset">Reset</string>
     <string name="weather_forecast">Weather Forecast</string>
-    <string name="loading_weather">Loading weather data...</string>
+    <string name="loading_weather">Loading weather data…</string>
     <string name="retry">Retry</string>
     <string name="session_expired">Session Expired</string>
     <string name="logged_out">You have been logged out. This might be because you logged in on another device.</string>
@@ -75,7 +75,7 @@
     <string name="proceed">Proceed</string>
     <string name="radius_km">Radius (km)</string>
     <string name="search">Search</string>
-    <string name="finding_nearby_users">Finding nearby users...</string>
+    <string name="finding_nearby_users">Finding nearby users…</string>
     <string name="find_nearest_water_source">Find Nearest Water Source</string>
     <string name="request_emergency_assistance">Request Emergency Assistance</string>
     <string name="permission_required">Permission Required</string>
@@ -204,7 +204,7 @@
     <string name="authentication_error">We detected you have logged in elsewhere. For that reason, you have been logged out</string>
     <string name="please_login_again">Please log in again</string>
     <string name="update_url" translatable="false">\"http://bluebridge.homeonthewater.com/home\"</string>
-    <string name="selected">Selected</string>
+    <string name="selected" tools:ignore="PrivateResource">Selected</string>
     <string name="back">Back</string>
 
     <!-- Well Status and Filters -->
@@ -300,7 +300,7 @@
     <string name="offline_banner_message">You are currently offline</string>
 
     <!-- General -->
-    <string name="empty_string" translatable="false"></string>
+    <string name="empty_string" translatable="false" />
     <string name="feature_icon_description" translatable="false">Feature icon</string>
     <string name="filters" translatable="false">Filters</string>
     <string name="change_language">Change the language</string>
@@ -333,12 +333,12 @@
     <string name="send">Send</string>
     <string name="confirm">Confirm</string>
     <string name="location_sharing">Location sharing</string>
-    <string name="location_sharing_info">Allow or disallow to share the refion you set to other users</string>
+    <string name="location_sharing_info">Allow or disallow to share the region you set to other users</string>
     <string name="choose_location_sharing_preference">Would you agree to share your location preferences with other people ? If you allow it, they can more easily contact you or help you if you get lost\n</string>
     <string name="location_sharing_set_to_public">Your region is now visible by anyone</string>
     <string name="location_not_available">There was an issue requesting the activation of your location\'s sharing. Contact an admin to fix this problem\n</string>
     <string name="public_location">"Everyone can know about you and your region now"</string>
     <string name="private_location">"Only you and the server will know about your location. "</string>
-    <string name="location_sharing_set_to_private">Your location is et to private.Only the server will know your region in order to send you weather notifications</string>
+    <string name="location_sharing_set_to_private">Your location is set to private.Only the server will know your region in order to send you weather notifications</string>
 
 </resources>

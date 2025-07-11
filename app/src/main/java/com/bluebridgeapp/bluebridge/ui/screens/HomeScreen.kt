@@ -90,7 +90,7 @@ fun HomeScreen(
     val wellOwnerRole = 3
     //Get the role's value for easy permissions
     LaunchedEffect(Unit) {
-        currentUserRole = userViewModel.repository.getRoleValue()
+        currentUserRole = userViewModel.getRoleValue()
         // Simulate data loading delay
         isLoading = false // Data loaded
     }

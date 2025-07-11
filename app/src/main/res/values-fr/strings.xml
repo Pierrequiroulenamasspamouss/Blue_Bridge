@@ -1,7 +1,7 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="support_bluebridge">Supportez Bluebridge</string>
-    <string name="agreement_terms_EULA">1. Conditions d\'utilisation...</string>
+    <string name="agreement_terms_EULA">1. Conditions d\'utilisation…</string>
     <string name="data_privacy_usage_EULA">2. Confidentialité et utilisation des données :</string>
     <string name="privacy_commitment_EULA">a. Nous nous engageons à protéger votre vie privée. Nous ne vendons, n\'échangeons ni ne transférons vos informations personnelles à des tiers.</string>
     <string name="data_collection_EULA">b. Nous ne collectons et stockons que les données nécessaires au bon fonctionnement de l\'application et à l\'amélioration de votre expérience utilisateur. Cela peut inclure des statistiques d\'utilisation anonymisées et des préférences.</string>
@@ -13,7 +13,7 @@
     <string name="play_again">Rejouer</string>
     <string name="reset">Réinitialiser</string>
     <string name="weather_forecast">Prévisions météo</string>
-    <string name="loading_weather">Chargement des données météo...</string>
+    <string name="loading_weather">Chargement des données météo…</string>
     <string name="retry">Réessayer</string>
     <string name="session_expired">Session expirée</string>
     <string name="logged_out">Vous avez été déconnecté. Cela peut être dû à une connexion sur un autre appareil.</string>
@@ -37,7 +37,7 @@
     <string name="dont_have_account">Pas de compte ? Inscrivez-vous</string>
     <string name="radius_km">Rayon (km)</string>
     <string name="search">Rechercher</string>
-    <string name="finding_nearby_users">Recherche d\'utilisateurs à proximité...</string>
+    <string name="finding_nearby_users">Recherche d\'utilisateurs à proximité…</string>
     <string name="find_nearest_water_source">Trouver la source d\'eau la plus proche</string>
     <string name="request_emergency_assistance">Demander une assistance d\'urgence</string>
     <string name="permission_required">Permission requise</string>
@@ -187,7 +187,7 @@
     <string name="network_error">Problème de réseau</string>
     <string name="authentication_error">Vous vous êtes connecté sur un autre appareil alors nous vous avons déconnecté.</string>
     <string name="please_login_again">Reconnectez-vous s\'il vous plaît</string>
-    <string name="selected">Sélectionné</string>
+    <string name="selected" tools:ignore="PrivateResource">Sélectionné</string>
     <string name="back">Retour</string>
     <string name="clean">Propre</string>
     <string name="grey">Sale</string>
@@ -273,6 +273,13 @@
     <string name="send">Envoyer</string>
     <string name="confirm">Confirmer</string>
     <string name="location_sharing">Location sharing</string>
+    <string name="location_sharing_info">Autoriser le partage de votre région à d\'autres utilisateurs</string>
+    <string name="choose_location_sharing_preference">Autorisez-vous le partage de votre localisation approximative à d\'autres utilisateurs ?</string>
+    <string name="location_sharing_set_to_public">Votre région est maintenant visible pare tout le monde</string>
+    <string name="location_not_available">Une erreur s\'est produite en tentant de configurer vos préférences de partage de position</string>
+    <string name="public_location">Tout le monde peut connaitre votre position approximative</string>
+    <string name="private_location">Seulement vous et le serveur connaissez votre région</string>
+    <string name="location_sharing_set_to_private">Votre localisation est privée. seulement le serveur connait votre région. Il s\'en sert pour vous envoyer des notifications météorologiques</string>
 
 </resources>
 

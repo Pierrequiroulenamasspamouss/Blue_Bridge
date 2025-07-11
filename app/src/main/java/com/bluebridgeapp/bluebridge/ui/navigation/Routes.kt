@@ -27,4 +27,6 @@ object Routes {
     const val WEATHER_SCREEN = "weather_screen"
     const val URGENT_SMS_SCREEN = "urgent_sms_screen"
     const val LANGUAGE_SELECTION_SCREEN = "language_selection_screen"
+    const val LOADING_SCREEN = "loading_screen"
+    const val MAP_DOWNLOADING_SCREEN = "map_downloading_screen"
 }

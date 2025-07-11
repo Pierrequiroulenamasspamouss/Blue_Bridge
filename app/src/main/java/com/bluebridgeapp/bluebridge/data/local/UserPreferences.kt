@@ -62,11 +62,8 @@ class UserPreferences(context: Context) {
             }
         }
         .map { preferences ->
-                if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
-                val email = preferences[PreferencesKeys.EMAIL] ?: run {
-                    Log.e("UserPreferences", "Email not found in preferences")
-                    return@map null
-                }
+            if (preferences[PreferencesKeys.IS_LOGGED_IN] == true) {
+                val email = preferences[PreferencesKeys.EMAIL] ?: return@map null
                 val firstName = preferences[PreferencesKeys.FIRST_NAME] ?: ""
                 val lastName = preferences[PreferencesKeys.LAST_NAME] ?: ""
                 val username = preferences[PreferencesKeys.USERNAME] ?: ""
@@ -74,44 +71,15 @@ class UserPreferences(context: Context) {
                 val theme = preferences[PreferencesKeys.THEME] ?: 0
                 val token = preferences[PreferencesKeys.LOGIN_TOKEN]
                 val languageCode = preferences[PreferencesKeys.LANGUAGE_CODE] ?: "en"
-                val userId = preferences[PreferencesKeys.USER_ID] ?: run {
-                    Log.e("UserPreferences", "UserID not found in preferences")
-                    return@map null
-                }
-
-                Log.d(
-                    "UserPreferences",
-                    "Found user data: email=$email, userId=$userId, role=$role, firstName=$firstName, lastName=$lastName, username=$username, theme=$theme, token=$token, language = $languageCode"
-                )
-
-                // Parse location from JSON string
+                val userId = preferences[PreferencesKeys.USER_ID] ?: return@map null
                 val locationJson = preferences[PreferencesKeys.LOCATION]
                 val location = if (locationJson != null) {
-                    try {
-                        Json.decodeFromString<Location>(locationJson)
-                    } catch (e: Exception) {
-                        Log.e("UserPreferences", "Error parsing location: $locationJson", e)
-                        Location(0.0, 0.0)
-                    }
-                } else {
-                    Log.d("UserPreferences", "No location found in preferences")
-                    Location(0.0, 0.0)
-                }
-
-                // Parse water needs from JSON string
+                    try { Json.decodeFromString<Location>(locationJson) } catch (e: Exception) { Location(0.0, 0.0) }
+                } else { Location(0.0, 0.0) }
                 val waterNeedsJson = preferences[PreferencesKeys.WATER_NEEDS]
                 val waterNeeds = if (waterNeedsJson != null) {
-                    try {
-                        Json.decodeFromString<List<WaterNeed>>(waterNeedsJson)
-                    } catch (e: Exception) {
-                        Log.e("UserPreferences", "Error parsing water needs: $waterNeedsJson", e)
-                        emptyList()
-                    }
-                } else {
-                    Log.d("UserPreferences", "No water needs found in preferences")
-                    emptyList()
-                }
-
+                    try { Json.decodeFromString<List<WaterNeed>>(waterNeedsJson) } catch (e: Exception) { emptyList() }
+                } else { emptyList() }
                 UserData(
                     email = email,
                     firstName = firstName,
@@ -124,11 +92,8 @@ class UserPreferences(context: Context) {
                     waterNeeds = waterNeeds,
                     loginToken = token,
                     languageCode = languageCode
-                ).also {
-                    Log.d("UserPreferences", "Successfully constructed UserData object: $it")
-                }
+                )
             } else {
-                Log.d("UserPreferences", "User is not logged in")
                 null
             }
         }
@@ -136,20 +101,10 @@ class UserPreferences(context: Context) {
     fun getUserData(): Flow<UserData?> = userDataFlow
 
     suspend fun clearUserData() {
-        Log.d("UserPreferences", "Clearing all user data")
-        var clearedPreferences: Preferences? = null
-        dataStore.edit { preferences ->
-            preferences.clear()
-            clearedPreferences = preferences
-        }
-        Log.d(
-            "UserPreferences",
-            "User data cleared successfully: New user data: $clearedPreferences"
-        )
+        dataStore.edit { preferences -> preferences.clear() }
     }
 
     suspend fun saveUserData(userData: UserData) {
-        Log.d("UserPreferences", "Saving user data: $userData")
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_ID] = userData.userId
             preferences[PreferencesKeys.EMAIL] = userData.email
@@ -160,42 +115,25 @@ class UserPreferences(context: Context) {
             preferences[PreferencesKeys.THEME] = userData.themePreference
             preferences[PreferencesKeys.IS_WELL_OWNER] = userData.role == "well_owner"
             preferences[PreferencesKeys.IS_LOGGED_IN] = true
-
-            // Store location as JSON string
             preferences[PreferencesKeys.LOCATION] = Json.encodeToString(userData.location)
-
-            // Store water needs as JSON string
             preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(userData.waterNeeds)
-
-            // Store login loginToken
-            userData.loginToken?.let { token ->
-                preferences[PreferencesKeys.LOGIN_TOKEN] = token
-            }
-
-            // If this is a guest login, set the guest flag
-            if (userData.role == "guest") {
-                preferences[PreferencesKeys.IS_GUEST] = true
-            }
+            userData.loginToken?.let { token -> preferences[PreferencesKeys.LOGIN_TOKEN] = token }
+            if (userData.role == "guest") preferences[PreferencesKeys.IS_GUEST] = true
+            preferences[PreferencesKeys.LANGUAGE_CODE] = userData.languageCode
         }
-        Log.d("UserPreferences", "User data saved successfully")
     }
 
-
     fun getThemePreference(): Int {
-        return prefs.getInt("theme_preference", 0) // Default to system theme
+        return prefs.getInt("theme_preference", 0)
     }
 
     suspend fun saveThemePreference(theme: Int) {
         prefs.edit().putInt("theme_preference", theme).apply()
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.THEME] = theme
-        }
+        dataStore.edit { preferences -> preferences[PreferencesKeys.THEME] = theme }
     }
 
     suspend fun setUserWaterNeeds(waterNeeds: String) {
         dataStore.edit { preferences ->
-            // We're storing as a stringified JSON array now, but keeping this method for backward compatibility
-            // In future, consider parsing and saving as WaterNeed list directly
             if (waterNeeds.isNotBlank()) {
                 val waterNeed = WaterNeed(
                     amount = waterNeeds.toFloatOrNull() ?: 0f,
@@ -203,20 +141,15 @@ class UserPreferences(context: Context) {
                     priority = 3,
                     description = "General water need"
                 )
-                preferences[PreferencesKeys.WATER_NEEDS] =
-                    Json.encodeToString(listOf(waterNeed))
+                preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(listOf(waterNeed))
             } else {
-                preferences[PreferencesKeys.WATER_NEEDS] =
-                    Json.encodeToString(emptyList<WaterNeed>())
+                preferences[PreferencesKeys.WATER_NEEDS] = Json.encodeToString(emptyList<WaterNeed>())
             }
         }
     }
 
-    // Push notification methods
     suspend fun setNotificationsEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
-        }
+        dataStore.edit { preferences -> preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled }
     }
 
     suspend fun areNotificationsEnabled(): Boolean {
@@ -225,9 +158,7 @@ class UserPreferences(context: Context) {
     }
 
     suspend fun saveNotificationToken(token: String) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.NOTIFICATION_TOKEN] = token
-        }
+        dataStore.edit { preferences -> preferences[PreferencesKeys.NOTIFICATION_TOKEN] = token }
     }
 
     suspend fun getNotificationToken(): String? {
@@ -236,21 +167,16 @@ class UserPreferences(context: Context) {
     }
 
     suspend fun clearNotificationToken() {
-        dataStore.edit { preferences ->
-            preferences.remove(PreferencesKeys.NOTIFICATION_TOKEN)
-        }
+        dataStore.edit { preferences -> preferences.remove(PreferencesKeys.NOTIFICATION_TOKEN) }
     }
 
     suspend fun setLanguage(language: String) {
-        // Save to both for backward compatibility
         prefs.edit().putString("language_code", language).apply()
         dataStore.edit { preferences -> preferences[PreferencesKeys.LANGUAGE_CODE] = language }
     }
 
     suspend fun getLanguage(): String? {
         val preferences = dataStore.data.first()
-        Log.d("UserPreferences", "Language code from preferences: ${preferences[stringPreferencesKey("language_code")]}")
         return preferences[stringPreferencesKey("language_code")]
     }
-
 }

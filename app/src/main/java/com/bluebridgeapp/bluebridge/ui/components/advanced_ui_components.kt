@@ -126,17 +126,18 @@ fun PasswordField(
     // Display password strength if provided
     passwordStrength?.let {
         if (value.isNotEmpty()) {
+            val strengthValue = when (it.strength) {
+                stringResource(id = R.string.password_strength_very_weak) -> 0.2f
+                stringResource(id = R.string.password_strength_weak) -> 0.4f
+                stringResource(id = R.string.password_strength_medium) -> 0.6f
+                stringResource(id = R.string.password_strength_strong) -> 0.8f
+                stringResource(id = R.string.password_strength_very_strong) -> 1f
+                else -> 0f
+            }
             LinearProgressIndicator(
-                progress = when (it.strength) {
-                    stringResource(id = R.string.password_strength_very_weak) -> 0.2f
-                    stringResource(id = R.string.password_strength_weak) -> 0.4f
-                    stringResource(id = R.string.password_strength_medium) -> 0.6f
-                    stringResource(id = R.string.password_strength_strong) -> 0.8f
-                    stringResource(id = R.string.password_strength_very_strong) -> 1f
-                    else -> 0f
-                },
+                progress = strengthValue,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                color = it.color
+                color = it.color,
             )
             Text(
                 text = "${it.strength}: ${it.message}",

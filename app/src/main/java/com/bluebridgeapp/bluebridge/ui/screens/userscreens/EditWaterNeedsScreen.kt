@@ -74,7 +74,7 @@ fun EditWaterNeedsScreen(
     LaunchedEffect(Unit) {
         waterManager.isLoading = true
         try {
-            val userData = userViewModel.repository.getUserData().first()
+            val userData = userViewModel.getUserData().first()
             userData?.waterNeeds?.let { needs ->
                 waterManager.waterNeeds.clear()
                 waterManager.waterNeeds.addAll(needs)

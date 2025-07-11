@@ -184,7 +184,7 @@ fun WaterNeedDialog(
                         readOnly = true,
                         label = { Text(stringResource(R.string.select_usage_type)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                        modifier = Modifier.fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -615,7 +615,7 @@ fun BugReportDialog(
                         readOnly = true,
                         label = { Text(stringResource(R.string.category)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,

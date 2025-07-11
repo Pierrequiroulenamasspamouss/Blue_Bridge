@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,7 +28,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -72,10 +71,7 @@ fun MapScreen(
     targetLat: Double? = null,
     targetLon: Double? = null
 ) {
-    var isDownloading by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val wellsState = wellViewModel.wellsListState.value
     val wells = remember { wellsState.dataOrEmpty() }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
@@ -96,7 +92,7 @@ fun MapScreen(
                 title = { Text("Well Map") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -179,10 +175,14 @@ fun MapScreen(
             // Location FAB
             FloatingActionButton(
                 onClick = {
-                    userLat?.let { lat ->
-                        userLon?.let { lon ->
-                            mapViewRef?.controller?.animateTo(GeoPoint(lat, lon))
-                        }
+                    // Get the current center of the map
+                    val mapCenter = mapViewRef?.mapCenter
+                    val currentLat = mapCenter?.latitude
+                    val currentLon = mapCenter?.longitude
+
+                    if (currentLat != null && currentLon != null) {
+                        // Animate to the current center of the map (user's perceived location)
+                        mapViewRef?.controller?.animateTo(GeoPoint(currentLat, currentLon))
                     }
                 },
                 modifier = Modifier
@@ -193,31 +193,18 @@ fun MapScreen(
                 Icon(Icons.Default.MyLocation, contentDescription = "Focus on my location")
             }
 
-            // Download FAB - positioned above the location FAB
+            // Download FAB - navigates to MapDownloadScreen
             FloatingActionButton(
                 onClick = {
+                    // Get the current center of the map
+                    val mapCenter = mapViewRef?.mapCenter
+                    val currentLat = mapCenter?.latitude
+                    val currentLon = mapCenter?.longitude
 
-                    userLat?.let { lat ->
-                        userLon?.let { lon ->
-                            mapViewRef?.let { mapView ->
-                                isDownloading = true
-                                downloadProgress = 0
-                                Log.d("MapScreen", "Downloading map for location: $lat, $lon")
-                                coroutineScope.launch {
-                                    val downloader = OfflineMapDownloader(context, mapView)
-                                    downloader.downloadArea(
-                                        center = GeoPoint(lat, lon),
-                                        radiusKm = 10,
-                                        minZoom = 12,
-                                        maxZoom = 18,
-                                        onProgress = { progress ->
-                                            downloadProgress = progress
-                                        }
-                                    )
-                                    isDownloading = false
-                                }
-                            }
-                        }
+                    if (currentLat != null && currentLon != null) {
+                        navController.navigate("${com.bluebridgeapp.bluebridge.ui.navigation.Routes.MAP_DOWNLOADING_SCREEN}?userLat=$currentLat&userLon=$currentLon")
+                    } else {
+                        Log.e("MapScreen", "Map center location is null")
                     }
                 },
                 modifier = Modifier
@@ -225,15 +212,7 @@ fun MapScreen(
                     .padding(bottom = 80.dp, end = 16.dp),
                 containerColor = MaterialTheme.colorScheme.secondary
             ) {
-                if (isDownloading) {
-                    CircularProgressIndicator(
-                        progress = { downloadProgress.toFloat() / 100f },
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onSecondary
-                    )
-                } else {
-                    Icon(Icons.Default.CloudDownload, contentDescription = "Download offline map")
-                }
+                Icon(Icons.Default.CloudDownload, contentDescription = "Download offline map")
             }
         }
     }

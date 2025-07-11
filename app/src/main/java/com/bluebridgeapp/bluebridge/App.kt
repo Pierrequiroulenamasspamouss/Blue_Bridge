@@ -207,8 +207,8 @@ private fun AppContent(
 
     // Load user data if logged in
     LaunchedEffect(Unit) {
-        userViewModel.repository.getUserId()
-            .takeIf { userViewModel.repository.isLoggedIn() }
+        userViewModel.getUserId()
+            .takeIf { userViewModel.isLoggedIn() }
             ?.let { userViewModel.handleEvent(UserEvent.LoadUser(it)) }
     }
 
