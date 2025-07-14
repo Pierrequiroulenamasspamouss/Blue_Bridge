@@ -1,6 +1,5 @@
 package com.bluebridgeapp.bluebridge.viewmodels
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -210,9 +209,8 @@ class UserViewModel(
             }
         }
     }
-    suspend fun getUserEmail(): String? {
-        return repository.getUserEmail()
-    }
+    suspend fun getUserEmail(): String? = repository.getUserEmail()
+
     fun setNotificationsEnabled(enable: Boolean) {
         viewModelScope.launch {
             try {

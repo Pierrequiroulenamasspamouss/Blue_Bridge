@@ -238,7 +238,7 @@ fun MiniMap(
                                     bitmap.toDrawable(context.resources)
                                 }
                                 icon = icon
-                            }//.also { addMarker(it) } //TODO: check if this removal was critical or not
+                            }
                         }
 
                         setOnTouchListener { _, event ->

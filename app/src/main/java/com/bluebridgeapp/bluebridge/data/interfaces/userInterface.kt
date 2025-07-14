@@ -41,4 +41,5 @@ interface UserRepository {
     suspend fun unregisterNotificationToken(userId: String, authToken: String, fcmToken: String): Boolean
     suspend fun updateLocation(location: Location): Boolean
     suspend fun setLanguage(language: String)
+
 }

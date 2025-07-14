@@ -101,6 +101,12 @@ fun RegisterScreen(
     var showEULADialog by remember { mutableStateOf(false) }
     var pendingRegistrationRequest by remember { mutableStateOf<RegisterRequest?>(null) }
 
+    var waterNeedAmount: String? = null
+    var waterNeedType: String? = null
+    var waterNeedDesc: String? = null
+    var waterNeedPriority: Int? = null
+    var customWaterType: String? = null
+
     // Handle registration state
     val userState by userViewModel.state
     LaunchedEffect(userState) {
@@ -191,26 +197,12 @@ fun RegisterScreen(
             )
 
             // Water needs
-            var showWaterNeeds = false
-            var waterNeedAmount: String? = null
-            var waterNeedType: String? = null
-            var waterNeedDesc: String? = null
-            var waterNeedPriority: Int? = null
-            var customWaterType: String? = null
+
             WaterNeedsSection(
-                showWaterNeeds = showWaterNeeds,
-                onToggle = { showWaterNeeds = !showWaterNeeds },
-                waterNeeds = waterNeeds,
-                amount = waterNeedAmount.toString(),
-                onAmountChange = { waterNeedAmount = it },
-                type = waterNeedType.toString(),
-                onTypeChange = { waterNeedType = it },
-                desc = waterNeedDesc.toString(),
-                onDescChange = { waterNeedDesc = it },
-                priority = waterNeedPriority,
-                onPriorityChange = { waterNeedPriority = it },
-                customType = customWaterType.toString(),
-                onCustomTypeChange = { customWaterType = it }
+                waterNeeds = emptyList(), // or your actual list
+                onAddWaterNeed = { _, _, _, _, _ ->
+                    // Just ignore the parameters if you don't need to do anything
+                }
             )
             // Well owner toggle
             Row(

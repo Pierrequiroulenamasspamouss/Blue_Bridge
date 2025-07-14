@@ -66,7 +66,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 
 
-@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -128,7 +127,8 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+
         ) {
             // Offline Banner - show only when offline
             if (!isOnline) {
@@ -168,6 +168,17 @@ fun HomeScreen(
                     onClick = { navController.navigate(Routes.MAP_SCREEN) },
                     modifier = Modifier.weight(1f)
                 )
+
+                if (userData != null) {
+                    if (userData.username == "Joel") {
+                        FeatureCard(
+                            icon = Icons.Default.Map,
+                            title = "Example",
+                            description = "",
+                            onClick = { navController.navigate(Routes.EXAMPLE_SCREEN) },
+                        )
+                    }
+                }
             }
 
             Row(
@@ -343,6 +354,7 @@ fun HomeScreen(
                                 LogoutConfirmationDialog(
                                     onConfirm = {
                                         userViewModel.logout()
+
                                         showLogoutDialog = false
                                         navController.navigate(Routes.HOME_SCREEN)},
                                     onDismiss = {

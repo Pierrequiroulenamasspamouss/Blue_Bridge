@@ -5,7 +5,6 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +26,7 @@ import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LanguageSelectionScre
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.EasterEgg
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.FeatureNotImplementedScreen
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LoadingScreen
+import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.ExampleScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapDownloadScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.EditWaterNeedsScreen
@@ -57,7 +57,6 @@ fun NavigationGraph(
     userViewModel: UserViewModel,
     weatherViewModel: WeatherViewModel,
     smsViewModel: SmsViewModel,
-    paddingValues: PaddingValues,
 ) {
 
     NavHost(
@@ -385,6 +384,13 @@ fun NavigationGraph(
         composable(Routes.ADMOB_SCREEN) {
             AdMobScreen(
                 navController = navController
+            )
+        }
+
+        // Example Screen
+        composable(Routes.EXAMPLE_SCREEN) {
+            ExampleScreen(
+                userViewModel = userViewModel
             )
         }
 

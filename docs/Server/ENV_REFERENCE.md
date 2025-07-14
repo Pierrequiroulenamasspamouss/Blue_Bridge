@@ -10,7 +10,11 @@ This document provides a quick reference for all environment variables used in t
 NODE_ENV=development          # Environment mode (development/production)
 PORT=80                      # HTTP port for the server
 HTTPS_PORT=443               # HTTPS port for the server
+APP_LATEST_VERSION = '0.0.0.0' # or any version you'd think would work. For the APK naming
+SERVER_VERSION = '0.0.0.0' # or any version you'd think would work
+
 ```
+
 
 ### Domain and SSL Configuration
 ```env
@@ -74,3 +78,8 @@ OPENWEATHER_API_KEY=your-openweather-api-key    # API key for weather service
 - Keep API keys and passwords secure
 - Regularly rotate sensitive credentials
 - Use environment-specific configurations for development vs production 
+
+
+
+
+

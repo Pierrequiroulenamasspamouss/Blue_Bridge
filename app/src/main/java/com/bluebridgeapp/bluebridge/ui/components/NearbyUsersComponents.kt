@@ -33,7 +33,7 @@ import com.bluebridgeapp.bluebridge.data.model.NearbyUser
 // Helper function to format doubles with specified decimal places
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
-@SuppressLint("DefaultLocale", "StringFormatMatches")
+@SuppressLint("DefaultLocale", "StringFormatMatches", "StringFormatInvalid")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NearbyUserCard(

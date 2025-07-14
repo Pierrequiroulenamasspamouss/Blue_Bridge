@@ -238,8 +238,7 @@ private fun AppContent(
                 wellViewModel = wellViewModel,
                 userViewModel = userViewModel,
                 weatherViewModel = viewModel(factory = viewModelFactory),
-                smsViewModel = viewModel(factory = viewModelFactory),
-                paddingValues = paddingValues
+                smsViewModel = viewModel(factory = viewModelFactory)
             )
 
             ServerStatusDialogs(serverViewModel)

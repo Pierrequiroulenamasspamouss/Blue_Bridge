@@ -228,9 +228,8 @@ fun FiltersSection(
             )
         }
 
-        //TODO: fix this: horrible type mismatch: fix
-        // Capacity range
-        Text("$capacityRangeText: ${capacityRange?.start?.toInt()} - ${capacityRange?.endInclusive?.toInt()}")
+
+        Text("$capacityRangeText: ${capacityRange?.start} - ${capacityRange?.endInclusive}")
         RangeSlider(
             value = floatCapacityRange,
             onValueChange = { newRange -> onCapacityRangeChange(newRange.start.toInt()..newRange.endInclusive.toInt()) },

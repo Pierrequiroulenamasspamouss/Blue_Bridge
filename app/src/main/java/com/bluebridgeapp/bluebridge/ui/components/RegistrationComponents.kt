@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,40 +34,37 @@ import com.bluebridgeapp.bluebridge.data.model.WaterNeed
 
 @Composable
 fun WaterNeedsSection(
-    showWaterNeeds: Boolean,
-    onToggle: () -> Unit,
     waterNeeds: List<WaterNeed>,
-    amount: String,
-    onAmountChange: (String) -> Unit,
-    type: String,
-    onTypeChange: (String) -> Unit,
-    desc: String,
-    onDescChange: (String) -> Unit,
-    priority: Int?,
-    onPriorityChange: (Int) -> Unit,
-    customType: String,
-    onCustomTypeChange: (String) -> Unit
+    onAddWaterNeed: (amount: String, type: String, desc: String, priority: Int, customType: String) -> Unit
 ) {
-    val absoluteEmergency = stringResource(R.string.absolute_emergency)
-    val medical = stringResource(R.string.medical)
-    val drinking = stringResource(R.string.drinking)
-    val farming = stringResource(R.string.farming)
-    val industry = stringResource(R.string.industry)
-    val other = stringResource(R.string.other)
+    var showWaterNeeds by remember { mutableStateOf(false) }
+    var amount by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+    var priority by remember { mutableStateOf<Int?>(6) }
+    var customType by remember { mutableStateOf("") }
+
+    val absoluteEmergencyStr = stringResource(R.string.absolute_emergency)
+    val medicalStr = stringResource(R.string.medical)
+    val drinkingStr = stringResource(R.string.drinking)
+    val farmingStr = stringResource(R.string.farming)
+    val industryStr = stringResource(R.string.industry)
+
 
     Column {
         Button(
-            onClick = onToggle,
+            onClick = { showWaterNeeds = !showWaterNeeds },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (showWaterNeeds) stringResource(R.string.hide_water_needs) else stringResource(R.string.add_water_needs_optional))
         }
 
         if (showWaterNeeds) {
+
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = amount,
-                    onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) onAmountChange(it) },
+                    onValueChange = { amount = it},
                     label = { Text("Amount (liters)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -79,17 +77,17 @@ fun WaterNeedsSection(
                 if (priority != null) {
                     WaterUsageTypeSelector(
                         currentWaterNeedType = type,
-                        onWaterNeedTypeChange = onTypeChange,
-                        currentPriority = priority,
-                        onPriorityChange = onPriorityChange,
+                        onWaterNeedTypeChange = { type = it },
+                        currentPriority = priority!!,
+                        onPriorityChange = { priority = it },
                         customType = customType,
-                        onCustomTypeChange = onCustomTypeChange
+                        onCustomTypeChange = { customType = it }
                     )
                 }
 
                 OutlinedTextField(
                     value = desc,
-                    onValueChange = onDescChange,
+                    onValueChange = { desc = it },
                     label = { Text(stringResource(R.string.description_optional)) },
                     singleLine = false,
                     modifier = Modifier.fillMaxWidth()
@@ -98,22 +96,22 @@ fun WaterNeedsSection(
                 Button(
                     onClick = {
                         val amountValue = amount.toIntOrNull()
-                        if (amountValue != null && amountValue > 0) {
-                            when (type) {
-                                absoluteEmergency -> 0
-                                medical -> 1
-                                drinking -> 2
-                                farming -> 3
-                                industry -> 4
-                                else -> priority
+                        if (amountValue != null && amountValue > 0 && priority != null) {
+                            val finalPriority = when (type) {
+                                absoluteEmergencyStr -> 0
+                                medicalStr -> 1
+                                drinkingStr -> 2
+                                farmingStr -> 3
+                                industryStr -> 4
+                                else -> priority!!
                             }
-
-
-                            onAmountChange("")
-                            onTypeChange("")
-                            onDescChange("")
-                            onCustomTypeChange("")
-                            onPriorityChange(6)
+                            onAddWaterNeed(amount, type, desc, finalPriority, customType)
+                            // Reset fields
+                            amount = ""
+                            type = ""
+                            desc = ""
+                            customType = ""
+                            priority = 6 // Reset priority to default
                         }
                     },
                     modifier = Modifier.fillMaxWidth()

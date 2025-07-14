@@ -25,6 +25,7 @@ router.get('/support', (req, res) => res.send(readHtmlFile('support')));
 router.get('/contact', (req, res) => res.send(readHtmlFile('website_under_construction')));
 
 
+
 // APK download route
 router.get('/download', (req, res) => {
     const apkDir = path.join(__dirname, '../APK');
