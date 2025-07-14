@@ -38,7 +38,7 @@ import com.bluebridgeapp.bluebridge.viewmodels.ViewModelFactory
 import com.google.android.gms.ads.MobileAds
 
 
-// hello world
+
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : ComponentActivity() {
     lateinit var viewModelFactory: ViewModelFactory
