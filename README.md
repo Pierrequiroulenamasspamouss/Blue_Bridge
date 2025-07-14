@@ -98,7 +98,7 @@ git clone https://github.com/Pierrequiroulenamasspamouss/Blue_Bridge/.git
 5. Create a Pull Request
 
 ## License
-No license for now... Thinking about the MIT license
+This project falls under the restrictions of the Apache 2.0 licensing. Contact me if you want to fork this project, we can find an agreement on that
 
 ## Acknowledgments
 
