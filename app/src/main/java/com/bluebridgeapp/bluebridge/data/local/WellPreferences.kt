@@ -31,20 +31,20 @@ class WellPreferences(val context: Context) {
     }
 
     suspend fun getWellById(wellId: Int): WellData? {
-        return wellListFlow.first().find { it.id == wellId }
+        return wellListFlow.first().find { it.wellId == wellId.toString() }
     }
 
     suspend fun saveWell(well: WellData) {
         val current = wellListFlow.first()
         val updated = current
-            .filterNot { it.id == well.id }
+            .filterNot { it.wellId == well.wellId }
             .plus(well)
         saveWellList(updated)
     }
 
     suspend fun updateWell(wellData: WellData) {
         val current = wellListFlow.first().toMutableList()
-        val index = current.indexOfFirst { it.id == wellData.id }
+        val index = current.indexOfFirst { it.wellId == wellData.wellId }
         if (index != -1) {
             current[index] = wellData
             saveWellList(current)
@@ -53,7 +53,7 @@ class WellPreferences(val context: Context) {
 
     suspend fun deleteWell(wellId: String) {
         val current = wellListFlow.first()
-        val updated = current.filterNot { it.id.toString() == wellId }
+        val updated = current.filterNot { it.wellId.toString() == wellId }
         saveWellList(updated)
     }
 

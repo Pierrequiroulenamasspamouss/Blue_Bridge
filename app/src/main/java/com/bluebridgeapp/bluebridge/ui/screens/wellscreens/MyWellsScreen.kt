@@ -211,7 +211,7 @@ fun MonitorScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            well.id.let { id ->
+                            well.wellId.let { id ->
                                 wellViewModel.deleteWell(id.toString())
                             }
                             wellToDelete = null
@@ -284,7 +284,7 @@ private fun WellsList(
                 showLastRefresh = true,
                 showLastUpdate = true,
                 onEdit = {
-                    navController.navigate("${Routes.WELL_CONFIG_SCREEN}/${well.id}")
+                    navController.navigate("${Routes.WELL_CONFIG_SCREEN}/${well.wellId}")
                 },
                 onItemClick = {
                     val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
@@ -293,7 +293,7 @@ private fun WellsList(
                     navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
                 },
                 onNavigate = {
-                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                    navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.wellId}")
                 },
                 onDeleteClick = { onDeleteClick(well) }
             )

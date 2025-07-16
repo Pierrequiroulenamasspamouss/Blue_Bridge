@@ -168,7 +168,7 @@ fun WellCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { onItemClick(well.id.toString()) },
+                onClick = { onItemClick(well.wellId.toString()) },
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Icon(

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const under_construction = true
+const under_construction = false
 
 if (under_construction) {
 router.use(express.static(path.join(__dirname, '../html')))

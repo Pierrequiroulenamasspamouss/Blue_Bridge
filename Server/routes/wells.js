@@ -22,17 +22,17 @@ function mapToShortenedWellData(well) {
     return {
         status : "success",
         data : {
-            id: well.id || well.espId || '',
-            wellName: well.wellName || '',
-            wellLocation: well.wellLocation || { latitude: 0.0, longitude: 0.0 },
-            wellWaterType: well.wellWaterType || well.waterType || '',
-            espId: well.espId || '',
-            wellStatus: well.wellStatus || well.status || 'Unknown',
-            wellOwner: well.wellOwner || '',
-            wellCapacity: well.wellCapacity != null ? String(well.wellCapacity) : (well.capacity != null ? String(well.capacity) : ''),
-            wellWaterLevel: well.wellWaterLevel != null ? String(well.wellWaterLevel) : (well.waterLevel != null ? String(well.waterLevel) : ''),
-            wellWaterConsumption: well.wellWaterConsumption != null ? String(well.wellWaterConsumption) : (well.waterConsumption != null ? String(well.waterConsumption) : ''),
-            waterQuality: well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 },
+            a: well.id || well.espId || '',
+            b: well.wellName || '',
+            c: well.wellLocation || { latitude: 0.0, longitude: 0.0 },
+            d: well.wellWaterType || well.waterType || '',
+            e: well.espId || '',
+            f: well.wellStatus || well.status || 'Unknown',
+            f: well.wellOwner || '',
+            h: well.wellCapacity != null ? String(well.wellCapacity) : (well.capacity != null ? String(well.capacity) : ''),
+            i: well.wellWaterLevel != null ? String(well.wellWaterLevel) : (well.waterLevel != null ? String(well.waterLevel) : ''),
+            j: well.wellWaterConsumption != null ? String(well.wellWaterConsumption) : (well.waterConsumption != null ? String(well.waterConsumption) : ''),
+            k: well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 },
             lastRefreshTime
         }
     };

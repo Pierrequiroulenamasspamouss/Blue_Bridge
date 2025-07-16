@@ -109,6 +109,7 @@ dependencies {
     // Add SMS functionality dependencies
     implementation(libs.play.services.auth)
     implementation(libs.play.services.auth.api.phone)
+
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
     androidTestImplementation(libs.androidx.junit)

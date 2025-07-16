@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.data.model
 
+import android.media.Image
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.serialization.Serializable
@@ -7,7 +8,6 @@ import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class WellData(
-    var id: Int = 0,
     val wellName: String = "",
     val wellLocation: Location = Location(latitude = 0.0, longitude = 0.0),
     val wellWaterType: String = "",
@@ -19,10 +19,10 @@ data class WellData(
     val extraData: Map<String, JsonElement> = emptyMap(),
     val description: String = "",
     val lastUpdated: String? = null,
-    var espId: String,
+    var wellId: String,
     val wellWaterConsumption: String,
-    val wellOwner: String
-)
+    val wellOwner: String,
+    val images: List<ImageData> = emptyList())
 
 fun WellData.getLatitude(): Double = wellLocation.latitude
 fun WellData.getLongitude(): Double = wellLocation.longitude
@@ -41,7 +41,7 @@ data class ShortenedWellData(
     val wellStatus: String = "Unknown",
     val wellCapacity: String = "No capacity available",
     val wellWaterLevel: String = "0",
-    val espId: String = "0"
+    val wellId: String = "0"
 ) {
     fun getLatitude(): Double = wellLocation.latitude
     fun getLongitude(): Double = wellLocation.longitude
@@ -60,4 +60,9 @@ data class Pagination(
     val page: Int,
     val limit: Int,
     val pages: Int
+)
+
+@Serializable
+data class ImageData(
+    val description: String
 )

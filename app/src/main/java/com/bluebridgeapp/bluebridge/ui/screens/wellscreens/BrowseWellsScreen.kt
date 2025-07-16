@@ -250,7 +250,7 @@ fun BrowseWellsScreen(
                             wellStatus = well.wellStatus, // Assuming these fields exist in WellData
                             wellCapacity = well.wellCapacity, // Handle potential nulls
                             wellWaterLevel = well.wellWaterLevel, // Handle potential nulls
-                            espId = well.espId // Handle potential nulls
+                            wellId = well.wellId // Handle potential nulls
                         )
                     }.toList(), // Make sure it's a List<ShortenedWellData>
                     userLocation = userLocation
@@ -318,7 +318,7 @@ fun BrowseWellsScreen(
                 onMoreDetails = {
                     // Use the temporary route for espId
                     selectedWell = null
-                    navController.navigate("${Routes.WELL_DETAILS_TEMP_SCREEN}/${well.espId}")
+                    navController.navigate("${Routes.WELL_DETAILS_TEMP_SCREEN}/${well.wellId}")
                 },
                 onAdd = {
                     coroutineScope.launch {

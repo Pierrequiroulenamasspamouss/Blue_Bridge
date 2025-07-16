@@ -1,5 +1,5 @@
 package com.bluebridgeapp.bluebridge.data.repository
-import android.util.Log
+import android.media.Image
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
 import com.bluebridgeapp.bluebridge.data.local.WellPreferences
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
@@ -7,6 +7,7 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
 import com.bluebridgeapp.bluebridge.network.ServerApi
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -43,7 +44,7 @@ class WellRepositoryImpl(
                         wellStatus = well.wellStatus,
                         wellCapacity = well.wellCapacity,
                         wellWaterLevel = well.wellWaterLevel,
-                        espId = well.espId
+                        wellId = well.wellId
                     )
                 }
             } else {
@@ -130,16 +131,16 @@ class WellRepositoryImpl(
         true
     }
 
-    override suspend fun swapWells(from: Int, to: Int) = withContext(Dispatchers.IO) {
+    override suspend fun swapWells(from: String, to: String) = withContext(Dispatchers.IO) {
         val wells = preferences.getAllWells().toMutableList()
-        val fromWellIndex = wells.indexOfFirst { it.id == from }
-        val toWellIndex = wells.indexOfFirst { it.id == to}
+        val fromWellIndex = wells.indexOfFirst { it.wellId == from }
+        val toWellIndex = wells.indexOfFirst { it.wellId == to}
         if (fromWellIndex != -1 && toWellIndex != -1) {
             val fromWell = wells[fromWellIndex]
             val toWell = wells[toWellIndex]
-            val tempWellId = fromWell.id
-            fromWell.id = toWell.id
-            toWell.id = tempWellId
+            val tempWellId = fromWell.wellId
+            fromWell.wellId = toWell.wellId
+            toWell.wellId = tempWellId
             preferences.saveWell(fromWell)
             preferences.saveWell(toWell)
         }
@@ -165,5 +166,24 @@ class WellRepositoryImpl(
         } catch (e: Exception) {
             false
         }
+    }
+    override suspend fun getAllImages(espId: String): List<Image> = withContext(Dispatchers.IO) {
+        try {
+            val wellData = api.getWellDataById(espId)
+            val numberOfImages = wellData.images.size
+            val imagesList = mutableListOf<Image>()
+            for (i in 0 until numberOfImages) { // Iterate through image indices (0 to size-1)
+                val imageResponse = api.getImage(espId, i) // getImage should return Response<Image>
+                imageResponse.body()?.let { imagesList.add(it) } // Add image if response is successful and body is not null
+            }
+            imagesList
+        } catch (e: Exception) {
+            Log.e("WellRepository", "Error fetching images for espId $espId: ${e.message}", e)
+           emptyList()
+        }
+    }
+
+    override suspend fun uploadWellPicture(espId: String, image: Image): Boolean {
+        TODO("Not yet implemented. Should send the data to the server, wait a positive response, then update the local data, and return true if all of that succeeds.")
     }
 }

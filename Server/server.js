@@ -41,8 +41,7 @@ const models = require('./models');
 // ===============
 // Route Imports
 // ===============
-const apiRouter = require('./routes/api');
-const webappRouter = require('./routes/webapp');
+
 const mainRouter = require('./routes/main');
 
 // =================
@@ -106,8 +105,7 @@ app.use((req, res, next) => {
 // ===========
 // Route Mounting
 // ===========
-app.use('/api', apiRouter);          // All API endpoints
-app.use('/webapp', webappRouter);    // Web application routes //NOT AVAILABLE RIGHT NOW, STILL A WIP
+
 app.use('/', mainRouter);            // Main website routes (HTML pages, etc.)
 
 // ===================

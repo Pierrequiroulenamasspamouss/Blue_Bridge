@@ -68,7 +68,7 @@ fun MapView(
                         """
                         L.marker([${lat}, ${lon}], {title: "${well.wellName}"})
                           .addTo(map)
-                          .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>$navigateButtonText</button><button onclick='viewWellDetails(\"${well.espId}\")'>$detailsButtonText</button>");
+                          .bindPopup("${well.wellName}<br>${well.wellWaterType}<br><button onclick='navigateToWell(${lat},${lon},\"${well.wellName}\")'>$navigateButtonText</button><button onclick='viewWellDetails(\"${well.wellId}\")'>$detailsButtonText</button>");
                         """
                     }.joinToString("\n")
 
