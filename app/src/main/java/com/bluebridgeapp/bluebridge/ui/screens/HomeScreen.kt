@@ -1,6 +1,5 @@
 package com.bluebridgeapp.bluebridge.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,19 +23,19 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.ExploreOff
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,8 +61,8 @@ import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.utils.isNetworkAvailable
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.InternalSerializationApi
 
 
 @Composable
@@ -82,6 +81,20 @@ fun HomeScreen(
 
     // Network connectivity state
     var isOnline by remember { mutableStateOf(isNetworkAvailable(context)) }
+
+    // Periodically check network status
+    LaunchedEffect(Unit) {
+        while (true) {
+            isOnline = isNetworkAvailable(context)
+            delay(5000) // Check every 5 seconds
+        }
+    }
+
+    // Update network status when the composable is disposed or configuration changes
+    DisposableEffect(context) {
+        onDispose { }
+    }
+
 
     // Define user roles
     val guestRole = 1
@@ -115,9 +128,7 @@ fun HomeScreen(
         return // Do not show the screen until loaded
     }
 
-    if (userData == null && isLoggedIn) { // Still loading user data after login
-        // Potentially show a more specific loading state or skeleton UI
-    }
+
 
     Scaffold { paddingValues ->
         Column(
@@ -127,8 +138,7 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Offline Banner - show only when offline
             if (!isOnline) {
@@ -168,16 +178,14 @@ fun HomeScreen(
                     onClick = { navController.navigate(Routes.MAP_SCREEN) },
                     modifier = Modifier.weight(1f)
                 )
-
-                if (userData != null) {
-                    if (userData.username == "Joel") {
-                        FeatureCard(
-                            icon = Icons.Default.Map,
-                            title = "Example",
-                            description = "",
-                            onClick = { navController.navigate(Routes.EXAMPLE_SCREEN) },
-                        )
-                    }
+                if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
+                    FeatureCard(
+                        icon = Icons.Default.Cloud,
+                        title = stringResource(R.string.weather),
+                        description = stringResource(R.string.check_upcoming_weather_forecast),
+                        onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
@@ -193,15 +201,7 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
 
-                if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
-                    FeatureCard(
-                        icon = Icons.Default.Cloud,
-                        title = stringResource(R.string.weather),
-                        description = stringResource(R.string.check_upcoming_weather_forecast),
-                        onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+
             }
 
             Row(
@@ -229,58 +229,6 @@ fun HomeScreen(
                 }
             }
 
-            // removed Support section since not needed
-            /*
-            Text(
-                text = "Support BlueBridge",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 4.dp),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MonetizationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(
-                            text = "Help us improve BlueBridge",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Text(
-                        text = "BlueBridge is a community-driven app to help everyone access clean water. Your support keeps us running.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Button(
-                        onClick = { navController.navigate(Routes.ADMOB_SCREEN) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.support_with_ads))
-                    }
-                }
-            }
-            */
 
             // Account section
             if (currentUserRole >= guestRole) { // Show account section for logged-in users (user, well_owner, admin)
@@ -354,7 +302,6 @@ fun HomeScreen(
                                 LogoutConfirmationDialog(
                                     onConfirm = {
                                         userViewModel.logout()
-
                                         showLogoutDialog = false
                                         navController.navigate(Routes.HOME_SCREEN)},
                                     onDismiss = {

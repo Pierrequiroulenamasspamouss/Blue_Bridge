@@ -1,7 +1,7 @@
 package com.bluebridgeapp.bluebridge.viewmodels
 
+import android.media.Image
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -10,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.events.WellEvents
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed class ActionState {
@@ -72,7 +71,7 @@ class WellViewModel(
             is WellEvents.WellCapacityEntered -> updateCurrentWell { copy(wellCapacity = event.wellCapacity) }
             is WellEvents.WaterLevelEntered -> updateCurrentWell { copy(wellWaterLevel = event.wellWaterLevel) }
             is WellEvents.ConsumptionEntered -> updateCurrentWell { copy(wellWaterConsumption = event.wellWaterConsumption) }
-            is WellEvents.EspIdEntered -> updateCurrentWell { copy(espId = event.espId) }
+            is WellEvents.WellIdEntered -> updateCurrentWell { copy(wellId = event.wellId) }
         }
     }
     @RequiresApi(Build.VERSION_CODES.O)
@@ -87,7 +86,7 @@ class WellViewModel(
                     _currentWellState.value = UiState.Success(updatedWell)
                     val currentWells = (_wellsListState.value as? UiState.Success)?.data ?: emptyList()
                     val updatedWells = currentWells.map {
-                        if (it.id == id) updatedWell else it
+                        if (it.wellId == id.toString()) updatedWell else it
                     }
                     _wellsListState.value = UiState.Success(updatedWells)
                     _actionState.value = ActionState.Success("Well loaded successfully")
@@ -117,7 +116,7 @@ class WellViewModel(
             }
         }
     }
-    fun swapWells(from: Int, to: Int) {
+    fun swapWells(from: String, to: String) {
         viewModelScope.launch {
             try {
                 repository.swapWells(from, to)
@@ -157,5 +156,7 @@ class WellViewModel(
         }
     }
     suspend fun isEspIdUnique(espId: String)= repository.isEspIdUnique(espId)
+    suspend fun getAllImages(espId: String):List<Image> = repository.getAllImages(espId)
+    suspend fun uploadWellPicture(espId: String, image: Image) = repository.uploadWellPicture(espId, image)
 
 }

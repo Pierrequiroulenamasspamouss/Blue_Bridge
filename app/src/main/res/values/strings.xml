@@ -340,5 +340,10 @@
     <string name="public_location">"Everyone can know about you and your region now"</string>
     <string name="private_location">"Only you and the server will know about your location. "</string>
     <string name="location_sharing_set_to_private">Your location is set to private.Only the server will know your region in order to send you weather notifications</string>
+    <string name="gallery_permission">Allow us access to your gallery in order to add an image</string>
+    <string name="gallery_permission_message">This will allow you to upload an image of the well in question</string>
+    <string name="pictures_section">Well pictures</string>
+    <string name="add_image">Add more images to this well</string>
+    <string name="no_images_yet_add_one">No image found for this well. Consider adding some</string>
 
 </resources>

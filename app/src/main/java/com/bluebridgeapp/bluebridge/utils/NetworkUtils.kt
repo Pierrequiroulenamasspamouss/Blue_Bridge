@@ -81,7 +81,7 @@ suspend fun fetchWellDetailsFromServer(
  * Retrieve data from server_crt for a specific well and update it in the data store
  */
 suspend fun retrieveDataFromServer(
-    id: Int = 0,
+    id: String = "",
     wellRepositoryImpl: WellRepositoryImpl,
     context: Context
 ): Boolean {
@@ -97,7 +97,7 @@ suspend fun retrieveDataFromServer(
 
             // 1. Get current well data by ID
             val currentList = wellRepositoryImpl.wellListFlow.first()
-            val matchingWell = currentList.find { it.id == id } ?: run {
+            val matchingWell = currentList.find { it.wellId == id } ?: run {
                 withContext(Dispatchers.Main) {
                     AppEventChannel.sendEvent(AppEvent.ShowError("Well with ID $id not found"))
                 }
@@ -105,7 +105,7 @@ suspend fun retrieveDataFromServer(
             }
 
             // 2. Fetch new data from server_crt by endpoint /data/wells/{espId}
-            val espId = matchingWell.espId
+            val espId = matchingWell.wellId
             Log.d("DataFetch", "Fetching data for ESP ID: $espId")
             
             val newData = fetchWellDetailsFromServer(espId, context) ?: return@withContext false
@@ -113,14 +113,13 @@ suspend fun retrieveDataFromServer(
             // 3. Update only the timestamp and the id
             val updatedWell = newData
             updatedWell.lastRefreshTime = System.currentTimeMillis()
-            updatedWell.id = matchingWell.id
-            updatedWell.espId = matchingWell.espId
+            updatedWell.wellId = matchingWell.wellId
 
             // 4. Save back to datastore
             Log.d("DataSave", "Saving updated data: $updatedWell")
             wellRepositoryImpl.saveWell(updatedWell)
 
-            Log.d("DataSave", "Successfully saved data for well ID ${matchingWell.id}")
+            Log.d("DataSave", "Successfully saved data for well ID ${matchingWell.wellId}")
             true
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {

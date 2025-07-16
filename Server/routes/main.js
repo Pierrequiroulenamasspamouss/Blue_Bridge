@@ -7,7 +7,11 @@ require('dotenv').config();
 const isDev = process.env.NODE_ENV ;
 const appLatestVersion = process.env.APP_LATEST_VERSION ;
 const serverVersion = process.env.SERVER_VERSION;
+const apiRouter = require('./api');
+const webappRouter = require('./webapp');
 
+router.use('/api', apiRouter);          // All API endpoints
+router.use('/webapp', webappRouter);    // Web application routes //NOT AVAILABLE RIGHT NOW, STILL A WIP
 
 // Helper function to read HTML files
 const readHtmlFile = (filename) => {

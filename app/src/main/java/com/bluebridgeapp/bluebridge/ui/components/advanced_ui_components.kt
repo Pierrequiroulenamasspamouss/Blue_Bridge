@@ -69,7 +69,7 @@ import java.util.Date
 fun WellField(
     label: String,
     value: String,
-    keyId: Int,
+    keyId: String,
     onValueChange: (String) -> Unit,
     isNumeric: Boolean = false
 ) {

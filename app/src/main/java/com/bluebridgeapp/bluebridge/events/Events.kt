@@ -16,7 +16,7 @@ open class WellEvents {
     data class WellCapacityEntered(val wellCapacity: String) : WellEvents()
     data class WaterLevelEntered(val wellWaterLevel: String) : WellEvents()
     data class ConsumptionEntered(val wellWaterConsumption: String) : WellEvents()
-    data class EspIdEntered(val espId: String) : WellEvents()
+    data class WellIdEntered(val wellId: String) : WellEvents()
 }
 
 sealed class BrowseWellsEvent {

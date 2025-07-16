@@ -2,12 +2,7 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const Well = sequelize.define('Well', {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true
-        },
-        espId: {
+        wellId: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true
@@ -64,16 +59,14 @@ module.exports = (sequelize) => {
             type: DataTypes.JSON, // Store as JSON object {ph, turbidity, tds}
             allowNull: true,
             defaultValue: null
+        },
+        wellImages: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            defaultValue: []
         }
     });
 
-    // // Define associations
-    // Well.associate = (models) => {
-    //     Well.belongsTo(models.User, {
-    //         foreignKey: 'ownerId',
-    //         as: 'owner'
-    //     });
-    // };
 
     return Well;
 }; 

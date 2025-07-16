@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.network
 
+import android.media.Image
 import com.bluebridgeapp.bluebridge.data.model.BasicRequest
 import com.bluebridgeapp.bluebridge.data.model.BasicResponse
 import com.bluebridgeapp.bluebridge.data.model.BugReportRequest
@@ -41,7 +42,7 @@ interface ServerApi {
     @POST("/api/wells")
     suspend fun createWell(
         @Body wellData: WellData,
-        @Query("email") email: String,
+        @Query("userId") email: String,
         @Query("loginToken") token: String
     ): Response<BasicResponse>
 
@@ -88,6 +89,13 @@ interface ServerApi {
     suspend fun getWellStats(
         @Path("espId") espId: String
     ) : Response<WellStatsResponse>
+
+    @GET("/api/wells/{espId}/image/{imageNumber}")
+    suspend fun getImage(
+        @Path("espId") espId: String,
+        @Path("imageNumber") imageNumber: Int
+    ) : Response<Image>
+
 
     @POST("/api/nearby-users")
     suspend fun getNearbyUsers(

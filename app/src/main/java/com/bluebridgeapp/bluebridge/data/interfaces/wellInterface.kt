@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.data.interfaces
 
+import android.media.Image
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
@@ -26,9 +27,11 @@ interface WellRepository {
     suspend fun deleteWell(espId: String): Boolean
     suspend fun getStats(espId: String): WellStatsResponse?
     suspend fun isEspIdUnique(espId: String): Boolean
-    suspend fun swapWells(from: Int, to: Int)
+    suspend fun swapWells(from: String, to: String)
     suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean
     suspend fun deleteWellFromServer(espId: String, email: String, token: String): Boolean
+    suspend fun getAllImages(espId: String): List<Image>
+    suspend fun uploadWellPicture(espId: String, image: Image): Boolean
 }
 
 

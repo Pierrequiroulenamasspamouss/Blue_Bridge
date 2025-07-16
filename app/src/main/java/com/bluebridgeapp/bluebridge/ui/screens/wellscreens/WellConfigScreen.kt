@@ -3,9 +3,16 @@ package com.bluebridgeapp.bluebridge.ui.screens.wellscreens
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +23,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SettingsRemote
 import androidx.compose.material.icons.filled.Water
@@ -54,12 +65,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
@@ -74,14 +88,13 @@ import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
-
-const val debug = true
+import java.io.ByteArrayOutputStream
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WellConfigScreen(
-    wellId: Int,
+    wellId: Int? = null,
     wellViewModel: WellViewModel,
     userViewModel: UserViewModel,
     navController: NavController,
@@ -93,9 +106,8 @@ fun WellConfigScreen(
     var isSaving by remember { mutableStateOf(false) }
 
     val currentWellState = wellViewModel.currentWellState.value
-    
+    var currentWellId = wellId ?: -1
     val wellData = (currentWellState as? UiState.Success)?.data ?: WellData(
-        id = wellId,
         wellName = "",
         wellLocation = Location(0.0, 0.0),
         wellWaterType = "",
@@ -103,13 +115,13 @@ fun WellConfigScreen(
         wellWaterLevel = "",
         lastRefreshTime = 0,
         wellStatus = "",
-        //TODO: maybe have the WaterQuality ?
         extraData = emptyMap(),
         description = "",
         lastUpdated = "",
-        espId = "",
+        wellId = "",
         wellWaterConsumption = "",
         wellOwner = "",
+        images = emptyList()
     )
     var lastSavedData by remember { mutableStateOf(wellData) }
     val isLoading = currentWellState is UiState.Loading
@@ -118,8 +130,9 @@ fun WellConfigScreen(
     var navigateBack by remember { mutableStateOf(false) }
 
     // Load well data when screen is first shown
-    LaunchedEffect(wellId) {
-        wellViewModel.loadWell(wellId)
+    LaunchedEffect(currentWellId) {
+            wellViewModel.loadWell(currentWellId)
+
     }
 
     // Show error messages in snackbar
@@ -203,14 +216,14 @@ fun WellConfigScreen(
                         WellField(
                             label = stringResource(R.string.well_name),
                             value = wellData.wellName,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellNameEntered(it)) }
                         )
 
                         WellField(
                             label = stringResource(R.string.well_owner),
                             value = wellData.wellOwner,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
                         )
                     }
@@ -337,14 +350,14 @@ fun WellConfigScreen(
                         WellField(
                             label = stringResource(R.string.water_type),
                             value = wellData.wellWaterType,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterTypeEntered(it)) }
                         )
 
                         WellField(
                             label = stringResource(R.string.well_capacity),
                             value = wellData.wellCapacity,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellCapacityEntered(it)) },
                             isNumeric = true
                         )
@@ -352,7 +365,7 @@ fun WellConfigScreen(
                         WellField(
                             label = stringResource(R.string.water_level),
                             value = wellData.wellWaterLevel,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterLevelEntered(it)) },
                             isNumeric = true
                         )
@@ -360,7 +373,7 @@ fun WellConfigScreen(
                         WellField(
                             label = stringResource(R.string.daily_consumption),
                             value = wellData.wellWaterConsumption,
-                            keyId = wellData.id,
+                            keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
                             isNumeric = true
                         )
@@ -397,6 +410,8 @@ fun WellConfigScreen(
                     }
                 }
 
+                SectionHeader(title = stringResource(R.string.pictures_section), icon = Icons.Default.Photo)
+                ImageSection(wellData = wellData, wellViewModel = wellViewModel)
                 // Technical Details Section
                 SectionHeader(title = stringResource(R.string.technical_details), icon = Icons.Default.SettingsRemote)
 
@@ -413,13 +428,13 @@ fun WellConfigScreen(
                     ) {
                         WellField(
                             label = stringResource(R.string.esp_id),
-                            value = wellData.espId,
-                            keyId = wellData.id,
+                            value = wellData.wellId,
+                            keyId = wellData.wellId,
                             onValueChange = { newEspId ->
                                 scope.launch {
                                     val isUnique = wellViewModel.isEspIdUnique(newEspId)
                                     if (isUnique) {
-                                        wellViewModel.handleEvent(WellEvents.EspIdEntered(newEspId))
+                                        wellViewModel.handleEvent(WellEvents.WellIdEntered(newEspId))
                                     } else {
                                         AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use"))
                                     }
@@ -444,9 +459,9 @@ fun WellConfigScreen(
                         scope.launch {
                             isSaving = true
                             try {
-                                val isUnique = wellViewModel.isEspIdUnique(wellData.espId)
+                                val isUnique = wellViewModel.isEspIdUnique(wellData.wellId)
                                 if (!isUnique && wellId == -1) {
-                                    AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use by another well"))
+                                    AppEventChannel.sendEvent(AppEvent.ShowError("Well ID already in use by another well"))
                                     isSaving = false
                                     return@launch
                                 }
@@ -461,20 +476,20 @@ fun WellConfigScreen(
                                     
                                     if (success) {
                                         // Also save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
+                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
                                         lastSavedData = wellData
                                         AppEventChannel.sendEvent(AppEvent.ShowError("Well saved successfully!"))
                                         navigateBack = true
                                     } else {
                                         // If server save fails, at least save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
+                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
                                         lastSavedData = wellData
                                         AppEventChannel.sendEvent(AppEvent.ShowError("Could not save to server but saved locally"))
                                         navigateBack = true
                                     }
                                 } else {
                                     // No valid user credentials, just save locally
-                                    wellViewModel.handleEvent(WellEvents.SaveWell(wellId))
+                                    wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
                                     lastSavedData = wellData
                                     AppEventChannel.sendEvent(AppEvent.ShowError("Well saved locally"))
                                     navigateBack = true
@@ -576,7 +591,7 @@ fun SectionHeader(title: String, icon: ImageVector) {
 // Helper function to validate well data
 private fun WellData.isValid(): Boolean {
     // ESP ID is required
-    if (espId.isBlank()) return false
+    if (wellId.isBlank()) return false
     
     // At least one other field must be filled
     val hasValidLocation = wellLocation.latitude != 0.0 || wellLocation.longitude != 0.0
@@ -589,3 +604,103 @@ private fun WellData.isValid(): Boolean {
            wellWaterType.isNotBlank()
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ImageSection(
+    wellData: WellData,
+    wellViewModel: WellViewModel
+) {
+    // State to hold the list of images
+    var images by remember { mutableStateOf<List<android.media.Image>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+                val byteArray = byteArrayOutputStream.toByteArray()
+                // TODO: For now, we are creating a dummy android.media.Image. Replace with actual image handling
+                // val newImage = createDummyImage(byteArray) // This needs a proper implementation or library
+                // wellViewModel.uploadWellPicture(espId = wellData.espId, image = newImage)
+                // Reload images after upload
+                images = wellViewModel.getAllImages(wellData.wellId)
+            }
+        }
+    }
+    // Load images when wellData.espId changes
+    LaunchedEffect(wellData.wellId) {
+        images = wellViewModel.getAllImages(wellData.wellId)    }
+
+    Column {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            items(images) { image ->
+                val buffer = image.planes[0].buffer
+                val bytes = ByteArray(buffer.remaining())
+                buffer.get(bytes)
+                Image(
+                    bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap(),
+                    contentDescription = "Well Image",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            item {
+                // Add image button
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable {
+                            coroutineScope.launch {
+                                imagePickerLauncher.launch("image/*")
+                            }
+                        }
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.AddAPhoto,
+                            contentDescription = stringResource(R.string.add_image),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.add_image),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (images.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_images_yet_add_one),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}

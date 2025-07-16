@@ -2,7 +2,6 @@
 
 package com.bluebridgeapp.bluebridge.ui.screens.navscreens
 
-import OfflineMapDownloader
 import android.os.Build
 import android.preference.PreferenceManager
 import android.util.Log
@@ -11,12 +10,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,7 +27,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +41,11 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.getLatitude
 import com.bluebridgeapp.bluebridge.data.model.getLongitude
 import com.bluebridgeapp.bluebridge.data.model.hasValidCoordinates
+import com.bluebridgeapp.bluebridge.ui.dialogs.LocationPermissionDialog
 import com.bluebridgeapp.bluebridge.ui.dialogs.WellDetailsDialog
 import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
-import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -76,6 +72,16 @@ fun MapScreen(
     val wells = remember { wellsState.dataOrEmpty() }
     var selectedWell by remember { mutableStateOf<WellData?>(null) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Dialogs
+    if (showPermissionDialog) {
+        LocationPermissionDialog(
+            onDismiss = { showPermissionDialog = false },
+            onAllow = { showPermissionDialog = false }
+        )
+    }
+
 
     // Initialize OSMDroid
     LaunchedEffect(Unit) {
@@ -223,7 +229,7 @@ fun MapScreen(
             well = well,
             onDismiss = { selectedWell = null },
             onNavigateToDetails = {
-                navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.id}")
+                navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.wellId}")
                 selectedWell = null
             },
             onNavigateToDirections = {

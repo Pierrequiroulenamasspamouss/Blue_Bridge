@@ -292,6 +292,24 @@ fun LocationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
         }
     )
 }
+@Composable
+fun RequireGalleryPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.gallery_permission)) },
+        text = { Text(stringResource(R.string.gallery_permission_message)) },
+        confirmButton = {
+            Button(onClick = { onAllow() }) {
+                Text(stringResource(R.string.allow))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
