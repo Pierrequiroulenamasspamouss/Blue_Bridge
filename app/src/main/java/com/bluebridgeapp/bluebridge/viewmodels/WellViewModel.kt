@@ -1,15 +1,22 @@
 package com.bluebridgeapp.bluebridge.viewmodels
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.media.Image
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
+import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
+import com.bluebridgeapp.bluebridge.events.AppEvent
+import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.WellEvents
+import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import kotlinx.coroutines.launch
 
 sealed class ActionState {
@@ -21,7 +28,7 @@ sealed class ActionState {
 
 @RequiresApi(Build.VERSION_CODES.O)
 class WellViewModel(
-    private val repository: WellRepository
+    val repository: WellRepository //TODO: make it as private later
 ) : ViewModel() {
     private val _currentWellState = mutableStateOf<UiState<WellData>>(UiState.Empty)
     val currentWellState: State<UiState<WellData>> = _currentWellState
@@ -35,7 +42,7 @@ class WellViewModel(
             val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return@launch
             _currentWellState.value = UiState.Loading
             try {
-                if (currentWell.wellOwner.isBlank()) {
+                if (currentWell.wellOwner?.isBlank() == true) {
                     val defaultOwner = "BlueBridge User"
                     val updatedWell = currentWell.copy(wellOwner = defaultOwner)
                     repository.saveWell(updatedWell)
@@ -155,8 +162,50 @@ class WellViewModel(
             }
         }
     }
-    suspend fun isEspIdUnique(espId: String)= repository.isEspIdUnique(espId)
-    suspend fun getAllImages(espId: String):List<Image> = repository.getAllImages(espId)
-    suspend fun uploadWellPicture(espId: String, image: Image) = repository.uploadWellPicture(espId, image)
+    suspend fun isWellIdUnique(wellId: String)= repository.isEspIdUnique(wellId)
+    suspend fun getAllImages(wellId: String): List<Bitmap> = repository.getAllImages(wellId)
+    suspend fun loadWells(
+        page: Int,
+        pageSize: Int,
+        searchQuery: String,
+        waterType: String?,
+        status: String?,
+        minWaterLevel: Int?,
+        maxWaterLevel: Int?,
+        context: Context
+    ): List<ShortenedWellData> {
+        return try {
+            val serverApi = RetrofitBuilder.getServerApi(context)
+            val response = serverApi.getWellsWithFilters(
+                page = page,
+                limit = pageSize,
+                wellName = searchQuery.takeIf { it.isNotBlank() },
+                wellStatus = status,
+                wellWaterType = waterType,
+                minWaterLevel = minWaterLevel,
+                maxWaterLevel = maxWaterLevel
+            )
+
+            if (response.isSuccessful && response.body()?.data != null) {
+                val wellsResponse = response.body()!!
+                wellsResponse.data.map { it.toShortenedWell(it) }
+            } else {
+                AppEventChannel.sendEvent(AppEvent.ShowError("Failed to load wells"))
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("BrowseWellsScreen", "Error loading wells", e)
+            AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.message}"))
+            emptyList()
+        }
+    }
+
+    suspend fun getWellFromServer(wellId: String): WellData? {
+        return repository.getWellFromServer(wellId)
+    }
+
+    fun deleteWellImage(string: String, i: Int) {TODO()}
+    fun uploadWellPicture(string: String, i: Int, bitmap: Bitmap) {TODO()}
+
 
 }

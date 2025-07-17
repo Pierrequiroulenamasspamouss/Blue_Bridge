@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.repository.WaterNeedsManager
 import com.bluebridgeapp.bluebridge.ui.components.StatusIndicator
@@ -346,7 +347,7 @@ fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
 
 @Composable
 fun EnhancedWellDetailsDialog(
-    well: WellData,
+    well: ShortenedWellData,
     onAdd: () -> Unit,
     onDismiss: () -> Unit,
     onMoreDetails: () -> Unit
@@ -360,10 +361,6 @@ fun EnhancedWellDetailsDialog(
         title = { Text(well.wellName) },
         text = {
             Column {
-                if (well.wellOwner.isNotBlank()) {
-                    Text("${stringResource(R.string.well_owner)}: ${well.wellOwner}", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(8.dp))
-                }
                 Text("${stringResource(R.string.location)}: ${well.wellLocation}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Text("${stringResource(R.string.type_label)}: ${well.wellWaterType}", style = MaterialTheme.typography.bodyMedium)
@@ -392,11 +389,6 @@ fun EnhancedWellDetailsDialog(
                         )
                     }
                 }
-                if (well.wellWaterConsumption.isNotBlank()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("${stringResource(R.string.daily_consumption)}: ${well.wellWaterConsumption}${stringResource(R.string.liters_per_day)}",
-                        style = MaterialTheme.typography.bodyMedium)
-                }
             }
         },
         confirmButton = {
@@ -419,7 +411,7 @@ fun EnhancedWellDetailsDialog(
 
 @Composable
 fun WellDetailsDialog(
-    well: WellData,
+    well: ShortenedWellData,
     onDismiss: () -> Unit,
     onNavigateToDetails: () -> Unit,
     onNavigateToDirections: () -> Unit

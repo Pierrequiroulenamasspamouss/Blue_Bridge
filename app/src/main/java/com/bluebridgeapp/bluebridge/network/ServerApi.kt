@@ -1,6 +1,5 @@
 package com.bluebridgeapp.bluebridge.network
 
-import android.media.Image
 import com.bluebridgeapp.bluebridge.data.model.BasicRequest
 import com.bluebridgeapp.bluebridge.data.model.BasicResponse
 import com.bluebridgeapp.bluebridge.data.model.BugReportRequest
@@ -24,11 +23,16 @@ import com.bluebridgeapp.bluebridge.data.model.WeatherResponse
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -94,8 +98,18 @@ interface ServerApi {
     suspend fun getImage(
         @Path("espId") espId: String,
         @Path("imageNumber") imageNumber: Int
-    ) : Response<Image>
+    ) : Response<ResponseBody>
 
+    @GET("/api/wells/{espId}/images/{imageNumber}")
+    suspend fun getWellImage(
+        @Path("espId") espId: String,
+        @Path("imageNumber") imageNumber: Int
+    ) : Response<ResponseBody>
+
+    @GET("/api/wells/{espId}/images")
+    suspend fun getWellImages(
+        @Path("espId") espId: String
+    ) : Response<ResponseBody>
 
     @POST("/api/nearby-users")
     suspend fun getNearbyUsers(
@@ -156,5 +170,13 @@ interface ServerApi {
     @POST("/api/auth/validate")
     suspend fun validateAuthToken(
         @Body request: ValidateAuthTokenRequest
+    ): Response<BasicResponse>
+
+    @Multipart
+    @POST("/api/wells/{espId}/image/{imageNumber}/upload")
+    suspend fun uploadWellPicture(
+        @Path("espId") wellId: String,
+        @Path("imageNumber") imageNumber: Int,
+        @Part image: MultipartBody.Part
     ): Response<BasicResponse>
 }

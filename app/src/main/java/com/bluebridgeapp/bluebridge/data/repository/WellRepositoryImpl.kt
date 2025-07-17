@@ -1,4 +1,5 @@
 package com.bluebridgeapp.bluebridge.data.repository
+import android.annotation.SuppressLint
 import android.media.Image
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
 import com.bluebridgeapp.bluebridge.data.local.WellPreferences
@@ -10,6 +11,7 @@ import com.bluebridgeapp.bluebridge.network.ServerApi
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import kotlinx.coroutines.withContext
 
 class WellRepositoryImpl(
@@ -94,7 +96,7 @@ class WellRepositoryImpl(
 
     override suspend fun saveWell(well: WellData): Boolean = withContext(Dispatchers.IO) {
         try {
-            preferences.saveWell(well)
+            preferences.saveWell(well, api)
             true
         } catch (e: Exception) {
             Log.e("WellRepository", "Error saving well: ${e.message}", e)
@@ -128,7 +130,7 @@ class WellRepositoryImpl(
     }
 
     override suspend fun isEspIdUnique(espId: String): Boolean = withContext(Dispatchers.IO) {
-        true
+        true // TODO: Implement this
     }
 
     override suspend fun swapWells(from: String, to: String) = withContext(Dispatchers.IO) {
@@ -141,8 +143,8 @@ class WellRepositoryImpl(
             val tempWellId = fromWell.wellId
             fromWell.wellId = toWell.wellId
             toWell.wellId = tempWellId
-            preferences.saveWell(fromWell)
-            preferences.saveWell(toWell)
+            preferences.saveWell(fromWell, api)
+            preferences.saveWell(toWell, api)
         }
     }
 
@@ -167,23 +169,86 @@ class WellRepositoryImpl(
             false
         }
     }
-    override suspend fun getAllImages(espId: String): List<Image> = withContext(Dispatchers.IO) {
+    override suspend fun getAllImages(wellId: String): List<android.graphics.Bitmap> = withContext(Dispatchers.IO) {
         try {
-            val wellData = api.getWellDataById(espId)
-            val numberOfImages = wellData.images.size
-            val imagesList = mutableListOf<Image>()
-            for (i in 0 until numberOfImages) { // Iterate through image indices (0 to size-1)
-                val imageResponse = api.getImage(espId, i) // getImage should return Response<Image>
-                imageResponse.body()?.let { imagesList.add(it) } // Add image if response is successful and body is not null
+            val wellData = api.getWellDataById(wellId)
+            val imagesList = mutableListOf<android.graphics.Bitmap>()
+            
+            wellData.images?.forEach { imageData ->
+                val bitmap = preferences.loadWellImageAsBitmap(imageData.imageNumber)
+                if (bitmap != null) {
+                    imagesList.add(bitmap)
+                } else {
+                    // Try to download from server if not cached
+                    try {
+                        val response = api.getWellImage(wellId, imageData.imageNumber)
+                        if (response.isSuccessful) {
+                            response.body()?.let { responseBody ->
+                                val imagePath = com.bluebridgeapp.bluebridge.utils.ImageUtils.downloadAndSaveImage(
+                                    preferences.context, 
+                                    imageData.imageNumber, 
+                                    responseBody
+                                )
+                                if (imagePath != null) {
+                                    val downloadedBitmap = preferences.loadWellImageAsBitmap(imageData.imageNumber)
+                                    downloadedBitmap?.let { imagesList.add(it) }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("WellRepository", "Error downloading image ${imageData.imageNumber}: ${e.message}", e)
+                    }
+                }
             }
+            
             imagesList
         } catch (e: Exception) {
-            Log.e("WellRepository", "Error fetching images for espId $espId: ${e.message}", e)
-           emptyList()
+            Log.e("WellRepository", "Error fetching images for wellId $wellId: ${e.message}", e)
+            emptyList()
         }
     }
 
-    override suspend fun uploadWellPicture(espId: String, image: Image): Boolean {
-        TODO("Not yet implemented. Should send the data to the server, wait a positive response, then update the local data, and return true if all of that succeeds.")
+    override suspend fun uploadWellPicture(wellId: String, imageNumber: Int, image: android.graphics.Bitmap): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // Convert bitmap to file for upload
+            val imageFile = java.io.File(preferences.context.cacheDir, "upload_image.jpg")
+            val outputStream = java.io.FileOutputStream(imageFile) // Use context.cacheDir for temp files
+            image.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
+            outputStream.close()
+            
+            val requestBody = okhttp3.RequestBody.create(
+                "image/jpeg".toMediaTypeOrNull(),
+                imageFile
+            )
+            val multipartBody = okhttp3.MultipartBody.Part.createFormData("image", "image.jpg", requestBody)
+            
+            val response = api.uploadWellPicture(wellId = wellId, imageNumber = imageNumber, image = multipartBody)
+            imageFile.delete()
+            
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.e("WellRepository", "Error uploading image for wellId $wellId and imageNumber $imageNumber: ${e.message}", e)
+            false
+        }
     }
+
+    override suspend fun getWellFromServer(wellId: String): WellData? = withContext(Dispatchers.IO) {
+        try {
+            val well = api.getWellDataById(wellId)
+            Log.i("WellRepository", "Successfully fetched well $wellId from server.")
+            well
+        } catch (e: Exception) {
+            Log.e("WellRepository", "Error fetching well $wellId from server: ${e.message}", e)
+            null
+        }
+    }
+    
+    override suspend fun getWellImageAsComposeBitmap(imageNumber: Int): androidx.compose.ui.graphics.ImageBitmap? {
+        return preferences.loadWellImageAsComposeBitmap(imageNumber)
+    }
+    
+    override suspend fun getWellImageAsBitmap(imageNumber: Int): android.graphics.Bitmap? {
+        return preferences.loadWellImageAsBitmap(imageNumber)
+    }
+
 }

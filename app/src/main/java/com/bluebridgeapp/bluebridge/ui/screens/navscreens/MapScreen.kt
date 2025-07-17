@@ -226,7 +226,7 @@ fun MapScreen(
     // Well details dialog
     selectedWell?.let { well ->
         WellDetailsDialog(
-            well = well,
+            well = well.toShortenedWell(well),
             onDismiss = { selectedWell = null },
             onNavigateToDetails = {
                 navController.navigate("${Routes.WELL_DETAILS_SCREEN}/${well.wellId}")

@@ -30,8 +30,11 @@ interface WellRepository {
     suspend fun swapWells(from: String, to: String)
     suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean
     suspend fun deleteWellFromServer(espId: String, email: String, token: String): Boolean
-    suspend fun getAllImages(espId: String): List<Image>
-    suspend fun uploadWellPicture(espId: String, image: Image): Boolean
+    suspend fun getAllImages(wellId: String): List<android.graphics.Bitmap>
+    suspend fun uploadWellPicture(wellId: String, imageNumber: Int, image: android.graphics.Bitmap): Boolean
+    suspend fun getWellFromServer(wellId: String): WellData?
+    suspend fun getWellImageAsComposeBitmap(imageNumber: Int): androidx.compose.ui.graphics.ImageBitmap?
+    suspend fun getWellImageAsBitmap(imageNumber: Int): android.graphics.Bitmap?
 }
 
 

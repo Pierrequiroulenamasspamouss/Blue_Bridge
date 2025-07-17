@@ -152,16 +152,8 @@ fun MonitorScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            if (isWellOwner || isAdmin || tempAdminMode) {
-                ExtendedFloatingActionButton(
-                    onClick = { navController.navigate("${Routes.WELL_CONFIG_SCREEN}/new") },
-                    icon = { Icon(Icons.Default.Add, "Add Well") },
-                    text = { Text(stringResource(R.string.add_new_well)) }
-                )
-            }
         }
+
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (wellsState) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -103,7 +104,7 @@ fun WellCard(
                 )
             } ?: run {
                 Text(
-                    text = stringResource(R.string.quality_label, well.waterQuality),
+                    text = stringResource(R.string.quality_label, well.waterQuality!!),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -144,8 +145,8 @@ fun WellCard(
             if (showLastRefresh || showLastUpdate) {
                 Spacer(modifier = Modifier.height(8.dp))
                 if (showLastRefresh) {
-                    val lastRefreshText = if (well.lastRefreshTime > 0) {
-                        val date = Date(well.lastRefreshTime)
+                    val lastRefreshText = if (well.lastRefreshTime!! > 0) {
+                        val date = Date(well.lastRefreshTime!!)
                         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date)
                     } else stringResource(R.string.never)
                     Text(
@@ -184,7 +185,7 @@ fun WellCard(
 
 @Composable
 fun EnhancedWellCard(
-    well: WellData,
+    well: ShortenedWellData,
     onClick: () -> Unit,
     onNavigateClick: () -> Unit
 ) {

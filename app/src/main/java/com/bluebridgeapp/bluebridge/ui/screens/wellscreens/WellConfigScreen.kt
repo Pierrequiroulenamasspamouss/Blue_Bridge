@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -82,6 +84,7 @@ import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.WellEvents
 import com.bluebridgeapp.bluebridge.ui.components.WellField
+import com.bluebridgeapp.bluebridge.ui.dialogs.RequireGalleryPermissionDialog
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
@@ -115,7 +118,6 @@ fun WellConfigScreen(
         wellWaterLevel = "",
         lastRefreshTime = 0,
         wellStatus = "",
-        extraData = emptyMap(),
         description = "",
         lastUpdated = "",
         wellId = "",
@@ -128,19 +130,14 @@ fun WellConfigScreen(
     val errorMessage = (currentWellState as? UiState.Error)?.message
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     var navigateBack by remember { mutableStateOf(false) }
-
+    var isNewWell = false
+    if (wellId == null) {
+        Log.e("WellConfigScreen", "Well ID is null")
+        isNewWell = true
+    }
     // Load well data when screen is first shown
     LaunchedEffect(currentWellId) {
             wellViewModel.loadWell(currentWellId)
-
-    }
-
-    // Show error messages in snackbar
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            AppEventChannel.sendEvent(AppEvent.ShowError(it))
-
-        }
     }
 
     // Format location input when wellData changes
@@ -222,7 +219,7 @@ fun WellConfigScreen(
 
                         WellField(
                             label = stringResource(R.string.well_owner),
-                            value = wellData.wellOwner,
+                            value = wellData.wellOwner.toString(),
                             keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
                         )
@@ -372,7 +369,7 @@ fun WellConfigScreen(
 
                         WellField(
                             label = stringResource(R.string.daily_consumption),
-                            value = wellData.wellWaterConsumption,
+                            value = wellData.wellWaterConsumption.toString(),
                             keyId = wellData.wellId,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
                             isNumeric = true
@@ -432,7 +429,7 @@ fun WellConfigScreen(
                             keyId = wellData.wellId,
                             onValueChange = { newEspId ->
                                 scope.launch {
-                                    val isUnique = wellViewModel.isEspIdUnique(newEspId)
+                                    val isUnique = wellViewModel.isWellIdUnique(newEspId)
                                     if (isUnique) {
                                         wellViewModel.handleEvent(WellEvents.WellIdEntered(newEspId))
                                     } else {
@@ -459,7 +456,7 @@ fun WellConfigScreen(
                         scope.launch {
                             isSaving = true
                             try {
-                                val isUnique = wellViewModel.isEspIdUnique(wellData.wellId)
+                                val isUnique = wellViewModel.isWellIdUnique(wellData.wellId)
                                 if (!isUnique && wellId == -1) {
                                     AppEventChannel.sendEvent(AppEvent.ShowError("Well ID already in use by another well"))
                                     isSaving = false
@@ -595,12 +592,10 @@ private fun WellData.isValid(): Boolean {
     
     // At least one other field must be filled
     val hasValidLocation = wellLocation.latitude != 0.0 || wellLocation.longitude != 0.0
-    return wellName.isNotBlank() || 
-           wellOwner.isNotBlank() ||
+    return wellName.isNotBlank() ||
            hasValidLocation ||
            wellCapacity.isNotBlank() ||
            wellWaterLevel.isNotBlank() ||
-           wellWaterConsumption.isNotBlank() ||
            wellWaterType.isNotBlank()
 }
 
@@ -611,8 +606,10 @@ fun ImageSection(
     wellViewModel: WellViewModel
 ) {
     // State to hold the list of images
-    var images by remember { mutableStateOf<List<android.media.Image>>(emptyList()) }
+    var images: List<Bitmap> by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var requestPermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) {}
 
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -625,17 +622,17 @@ fun ImageSection(
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
                 val byteArray = byteArrayOutputStream.toByteArray()
-                // TODO: For now, we are creating a dummy android.media.Image. Replace with actual image handling
-                // val newImage = createDummyImage(byteArray) // This needs a proper implementation or library
-                // wellViewModel.uploadWellPicture(espId = wellData.espId, image = newImage)
+                // Upload to server as next image number
+                val imageNumber = images.size
+                wellViewModel.uploadWellPicture(wellData.wellId, imageNumber, bitmap)
                 // Reload images after upload
                 images = wellViewModel.getAllImages(wellData.wellId)
             }
         }
     }
-    // Load images when wellData.espId changes
     LaunchedEffect(wellData.wellId) {
-        images = wellViewModel.getAllImages(wellData.wellId)    }
+        images = wellViewModel.getAllImages(wellData.wellId)
+    }
 
     Column {
         LazyRow(
@@ -644,21 +641,34 @@ fun ImageSection(
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
-            items(images) { image ->
-                val buffer = image.planes[0].buffer
-                val bytes = ByteArray(buffer.remaining())
-                buffer.get(bytes)
-                Image(
-                    bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap(),
-                    contentDescription = "Well Image",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
+            itemsIndexed(images) { index, image ->
+                Box(modifier = Modifier) {
+                    Image(
+                        bitmap = image.asImageBitmap(),
+                        contentDescription = "Well Image",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    // Remove button
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                wellViewModel.deleteWellImage(wellData.wellId, index)
+                                images = wellViewModel.getAllImages(wellData.wellId)
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Photo,
+                            contentDescription = "Remove image",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
-
             item {
                 // Add image button
                 Box(
@@ -668,12 +678,27 @@ fun ImageSection(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .clickable {
                             coroutineScope.launch {
-                                imagePickerLauncher.launch("image/*")
+                                val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    Manifest.permission.READ_MEDIA_IMAGES
+                                } else {
+                                    Manifest.permission.READ_EXTERNAL_STORAGE
+                                }
+                                if (context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) {
+                                    imagePickerLauncher.launch("image/*")
+                                } else {
+                                    showPermissionDialog = true
+                                }
                             }
                         }
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    if (showPermissionDialog) {
+                        RequireGalleryPermissionDialog(onDismiss = { showPermissionDialog = false }, onAllow = {
+                            showPermissionDialog = false
+                            requestPermissionLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
+                            imagePickerLauncher.launch("image/*") })
+                    }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.AddAPhoto,

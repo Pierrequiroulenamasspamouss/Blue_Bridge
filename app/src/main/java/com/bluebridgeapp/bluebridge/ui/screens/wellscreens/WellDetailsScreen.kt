@@ -238,7 +238,7 @@ private fun WellBasicInfoCard(well: WellData) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
-            InfoRow("Owner:", well.wellOwner.ifBlank { "Not specified" })
+            InfoRow("Owner:", well.wellOwner ?: "Not specified")
             InfoRow("Status:", well.wellStatus)
         }
     }
@@ -260,7 +260,7 @@ private fun WellWaterSpecsCard(well: WellData) {
             )
             InfoRow(
                 "Consumption:",
-                if (well.wellWaterConsumption.isBlank()) "Not specified" else "${well.wellWaterConsumption}L/day"
+                if (well.wellWaterConsumption?.isBlank() == true) "Not specified" else "${well.wellWaterConsumption}L/day"
             )
         }
     }

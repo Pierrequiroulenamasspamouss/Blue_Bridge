@@ -6,8 +6,12 @@
     <string name="projects" translatable="false">FreeDns (freedns.afraid.org), OpenStreetMap (openstreetmap.org) and Google Cloud Free services</string>
 
 
-
+    <!--
     <string name="DevelopmentServerUrl" translatable="false">http://bluebridge.homeonthewater.com/</string>
+
+    -->
+    <string name="DevelopmentServerUrl" translatable="false">http://192.168.0.98</string>
+
 
     <!-- Firebase notifications -->
 
@@ -345,5 +349,6 @@
     <string name="pictures_section">Well pictures</string>
     <string name="add_image">Add more images to this well</string>
     <string name="no_images_yet_add_one">No image found for this well. Consider adding some</string>
+    <string name="no_current_well_owner">No well owner defined</string>
 
 </resources>

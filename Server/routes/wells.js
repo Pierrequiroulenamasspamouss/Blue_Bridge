@@ -2,10 +2,58 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models');
 const { Well } = db;
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const { Op } = require('sequelize'); // Import Sequelize operators
 const { validateToken } = require('../middleware/auth');
 const { body, param, query, validationResult } = require('express-validator');
 const validator = require('validator');
+
+// Configure multer for image upload
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../uploads/wells');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const wellId = req.params.wellId;
+        const imageNumber = req.params.imageNumber;
+        const ext = path.extname(file.originalname);
+        cb(null, `well_${wellId}_image_${imageNumber}${ext}`);
+    }
+});
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadPath = path.join(__dirname, '../uploads/wells');
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+      cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+      const { wellId, imageNumber } = req.params;
+      cb(null, `well_${wellId}_image_${imageNumber}${path.extname(file.originalname)}`);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    // More permissive check for testing
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      console.log('Rejected file:', file); // Log rejected files
+      cb(new Error(`Invalid file type. Only ${allowedTypes.join(', ')} are allowed.`), false);
+    }
+  }
+});
+
+
 
 function mapToShortenedWellData(well) {
     // Extract latitude/longitude from wellLocation JSON if present
@@ -15,24 +63,21 @@ function mapToShortenedWellData(well) {
         latitude = well.wellLocation.latitude != null ? String(well.wellLocation.latitude) : '';
         longitude = well.wellLocation.longitude != null ? String(well.wellLocation.longitude) : '';
     }
-    
     // Add last refresh time
     const lastRefreshTime = well.lastUpdated ? new Date(well.lastUpdated).getTime() : 0;
-    
     return {
-        status : "success",
-        data : {
-            a: well.id || well.espId || '',
-            b: well.wellName || '',
-            c: well.wellLocation || { latitude: 0.0, longitude: 0.0 },
-            d: well.wellWaterType || well.waterType || '',
-            e: well.espId || '',
-            f: well.wellStatus || well.status || 'Unknown',
-            f: well.wellOwner || '',
-            h: well.wellCapacity != null ? String(well.wellCapacity) : (well.capacity != null ? String(well.capacity) : ''),
-            i: well.wellWaterLevel != null ? String(well.wellWaterLevel) : (well.waterLevel != null ? String(well.waterLevel) : ''),
-            j: well.wellWaterConsumption != null ? String(well.wellWaterConsumption) : (well.waterConsumption != null ? String(well.waterConsumption) : ''),
-            k: well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 },
+        status: "success",
+        data: {
+            wellName: well.wellName || '',
+            wellLocation: well.wellLocation || { latitude: 0.0, longitude: 0.0 },
+            wellWaterType: well.wellWaterType || well.waterType || '',
+            wellId: well.wellId || '',
+            wellStatus: well.wellStatus || well.status || 'Unknown',
+            wellOwner: well.wellOwner || '',
+            wellCapacity: well.wellCapacity != null ? String(well.wellCapacity) : (well.capacity != null ? String(well.capacity) : ''),
+            wellWaterLevel: well.wellWaterLevel != null ? String(well.wellWaterLevel) : (well.waterLevel != null ? String(well.waterLevel) : ''),
+            wellWaterConsumption: well.wellWaterConsumption != null ? String(well.wellWaterConsumption) : (well.waterConsumption != null ? String(well.waterConsumption) : ''),
+            waterQuality: well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 },
             lastRefreshTime
         }
     };
@@ -50,7 +95,7 @@ router.get('/', async (req, res) => {
             wellStatus,
             wellWaterType,
             wellOwner,
-            espId,
+            wellId,
             minWaterLevel,
             maxWaterLevel,
             latitude,
@@ -67,7 +112,7 @@ router.get('/', async (req, res) => {
         if (wellStatus) where.wellStatus = wellStatus;
         if (wellWaterType) where.wellWaterType = wellWaterType;
         if (wellOwner) where.wellOwner = wellOwner;
-        if (espId) where.espId = espId;
+        if (wellId) where.wellId = wellId;
         if (minWaterLevel) where.wellWaterLevel = { [Op.gte]: minWaterLevel };
         if (maxWaterLevel) where.wellWaterLevel = { [Op.lte]: maxWaterLevel };
 
@@ -125,7 +170,7 @@ router.get('/', async (req, res) => {
 // Create new well - Authentication required
 router.post('/', [
     body('wellName').isString().trim().escape(),
-    body('espId').isString().trim().escape(),
+    body('wellId').isString().trim().escape(),
     body('wellLocation').optional().custom(value => {
         if (typeof value === 'string') {
             const [lat, lon] = value.split(',').map(Number);
@@ -162,11 +207,11 @@ router.post('/', [
     }
     try {
         const {
-            wellName, wellLocation, wellWaterType, espId, wellStatus, wellOwner, wellCapacity, wellWaterLevel, wellWaterConsumption, waterQuality, extraData
+            wellName, wellLocation, wellWaterType, wellId, wellStatus, wellOwner, wellCapacity, wellWaterLevel, wellWaterConsumption, waterQuality, extraData
         } = req.body;
         
         // Check for required fields
-        if (!wellName || !espId) {
+        if (!wellName || !wellId) {
             return res.status(400).json({
                 status: 'error',
                 message: 'Well name and ESP ID are required'
@@ -200,7 +245,7 @@ router.post('/', [
         
         // Check if well with this ESP ID already exists
         const existingWell = await Well.findOne({
-            where: { espId: espId }
+            where: { wellId: wellId }
         });
         
         if (existingWell) {
@@ -214,7 +259,7 @@ router.post('/', [
             wellName,
             wellLocation: locationObj,
             wellWaterType: wellWaterType || 'Clean',
-            espId,
+            wellId,
             wellStatus: wellStatus || 'Active',
             wellOwner: wellOwner || req.user.email,
             ownerId: req.user.userId,
@@ -241,11 +286,11 @@ router.post('/', [
 });
 
 // Get well by ESP ID - No authentication required (without User association)
-router.get('/:espId/details', async (req, res) => {
+router.get('/:wellId/details', async (req, res) => {
     try {
         // Find well without including the User association
         const well = await Well.findOne({
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!well) {
@@ -271,7 +316,7 @@ router.get('/:espId/details', async (req, res) => {
 });
 
 // Update well via /update path - Authentication required
-router.put('/:espId/update', validateToken, async (req, res) => {
+router.put('/:wellId/update', validateToken, async (req, res) => {
     try {
         const {
             wellName, wellLocation, wellWaterType, wellStatus, wellOwner, wellCapacity, wellWaterLevel, wellWaterConsumption, waterQuality, extraData
@@ -279,7 +324,7 @@ router.put('/:espId/update', validateToken, async (req, res) => {
         
         // Check if well exists
         const well = await Well.findOne({
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!well) {
@@ -316,7 +361,7 @@ router.put('/:espId/update', validateToken, async (req, res) => {
             extraData: extraData || well.extraData,
             lastUpdated: new Date()
         }, {
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!updated) {
@@ -327,7 +372,7 @@ router.put('/:espId/update', validateToken, async (req, res) => {
         }
         
         const updatedWell = await Well.findOne({ 
-            where: { espId: req.params.espId } 
+            where: { wellId: req.params.wellId }
         });
         
         res.json({
@@ -345,7 +390,7 @@ router.put('/:espId/update', validateToken, async (req, res) => {
 });
 
 // Update well via /edit path - Authentication required
-router.put('/:espId/edit', validateToken, async (req, res) => {
+router.put('/:wellId/edit', validateToken, async (req, res) => {
     try {
         const {
             wellName, wellLocation, wellWaterType, wellStatus, wellOwner, wellCapacity, wellWaterLevel, wellWaterConsumption, waterQuality, extraData
@@ -353,7 +398,7 @@ router.put('/:espId/edit', validateToken, async (req, res) => {
         
         // Check if well exists
         const well = await Well.findOne({
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!well) {
@@ -390,7 +435,7 @@ router.put('/:espId/edit', validateToken, async (req, res) => {
             extraData: extraData || well.extraData,
             lastUpdated: new Date()
         }, {
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!updated) {
@@ -401,7 +446,7 @@ router.put('/:espId/edit', validateToken, async (req, res) => {
         }
         
         const updatedWell = await Well.findOne({ 
-            where: { espId: req.params.espId } 
+            where: { wellId: req.params.wellId }
         });
         
         res.json({
@@ -420,10 +465,10 @@ router.put('/:espId/edit', validateToken, async (req, res) => {
 
 
 // Delete well - Authentication required
-router.delete('/:espId', validateToken, async (req, res) => {
+router.delete('/:wellId', validateToken, async (req, res) => {
     try {
         const well = await Well.findOne({
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!well) {
@@ -437,7 +482,7 @@ router.delete('/:espId', validateToken, async (req, res) => {
         // Any user with valid token can now delete wells
         
         const deleted = await Well.destroy({
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!deleted) {
@@ -460,28 +505,38 @@ router.delete('/:espId', validateToken, async (req, res) => {
     }
 });
 
-// Get wells by status - No authentication required
-router.get('/status/:status', async (req, res) => {
+// Get the stats of all wells,how many are active, how many inactive, etc...
+router.get('/stats', async (req, res) => {
     try {
-        const wells = await Well.findAll({
-            where: { wellStatus: req.params.status }
+        const totalWells = await Well.count();
+        const activeWells = await Well.count({ where: { wellStatus: 'Active' } });
+        const inactiveWells = await Well.count({ where: { wellStatus: 'Inactive' } });
+        const unknownStatusWells = await Well.count({ where: { wellStatus: { [Op.notIn]: ['Active', 'Inactive'] } } });
+
+        // You can add more stats as needed, e.g., by water type
+        const statsByWaterType = await Well.findAll({
+            attributes: ['wellWaterType', [db.sequelize.fn('COUNT', db.sequelize.col('wellWaterType')), 'count']],
+            group: ['wellWaterType']
         });
-        
+
         res.json({
             status: 'success',
-            wells: wells.map(mapToShortenedWellData)
+            data: {
+                totalWells,
+                activeWells,
+                inactiveWells,
+                unknownStatusWells,
+                statsByWaterType
+            }
         });
     } catch (error) {
-        console.error('Error fetching wells by status:', error);
-        res.status(500).json({ 
-            status: 'error', 
-            message: error.message 
-        });
+        console.error('Error fetching well stats:', error);
+        res.status(500).json({ status: 'error', message: 'Error fetching well stats: ' + error.message });
     }
 });
 
 // Update well water level - No authentication required
-router.patch('/:espId/water-level', async (req, res) => {
+router.patch('/:wellId/water-level', async (req, res) => {
     try {
         const { waterLevel } = req.body;
         
@@ -496,7 +551,7 @@ router.patch('/:espId/water-level', async (req, res) => {
             wellWaterLevel: waterLevel,
             lastUpdated: new Date()
         }, {
-            where: { espId: req.params.espId }
+            where: { wellId: req.params.wellId }
         });
         
         if (!updated) {
@@ -507,7 +562,7 @@ router.patch('/:espId/water-level', async (req, res) => {
         }
         
         const well = await Well.findOne({ 
-            where: { espId: req.params.espId } 
+            where: { wellId: req.params.wellId }
         });
         
         res.json({
@@ -524,49 +579,7 @@ router.patch('/:espId/water-level', async (req, res) => {
     }
 });
 
-// Update water quality - No authentication required
-router.patch('/:espId/water-quality', async (req, res) => {
-    try {
-        const { waterQuality } = req.body;
-        
-        if (!waterQuality || typeof waterQuality !== 'object') {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Water quality object is required'
-            });
-        }
-        
-        const [updated] = await Well.update({
-            waterQuality,
-            lastUpdated: new Date()
-        }, {
-            where: { espId: req.params.espId }
-        });
-        
-        if (!updated) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Well not found'
-            });
-        }
-        
-        const well = await Well.findOne({ 
-            where: { espId: req.params.espId } 
-        });
-        
-        res.json({
-            status: 'success',
-            message: 'Water quality updated successfully',
-            well: mapToShortenedWellData(well)
-        });
-    } catch (error) {
-        console.error('Error updating water quality:', error);
-        res.status(400).json({ 
-            status: 'error', 
-            message: error.message 
-        });
-    }
-});
+
 
 // Get wells in specified radius from coordinates - No authentication required
 router.get('/nearby/:latitude/:longitude/:radius', async (req, res) => {
@@ -635,19 +648,17 @@ router.get('/nearby/:latitude/:longitude/:radius', async (req, res) => {
     }
 });
 
-// Fallback route for the original /:espId path - redirects to /:espId/details
-router.get('/:espId', async (req, res) => {
+// Get well by  well ID - No authentication required
+router.get('/:wellId', async (req, res) => {
     try {
-        // Just use the same implementation as /:espId/details but without the User association
         const well = await Well.findOne({
-            where: { espId: req.params.espId }
+            where: { [Op.or]: [{ wellId: req.params.wellId }, { id: req.params.wellId }] }
         });
-        
         if (!well) {
             // If well not found in database, create a mock well for demo purposes
             const mockWell = {
-                espId: req.params.espId,
-                wellName: `Well ${req.params.espId}`,
+                wellId: req.params.wellId,
+                wellName: `Well ${req.params.wellId}`,
                 wellLocation: { latitude: 40.7128, longitude: -74.0060 },
                 wellWaterType: 'Clean',
                 wellStatus: 'Active',
@@ -665,38 +676,216 @@ router.get('/:espId', async (req, res) => {
             return res.json(normalResponse);
             //return res.json(status: "success", data: mapToShortenedWellData(mockWell));
         }
-        
         res.json(mapToShortenedWellData(well));
-    } catch (error) {
-        console.error('Error fetching well:', error);
-        res.status(500).json({ 
-            status: 'error', 
-            message: error.message 
-        });
-    }
-});
-
-router.get('/:wellId', async (req, res) => {
-    try {
-        const well = await Well.findOne({
-            where: { id: req.params.wellId }
-        });
-
-        if (!well) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'There is no well associated with this name'
-            });
-        }
-
-        res.json(well);
     } catch (error) {
         console.error('Error fetching well:', error);
         res.status(500).json({
             status: 'error',
-            message: 'Error fetching well data'
+            data: {
+                message: error.message
+            }
         });
     }
 });
+
+// Upload image for a well
+router.post('/:wellId/images/:imageNumber/upload', [
+    //validateToken,
+    param('wellId').isString().trim().escape(),
+    param('imageNumber').isInt({ min: 0, max: 9 }),
+    body('description').optional().isString().trim().escape()
+], upload.single('image'), async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
+
+    try {
+        const { wellId, imageNumber } = req.params;
+        const { description } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'No image file provided'
+            });
+        }
+
+        // Get well from database
+        const well = await db.Well.findOne({ where: { wellId: wellId } });
+        if (!well) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Well not found'
+            });
+        }
+
+        // Parse existing images
+        let images = [];
+        if (well.wellImages) {
+            try {
+                images = JSON.parse(well.wellImages);
+            } catch (e) {
+                console.error('Error parsing well images:', e);
+            }
+        }
+
+        const imageIndex = parseInt(imageNumber);
+
+        // Create or update image data
+        const imageData = {
+            imageNumber: imageIndex,
+            description: description || `Image ${imageIndex}`,
+            filename: req.file.filename,
+            uploadDate: new Date().toISOString(),
+            fileSize: req.file.size
+        };
+
+        // Update or add image
+        if (imageIndex < images.length) {
+            images[imageIndex] = imageData;
+        } else {
+            // Add new image
+            while (images.length <= imageIndex) {
+                images.push(null);
+            }
+            images[imageIndex] = imageData;
+        }
+
+        // Update well with new images data
+        await well.update({ wellImages: JSON.stringify(images) });
+
+        res.json({
+            status: 'success',
+            message: 'Image uploaded successfully',
+            data: imageData
+        });
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error uploading image: ' + error.message
+        });
+    }
+});
+
+router.get('/:wellId/images/:imageNumber', async (req, res) => {
+    try {
+        const { wellId, imageNumber } = req.params;
+
+        // Validate parameters
+        if (!validator.isAlphanumeric(wellId) || !validator.isInt(imageNumber, { min: 0, max: 9 })) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid well ID or image number format.'
+            });
+        }
+
+        // Find the well
+        const well = await db.Well.findOne({ where: { wellId } });
+        if (!well) {
+            return res.status(404).json({ status: 'error', message: 'Well not found' });
+        }
+
+        // Parse images JSON
+        let images = [];
+        if (well.wellImages) {
+            try {
+                images = JSON.parse(well.wellImages);
+            } catch (e) {
+                return res.status(500).json({ status: 'error', message: 'Error parsing image data' });
+            }
+        }
+
+        const imgIndex = parseInt(imageNumber);
+        if (imgIndex >= images.length || !images[imgIndex]) {
+            return res.status(404).json({ status: 'error', message: 'Image not found' });
+        }
+
+        const image = images[imgIndex];
+        const imagePath = path.join(__dirname, '../uploads/wells', image.filename);
+
+        res.sendFile(imagePath);
+    } catch (error) {
+        console.error('Error fetching image:', error);
+        res.status(500).json({ status: 'error', message: 'Server error: ' + error.message });
+    }
+});
+
+// Delete image from a well
+router.delete('/:wellId/images/:imageNumber', [
+    //validateToken,
+    param('wellId').isString().trim().escape(),
+    param('imageNumber').isInt({ min: 0, max: 9 })
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'error', errors: errors.array() });
+    }
+
+    try {
+        const { wellId, imageNumber } = req.params;
+
+        // Get well from database
+        const well = await db.Well.findOne({ where: { wellId: wellId } });
+        if (!well) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Well not found'
+            });
+        }
+
+        // Parse existing images
+        let images = [];
+        if (well.wellImages) {
+            try {
+                images = JSON.parse(well.wellImages);
+            } catch (e) {
+                console.error('Error parsing well images:', e);
+            }
+        }
+
+        const imageIndex = parseInt(imageNumber);
+        if (imageIndex < 0 || imageIndex >= images.length || !images[imageIndex]) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Image not found'
+            });
+        }
+
+        // Delete image file
+        const imagePath = path.join(__dirname, '../uploads/wells', `well_${wellId}_image_${imageNumber}.jpg`);
+        if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+        }
+
+        // Remove image from array
+        images.splice(imageIndex, 1);
+
+        // Renumber remaining images
+        images = images.map((img, index) => {
+            if (img) {
+                img.imageNumber = index;
+            }
+            return img;
+        });
+
+        // Update well with new images data
+        await well.update({ wellImages: JSON.stringify(images) });
+
+        res.json({
+            status: 'success',
+            message: 'Image deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error deleting image: ' + error.message
+        });
+    }
+});
+
+
 
 module.exports = router; 

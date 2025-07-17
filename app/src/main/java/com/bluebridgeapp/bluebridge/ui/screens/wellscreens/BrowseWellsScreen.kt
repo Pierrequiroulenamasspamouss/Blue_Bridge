@@ -2,9 +2,7 @@
 
 package com.bluebridgeapp.bluebridge.ui.screens.wellscreens
 
-import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,20 +48,16 @@ import com.bluebridgeapp.bluebridge.data.local.WellPreferences
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.UserData
-import com.bluebridgeapp.bluebridge.data.model.WellData
-import com.bluebridgeapp.bluebridge.data.model.getLatitude
-import com.bluebridgeapp.bluebridge.data.model.getLongitude
-import com.bluebridgeapp.bluebridge.events.AppEvent
-import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.ui.navigation.Routes
-import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import com.bluebridgeapp.bluebridge.ui.components.EnhancedWellCard
 import com.bluebridgeapp.bluebridge.ui.components.FiltersSection
 import com.bluebridgeapp.bluebridge.ui.components.MapView
 import com.bluebridgeapp.bluebridge.ui.dialogs.EnhancedWellDetailsDialog
+import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
 import java.net.URLEncoder
+
 
 @OptIn(InternalSerializationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -71,8 +65,8 @@ import java.net.URLEncoder
 fun BrowseWellsScreen(
 
     userData: UserData?,
-    navController: NavController
-
+    navController: NavController,
+    wellViewModel: WellViewModel
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -82,6 +76,7 @@ fun BrowseWellsScreen(
     val pageSize = 20
     var hasMorePages by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
+    var wells by remember { mutableStateOf<List<ShortenedWellData>>(emptyList()) }
 
     // Filter states
     var searchQuery by remember { mutableStateOf("") }
@@ -96,12 +91,12 @@ fun BrowseWellsScreen(
     // View state
     var showMap by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
-    var selectedWell by remember { mutableStateOf<WellData?>(null) }
-    var wells by remember { mutableStateOf<List<WellData>>(emptyList()) }
+    var selectedWell by remember { mutableStateOf<ShortenedWellData?>(null) }
     val wellPreferences = WellPreferences(context)
     // Load initial data
     LaunchedEffect(Unit) {
-        loadWells(
+        isLoading = true
+        val loadedWells = wellViewModel.loadWells(
             page = currentPage,
             pageSize = pageSize,
             searchQuery = searchQuery,
@@ -109,21 +104,19 @@ fun BrowseWellsScreen(
             status = selectedStatus,
             minWaterLevel = minWaterLevel,
             maxWaterLevel = maxWaterLevel,
-            context = context,
-            onSuccess = { newWells, hasMore ->
-                wells = newWells
-                hasMorePages = hasMore
-            }
+            context = context
         )
+        isLoading = false
+        hasMorePages = loadedWells.size == pageSize
     }
 
     // Load more when reaching end of list
     LaunchedEffect(wells.size, hasMorePages) {
-        if (!isLoading && hasMorePages) {
+        if (!isLoading && hasMorePages && wells.isNotEmpty()) {
             currentPage++
             isLoading = true
             coroutineScope.launch {
-                loadWells(
+                val loadedWells = wellViewModel.loadWells(
                     page = currentPage,
                     pageSize = pageSize,
                     searchQuery = searchQuery,
@@ -131,13 +124,15 @@ fun BrowseWellsScreen(
                     status = selectedStatus,
                     minWaterLevel = minWaterLevel,
                     maxWaterLevel = maxWaterLevel,
-                    context = context,
-                    onSuccess = { newWells, hasMore ->
-                        wells = wells + newWells
-                        hasMorePages = hasMore
-                        isLoading = false
-                    }
+                    context = context
                 )
+                if (loadedWells.isEmpty()) {
+                    hasMorePages = false
+                } else {
+                    wells = (wells + loadedWells) as List<ShortenedWellData>
+                    hasMorePages = loadedWells.size == pageSize
+                }
+                isLoading = false
             }
         }
     }
@@ -147,7 +142,7 @@ fun BrowseWellsScreen(
         currentPage = 1
         isLoading = true
         coroutineScope.launch {
-            loadWells(
+            val loadedWells = wellViewModel.loadWells(
                 page = currentPage,
                 pageSize = pageSize,
                 searchQuery = searchQuery,
@@ -155,13 +150,11 @@ fun BrowseWellsScreen(
                 status = selectedStatus,
                 minWaterLevel = minWaterLevel,
                 maxWaterLevel = maxWaterLevel,
-                context = context,
-                onSuccess = { newWells, hasMore ->
-                    wells = newWells
-                    hasMorePages = hasMore
-                    isLoading = false
-                }
+                context = context
             )
+            wells = loadedWells
+            isLoading = false
+            hasMorePages = loadedWells.size == pageSize
         }
     }
 
@@ -277,6 +270,7 @@ fun BrowseWellsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(wells) { well ->
+
                             EnhancedWellCard(
                                 well = well,
                                 onClick = {
@@ -322,7 +316,10 @@ fun BrowseWellsScreen(
                 },
                 onAdd = {
                     coroutineScope.launch {
-                        wellPreferences.saveWell(well)
+                        val wellToSave = wellViewModel.getWellFromServer(well.wellId)
+                        wellToSave?.let {
+                            wellPreferences.saveWell(it)
+                        }
                     }
                     selectedWell = null
                     //navController.navigate(Routes.MONITORING_SCREEN) //Should it go back th the monitoring screen after adding a well ?
@@ -332,42 +329,3 @@ fun BrowseWellsScreen(
     }
 }
 
-private suspend fun loadWells(
-    page: Int,
-    pageSize: Int,
-    searchQuery: String,
-    waterType: String?,
-    status: String?,
-    minWaterLevel: Int?,
-    maxWaterLevel: Int?,
-    context: Context,
-    onSuccess: (List<WellData>, Boolean) -> Unit
-) {
-    try {
-        val serverApi = RetrofitBuilder.getServerApi(context)
-        val response = serverApi.getWellsWithFilters(
-            page = page,
-            limit = pageSize,
-            wellName = searchQuery.takeIf { it.isNotBlank() },
-            wellStatus = status,
-            wellWaterType = waterType,
-            minWaterLevel = minWaterLevel,
-            maxWaterLevel = maxWaterLevel
-        )
-
-        if (response.isSuccessful) {
-            val wellsResponse = response.body()
-            if (wellsResponse != null) {
-                Log.d("BrowseWellsScreen", "Wells loaded successfully")
-                onSuccess(wellsResponse.data, 10 > page * pageSize)
-            } else {
-                AppEventChannel.sendEvent(AppEvent.ShowError("No wells found"))
-            }
-        } else {
-            AppEventChannel.sendEvent(AppEvent.ShowError("Failed to load wells"))
-        }
-    } catch (e: Exception) {
-        Log.e("BrowseWellsScreen", "Error loading wells", e)
-        AppEventChannel.sendEvent(AppEvent.ShowError("Error: ${e.message}"))
-    }
-}

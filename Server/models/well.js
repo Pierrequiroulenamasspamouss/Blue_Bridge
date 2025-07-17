@@ -40,20 +40,10 @@ module.exports = (sequelize) => {
             allowNull: false,
             defaultValue: 0.0
         },
-        extraData: {
-            type: DataTypes.JSON,
-            allowNull: true,
-            defaultValue: {}
-        },
         wellStatus: {
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: 'Unknown'
-        },
-        lastUpdated: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            defaultValue: DataTypes.NOW
         },
         waterQuality: {
             type: DataTypes.JSON, // Store as JSON object {ph, turbidity, tds}
@@ -61,9 +51,19 @@ module.exports = (sequelize) => {
             defaultValue: null
         },
         wellImages: {
-            type: DataTypes.JSON,
+            type: DataTypes.TEXT,
             allowNull: true,
-            defaultValue: []
+            defaultValue: '[]'
+        },
+        createdAt:{
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
+        },
+        updatedAt:{
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
         }
     });
 

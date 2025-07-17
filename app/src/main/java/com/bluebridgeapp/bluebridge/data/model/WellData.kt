@@ -5,24 +5,36 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlin.js.ExperimentalJsFileName
 
 @Serializable
 data class WellData(
-    val wellName: String = "",
-    val wellLocation: Location = Location(latitude = 0.0, longitude = 0.0),
-    val wellWaterType: String = "",
-    val wellCapacity: String = "",
-    val wellWaterLevel: String = "",
-    var lastRefreshTime: Long = 0L,
-    val wellStatus: String = "Unknown",
-    val waterQuality: WaterQuality = WaterQuality(),
-    val extraData: Map<String, JsonElement> = emptyMap(),
-    val description: String = "",
-    val lastUpdated: String? = null,
     var wellId: String,
-    val wellWaterConsumption: String,
-    val wellOwner: String,
-    val images: List<ImageData> = emptyList())
+    val wellName: String,
+    val wellLocation: Location,
+    val wellWaterType: String,
+    val wellCapacity: String,
+    val wellWaterLevel: String,
+    var lastRefreshTime: Long? = null,
+    val wellStatus: String = "Unknown",
+    val waterQuality: WaterQuality? = null,
+    val description: String? = null,
+    val lastUpdated: String? = null,
+    val wellWaterConsumption: String? = null,
+    var wellOwner: String?= null,
+    val images: List<ImageData>? = emptyList()) {
+    fun toShortenedWell(wellData: WellData): ShortenedWellData {
+        return ShortenedWellData(
+            wellName = wellData.wellName,
+            wellLocation = wellData.wellLocation,
+            wellWaterType = wellData.wellWaterType,
+            wellStatus = wellData.wellStatus,
+            wellCapacity = wellData.wellCapacity,
+            wellWaterLevel = wellData.wellWaterLevel,
+            wellId = wellData.wellId
+        )
+    }
+}
 
 fun WellData.getLatitude(): Double = wellLocation.latitude
 fun WellData.getLongitude(): Double = wellLocation.longitude
@@ -35,13 +47,13 @@ fun WellData.hasValidCoordinates(): Boolean {
 
 @Serializable
 data class ShortenedWellData(
-    val wellName: String = "Well",
-    val wellLocation: Location = Location(latitude = 0.0, longitude = 0.0),
-    val wellWaterType: String = "None",
-    val wellStatus: String = "Unknown",
-    val wellCapacity: String = "No capacity available",
-    val wellWaterLevel: String = "0",
-    val wellId: String = "0"
+    val wellName: String ,
+    val wellLocation: Location ,
+    val wellWaterType: String ,
+    val wellStatus: String,
+    val wellCapacity: String ,
+    val wellWaterLevel: String ,
+    val wellId: String
 ) {
     fun getLatitude(): Double = wellLocation.latitude
     fun getLongitude(): Double = wellLocation.longitude
@@ -64,5 +76,9 @@ data class Pagination(
 
 @Serializable
 data class ImageData(
-    val description: String
+    val imageNumber: Int,
+    val description: String,
+    val fileName: String,
+    val uploadDate: String,
+    val fileSize: Long
 )

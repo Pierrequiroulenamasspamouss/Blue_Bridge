@@ -26,7 +26,7 @@ import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LanguageSelectionScre
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.EasterEgg
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.FeatureNotImplementedScreen
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LoadingScreen
-import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.ExampleScreen
+import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.DebugScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapDownloadScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.EditWaterNeedsScreen
@@ -170,7 +170,8 @@ fun NavigationGraph(
             when (userState) {
                 is UiState.Success<*> -> BrowseWellsScreen(
                     userData = userState.data as? UserData,
-                    navController = navController
+                    navController = navController,
+                    wellViewModel = wellViewModel
                 )
                 else -> {
                     LaunchedEffect(Unit) {
@@ -241,22 +242,17 @@ fun NavigationGraph(
                 }
                 LoadingScreen()
             }
-            // Handle new well case
-            else if (wellIdParam == Routes.WELL_CONFIG_NEW) {
-                FeatureNotImplementedScreen(
-                    navController = navController
-                )
-            }
-            // Handle existing well case
-            else {
-                val wellId = wellIdParam.toIntOrNull() ?: 0
-                WellConfigScreen(
-                    navController = navController,
-                    wellViewModel = wellViewModel,
-                    wellId = wellId,
-                    userViewModel = userViewModel
-                )
-            }
+
+        }
+        composable (route = Routes.WELL_CONFIG_NEW) {
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            WellConfigScreen(
+                wellId = null,
+                wellViewModel = wellViewModel,
+                userViewModel = userViewModel,
+                navController = navController,
+            )
         }
         // Settings Screen
         composable(Routes.SETTINGS_SCREEN) {
@@ -389,8 +385,9 @@ fun NavigationGraph(
 
         // Example Screen
         composable(Routes.EXAMPLE_SCREEN) {
-            ExampleScreen(
-                userViewModel = userViewModel
+            DebugScreen(
+                wellViewModel = wellViewModel,
+                userViewModel = userViewModel,
             )
         }
 

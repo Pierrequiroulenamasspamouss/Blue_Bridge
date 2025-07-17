@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Map
@@ -178,15 +179,7 @@ fun HomeScreen(
                     onClick = { navController.navigate(Routes.MAP_SCREEN) },
                     modifier = Modifier.weight(1f)
                 )
-                if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
-                    FeatureCard(
-                        icon = Icons.Default.Cloud,
-                        title = stringResource(R.string.weather),
-                        description = stringResource(R.string.check_upcoming_weather_forecast),
-                        onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+
             }
 
             Row(
@@ -201,7 +194,15 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
 
-
+                if (currentUserRole >= userRole) { // Show weather for logged-in users (user, well_owner, admin)
+                    FeatureCard(
+                        icon = Icons.Default.Cloud,
+                        title = stringResource(R.string.weather),
+                        description = stringResource(R.string.check_upcoming_weather_forecast),
+                        onClick = { navController.navigate(Routes.WEATHER_SCREEN) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             Row(
@@ -226,6 +227,20 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+            if (currentUserRole >=3 ) { // Show debug
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FeatureCard(
+                        icon = Icons.Default.BugReport,
+                        title = "Testing",
+                        description = "",
+                        onClick = { navController.navigate(Routes.EXAMPLE_SCREEN) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
