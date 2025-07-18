@@ -9,6 +9,7 @@ import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
 import com.bluebridgeapp.bluebridge.network.ServerApi
 import android.util.Log
+import com.bluebridgeapp.bluebridge.data.model.ImageData
 import com.bluebridgeapp.bluebridge.data.model.Location
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,8 +17,9 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import android.util.Base64 // Import Android's Base64
+import okhttp3.RequestBody.Companion.asRequestBody
 
 class WellRepositoryImpl(
     private val api: ServerApi,
@@ -30,10 +32,27 @@ class WellRepositoryImpl(
     }
 
     override suspend fun getWellById(id: String?): WellData? = withContext(Dispatchers.IO) {
+        if (id == null) return@withContext null
+
         try {
-            preferences.getWellById(id)
+            // First try to get from local preferences
+            val localWell = preferences.getWellById(id)
+            if (localWell != null) {
+                return@withContext localWell
+            }
+
+            // If not found locally, try to fetch from server
+            val serverWell = getWellFromServer(id)
+            if (serverWell != null) {
+                // Optionally save the server-fetched well to local storage for future use
+                preferences.saveWell(serverWell, api)
+                return@withContext serverWell
+            }
+
+            // If not found either locally or on server
+            null
         } catch (e: Exception) {
-            Log.e("WellRepository", "Error fetching well by id from preferences: ${e.message}", e)
+            Log.e("WellRepository", "Error fetching well by id '$id': ${e.message}", e)
             null
         }
     }
@@ -53,13 +72,13 @@ class WellRepositoryImpl(
                     }
 
                     ShortenedWellData(
-                        wellName = well.wellName,
+                        wellName = well.wellName.toString(),
                         wellLocation = wellLocation as Location, // Re-serialize if needed, or use the object directly
-                        wellWaterType = well.wellWaterType,
-                        wellStatus = well.wellStatus,
-                        wellCapacity = well.wellCapacity,
-                        wellWaterLevel = well.wellWaterLevel,
-                        wellId = well.wellId
+                        wellWaterType = well.wellWaterType.toString(),
+                        wellStatus = well.wellStatus.toString(),
+                        wellCapacity = well.wellCapacity.toString(),
+                        wellWaterLevel = well.wellWaterLevel.toString(),
+                        wellId = well.wellId.toString()
                     )
                 }
             } else {
@@ -204,10 +223,8 @@ class WellRepositoryImpl(
             image.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
             outputStream.close()
             
-            val requestBody = okhttp3.RequestBody.create(
-                "image/jpeg".toMediaTypeOrNull(),
-                imageFile
-            )
+            val requestBody = imageFile
+                .asRequestBody("image/jpeg".toMediaTypeOrNull())
             val multipartBody = okhttp3.MultipartBody.Part.createFormData("image", "image.jpg", requestBody)
             
             val response = api.uploadWellPicture(wellId = wellId, imageNumber = imageNumber, image = multipartBody)
@@ -222,9 +239,26 @@ class WellRepositoryImpl(
 
     override suspend fun getWellFromServer(wellId: String): WellData? = withContext(Dispatchers.IO) {
         try {
-            val well = api.getWellDataById(wellId)
-            Log.i("WellRepository", "Successfully fetched well $wellId from server.")
-            well
+            // Get basic well details
+            val detailsResponse = api.getWellDetails(wellId)
+            val wellData = WellData.fromDetailsResponse(detailsResponse)
+
+            // Fetch images if available
+            val imageCount = detailsResponse.data.imageCount
+            if (imageCount > 0) {
+                val images = (0 until imageCount).mapNotNull { imageNumber ->
+                    try {
+                        val imageResponse = api.getWellImage(wellId, imageNumber)
+                        imageResponse.body()?.data
+                    } catch (e: Exception) {
+                        Log.e("WellRepository", "Error fetching image $imageNumber for well $wellId: ${e.message}")
+                        null
+                    }
+                }
+                wellData.copy(images = images)
+            } else {
+                wellData
+            }
         } catch (e: Exception) {
             Log.e("WellRepository", "Error fetching well $wellId from server: ${e.message}", e)
             null
@@ -233,28 +267,60 @@ class WellRepositoryImpl(
 
     @OptIn(ExperimentalEncodingApi::class)
     override suspend fun getWellImageAsBitmap(wellId: String, imageNumber: Int): Bitmap? = withContext(Dispatchers.IO) {
+
+        // First try to load from local cache
         try {
-            // Try to load from local cache first
-            preferences.loadWellImageAsBitmap(wellId, imageNumber)
-        } catch (e: Exception) {
-            Log.d("WellRepositoryImpl", "Image not found locally for well $wellId, image $imageNumber. Fetching from server. Error: ${e.message}")
-            try {
-                val response = api.getWellImage(wellId, imageNumber)
-                if (response.isSuccessful && response.body() != null) {
-                    val base64 = response.body()!!.data.base64encodedImage
-                    Log.d("WellRepositoryImpl", "Fetched image meta from server: ${response.body()!!.data} base64 data")
-                    val bytes = Base64.decode(base64)
-                    return@withContext BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    null // No bitmap to return
-                } else {
-                    Log.e("WellRepositoryImpl", "Error fetching image from server: ${response.errorBody()?.string()}")
-                    null
-                }
-            } catch (serverException: Exception) {
-                Log.e("WellRepositoryImpl", "Error fetching image from server for well $wellId, image $imageNumber: ${serverException.message}", serverException)
-                null
+            Log.d("WellRepositoryImpl", "Trying to load image from local cache for well $wellId, image $imageNumber")
+            val localBitmap = preferences.loadWellImageAsBitmap(wellId, imageNumber)
+            if (localBitmap != null) {
+                Log.d("WellRepositoryImpl", "Successfully loaded image from local cache")
+                return@withContext localBitmap
             }
-        } as Bitmap?
+        } catch (e: Exception) {
+            Log.d("WellRepositoryImpl", "Local cache fetch failed for well $wellId, image $imageNumber. Error: ${e.message}")
+            // Continue to server fetch
+        }
+
+        // If local fetch failed or returned null, try fetching from server
+        try {
+            Log.d("WellRepositoryImpl", "Fetching image from server for well $wellId, image $imageNumber")
+            val response = api.getWellImage(wellId, imageNumber)
+
+            if (response.isSuccessful && response.body() != null) {
+                val imageData = response.body()!!.data
+                val base64 = imageData.base64encodedImage
+                Log.d("WellRepositoryImpl", "Fetched image meta from server: $imageData")
+
+                val bytes = Base64.decode(base64, Base64.DEFAULT) // Use Android's Base64
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+
+                if (bitmap != null) {
+                    // Optionally save the fetched image to local cache for future use
+                    try {
+                        val well = preferences.getWellById(wellId)
+                        if (well != null) {
+                            val updatedImages = well.images?.toMutableList() ?: mutableListOf()
+                            // Ensure we have space for this image number
+                            while (updatedImages.size <= imageNumber) {
+                                updatedImages.add(ImageData("", "", 0, ""))
+                            }
+                            updatedImages[imageNumber] = imageData
+                            preferences.saveWell(well.copy(images = updatedImages))
+                        }
+                    } catch (e: Exception) {
+                        Log.e("WellRepositoryImpl", "Failed to save image to local cache", e)
+                    }
+                }
+
+                return@withContext bitmap
+            } else {
+                Log.e("WellRepositoryImpl", "Error fetching image from server: ${response.errorBody()?.string()}")
+                return@withContext null
+            }
+        } catch (serverException: Exception) {
+            Log.e("WellRepositoryImpl", "Error fetching image from server for well $wellId, image $imageNumber: ${serverException.message}", serverException)
+            return@withContext null
+        }
     }
 
     override suspend fun getAllImages(wellId: String): List<Bitmap> = withContext(Dispatchers.IO) {

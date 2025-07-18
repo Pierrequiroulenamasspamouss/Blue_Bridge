@@ -126,7 +126,7 @@ fun WellConfigScreen(
     )
     var lastSavedData by remember { mutableStateOf(wellData) }
     val isLoading = currentWellState is UiState.Loading
-    val errorMessage = (currentWellState as? UiState.Error)?.message
+    (currentWellState as? UiState.Error)?.message
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     var navigateBack by remember { mutableStateOf(false) }
     var isNewWell = false
@@ -141,7 +141,7 @@ fun WellConfigScreen(
 
     // Format location input when wellData changes
     LaunchedEffect(wellData.wellLocation) {
-        if (wellData.wellLocation.latitude != 0.0 || wellData.wellLocation.longitude != 0.0) {
+        if (wellData.wellLocation!!.latitude != 0.0 || wellData.wellLocation.longitude != 0.0) {
             locationInput = "Location:\nlat: ${wellData.wellLocation.latitude}\nlon: ${wellData.wellLocation.longitude}"
         }
     }
@@ -211,15 +211,15 @@ fun WellConfigScreen(
                     ) {
                         WellField(
                             label = stringResource(R.string.well_name),
-                            value = wellData.wellName,
-                            keyId = wellData.wellId,
+                            value = wellData.wellName!!,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellNameEntered(it)) }
                         )
 
                         WellField(
                             label = stringResource(R.string.well_owner),
                             value = wellData.wellOwner.toString(),
-                            keyId = wellData.wellId,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
                         )
                     }
@@ -249,7 +249,7 @@ fun WellConfigScreen(
                         )
                         
                         // Map preview placeholder (could be replaced with actual map)
-                        if (wellData.wellLocation.latitude != 0.0 || wellData.wellLocation.longitude != 0.0) {
+                        if (wellData.wellLocation!!.latitude != 0.0 || wellData.wellLocation.longitude != 0.0) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -345,23 +345,23 @@ fun WellConfigScreen(
                     ) {
                         WellField(
                             label = stringResource(R.string.water_type),
-                            value = wellData.wellWaterType,
-                            keyId = wellData.wellId,
+                            value = wellData.wellWaterType!!,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterTypeEntered(it)) }
                         )
 
                         WellField(
                             label = stringResource(R.string.well_capacity),
-                            value = wellData.wellCapacity,
-                            keyId = wellData.wellId,
+                            value = wellData.wellCapacity!!,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WellCapacityEntered(it)) },
                             isNumeric = true
                         )
 
                         WellField(
                             label = stringResource(R.string.water_level),
-                            value = wellData.wellWaterLevel,
-                            keyId = wellData.wellId,
+                            value = wellData.wellWaterLevel!!,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.WaterLevelEntered(it)) },
                             isNumeric = true
                         )
@@ -369,7 +369,7 @@ fun WellConfigScreen(
                         WellField(
                             label = stringResource(R.string.daily_consumption),
                             value = wellData.wellWaterConsumption.toString(),
-                            keyId = wellData.wellId,
+                            keyId = wellData.wellId!!,
                             onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
                             isNumeric = true
                         )
@@ -424,8 +424,8 @@ fun WellConfigScreen(
                     ) {
                         WellField(
                             label = stringResource(R.string.esp_id),
-                            value = wellData.wellId,
-                            keyId = wellData.wellId,
+                            value = wellData.wellId!!,
+                            keyId = wellData.wellId!!,
                             onValueChange = { newEspId ->
                                 scope.launch {
                                     val isUnique = wellViewModel.isWellIdUnique(newEspId)
@@ -455,7 +455,7 @@ fun WellConfigScreen(
                         scope.launch {
                             isSaving = true
                             try {
-                                val isUnique = wellViewModel.isWellIdUnique(wellData.wellId)
+                                val isUnique = wellViewModel.isWellIdUnique(wellData.wellId!!)
                                 if (!isUnique && wellId == -1) {
                                     AppEventChannel.sendEvent(AppEvent.ShowError("Well ID already in use by another well"))
                                     isSaving = false
@@ -587,15 +587,15 @@ fun SectionHeader(title: String, icon: ImageVector) {
 // Helper function to validate well data
 private fun WellData.isValid(): Boolean {
     // ESP ID is required
-    if (wellId.isBlank()) return false
+    if (wellId!!.isBlank()) return false
     
     // At least one other field must be filled
-    val hasValidLocation = wellLocation.latitude != 0.0 || wellLocation.longitude != 0.0
-    return wellName.isNotBlank() ||
+    val hasValidLocation = wellLocation!!.latitude != 0.0 || wellLocation.longitude != 0.0
+    return wellName!!.isNotBlank() ||
            hasValidLocation ||
-           wellCapacity.isNotBlank() ||
-           wellWaterLevel.isNotBlank() ||
-           wellWaterType.isNotBlank()
+           wellCapacity!!.isNotBlank() ||
+           wellWaterLevel!!.isNotBlank() ||
+           wellWaterType!!.isNotBlank()
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -620,17 +620,17 @@ fun ImageSection(
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-                val byteArray = byteArrayOutputStream.toByteArray()
+
                 // Upload to server as next image number
                 val imageNumber = images.size
-                wellViewModel.uploadWellPicture(wellData.wellId, imageNumber, bitmap)
+                wellViewModel.uploadWellPicture(wellData.wellId!!, imageNumber, bitmap)
                 // Reload images after upload
-                images = wellViewModel.getAllImages(wellData.wellId)
+                images = wellViewModel.getAllImages(wellData.wellId!!)
             }
         }
     }
     LaunchedEffect(wellData.wellId) {
-        images = wellViewModel.getAllImages(wellData.wellId)
+        images = wellViewModel.getAllImages(wellData.wellId!!)
     }
 
     Column {
@@ -654,8 +654,8 @@ fun ImageSection(
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                wellViewModel.deleteWellImage(wellData.wellId, index)
-                                images = wellViewModel.getAllImages(wellData.wellId)
+                                wellViewModel.deleteWellImage(wellData.wellId!!, index)
+                                images = wellViewModel.getAllImages(wellData.wellId!!)
                             }
                         },
                         modifier = Modifier.align(Alignment.TopEnd)

@@ -1,11 +1,16 @@
 package com.bluebridgeapp.bluebridge.ui.components
 
+import android.util.Base64
+import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +23,7 @@ import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -25,19 +31,23 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bluebridgeapp.bluebridge.R
+import com.bluebridgeapp.bluebridge.data.model.ImageData
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
 fun WellCard(
@@ -51,6 +61,14 @@ fun WellCard(
     onNavigate: () -> Unit = {},
     onDeleteClick: () -> Unit
 ) {
+    // Safe property access with fallbacks
+    val wellName = well.wellName ?: "Unnamed Well"
+    val wellStatus = well.wellStatus ?: "Unknown"
+    val capacity = well.wellCapacity?.toFloatOrNull() ?: 0f
+    val waterLevel = well.wellWaterLevel?.toFloatOrNull() ?: 0f
+    val waterLevelRatio = if (capacity > 0) (waterLevel / capacity).coerceIn(0f, 1f) else 0f
+    val waterLevelPercent = (waterLevelRatio * 100).toInt()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -58,15 +76,14 @@ fun WellCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-            // Header Row: Title + Admin Actions
+            // Header Row - Safe with fallback name
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = well.wellName,
+                    text = wellName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -75,50 +92,35 @@ fun WellCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (isWellOwner) {
                             IconButton(onClick = onEdit) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(R.string.edit_well)
-                                )
+                                Icon(Icons.Default.Edit, stringResource(R.string.edit_well))
                             }
                         }
-
                         IconButton(onClick = onDeleteClick) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.delete_well),
-                                tint = if (showAdminActions) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                Icons.Default.Delete,
+                                stringResource(R.string.delete_well),
+                                tint = if (showAdminActions) MaterialTheme.colorScheme.error
+                                else LocalContentColor.current
                             )
                         }
                     }
                 }
             }
 
-            // Status or Quality Info
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
-            well.wellStatus?.let {
-                Text(
-                    text = stringResource(R.string.status_label, it),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } ?: run {
-                Text(
-                    text = stringResource(R.string.quality_label, well.waterQuality!!),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            // Safe status display
+            Text(
+                text = stringResource(R.string.status_label, wellStatus),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-            // Water Level Info
-            val waterLevel = if (well.wellCapacity.toInt() > 0) {
-                (well.wellWaterLevel.toFloat() / well.wellCapacity.toFloat()).coerceIn(0f, 1f)
-            } else 0f
-            val waterLevelPercentage = (waterLevel * 100).toInt()
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // Water level indicator - safe with calculated values
             LinearProgressIndicator(
-                progress = { waterLevel },
+                progress = { waterLevelRatio },
                 modifier = Modifier
                     .height(8.dp)
                     .fillMaxWidth()
@@ -126,57 +128,49 @@ fun WellCard(
             )
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.water_level_liters, well.wellWaterLevel),
+                    text = stringResource(R.string.water_level_liters, waterLevel.toString()),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = stringResource(R.string.water_level_percentage, waterLevelPercentage),
+                    text = stringResource(R.string.water_level_percentage, waterLevelPercent),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            if (showLastRefresh || showLastUpdate) {
-                Spacer(modifier = Modifier.height(8.dp))
-                if (showLastRefresh) {
-                    val lastRefreshText = if (well.lastRefreshTime!! > 0) {
-                        val date = Date(well.lastRefreshTime!!)
-                        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date)
-                    } else stringResource(R.string.never)
+            // Safe time displays
+            well.lastRefreshTime?.let { refreshTime ->
+                if (showLastRefresh && refreshTime > 0) {
+                    val date = Date(refreshTime)
+                    val formatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date)
                     Text(
-                        text = stringResource(R.string.last_refreshed_label, lastRefreshText),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (showLastUpdate) {
-                    val lastUpdateText = well.lastUpdated?.let { formatDateTime(it) }
-                        ?: stringResource(R.string.never)
-                    Text(
-                        text = stringResource(R.string.last_update_label, lastUpdateText),
-                        style = MaterialTheme.typography.bodySmall, // Ensure style is applied
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.last_refreshed_label, formatted),
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            well.lastUpdated?.let { updated ->
+                if (showLastUpdate) {
+                    Text(
+                        text = stringResource(R.string.last_update_label, formatDateTime(updated)),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             Button(
-                onClick = { onItemClick(well.wellId.toString()) },
+                onClick = { well.wellId?.let(onItemClick) },
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Icon(
-                    Icons.Default.Navigation,
-                    contentDescription = stringResource(R.string.details)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.Navigation, stringResource(R.string.details))
+                Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.go_button))
             }
         }
@@ -272,6 +266,43 @@ private fun formatDateTime(dateTime: String): String {
     } catch (e: Exception) {
         Log.e("DateTimeFormat", "Error formatting date: $dateTime", e) // Log with specific error message
         dateTime
+    }
+}
+@OptIn(ExperimentalEncodingApi::class)
+@Composable
+fun WellImage(
+    imageData: ImageData?,
+    modifier: Modifier = Modifier,
+    loadingContent: @Composable () -> Unit = { CircularProgressIndicator() },
+    errorContent: @Composable () -> Unit = { Text("Invalid image", color = Color.Red) },
+    emptyContent: @Composable () -> Unit = { Text("No image available") }
+) {
+    val bitmap = remember(imageData) {
+        try {
+            imageData?.base64encodedImage?.let { base64 ->
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            imageData == null -> emptyContent()
+            bitmap == null -> errorContent()
+            else -> {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = imageData.description,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
     }
 }
 

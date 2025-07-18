@@ -268,6 +268,7 @@ private fun WellsList(
     ) {
         items(wellsList.size) { index ->
             val well = wellsList[index]
+            Log.d("WellsList", "Well: $well")
 
             WellCard(
                 well = well,

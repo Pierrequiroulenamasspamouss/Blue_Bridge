@@ -284,12 +284,12 @@ router.get('/:wellId/details', async (req, res) => {
             wellOwner: well.wellOwner,
             wellLocation: typeof well.wellLocation === 'string' ? well.wellLocation : JSON.stringify(well.wellLocation),
             wellWaterType: well.wellWaterType,
-            wellCapacity: well.wellCapacity,
-            wellWaterLevel: well.wellWaterLevel,
-            wellWaterConsumption: well.wellWaterConsumption,
+            wellCapacity: well.wellCapacity != null ? parseInt(well.wellCapacity) : 0, //TODO() TEMPORARY FIX, UPDATE ON THE APP LATER TO HANDLE FLOATS
+            wellWaterLevel: well.wellWaterLevel != null ? parseInt(well.wellWaterLevel) : 0, //TODO() TEMPORARY FIX, UPDATE ON THE APP LATER TO HANDLE FLOATS
+            wellWaterConsumption: well.wellWaterConsumption != null ? parseInt(well.wellWaterConsumption) : 0, //TODO() TEMPORARY FIX, UPDATE ON THE APP LATER TO HANDLE FLOATS
             wellStatus: well.wellStatus,
             waterQuality: typeof well.waterQuality === 'string' ? well.waterQuality : JSON.stringify(well.waterQuality),
-            createdAt: well.createdAt,
+            createdAt:well.createdAt,
             updatedAt: well.updatedAt,
             imageCount: imageCount
         };
@@ -782,7 +782,6 @@ router.get('/:wellId/images/:imageNumber', async (req, res) => {
         }
 
         console.log('Found well:', well.wellId);
-        console.log('Raw wellImages:', well.wellImages);
 
         // Parse images JSON robustly
         let images = [];
@@ -800,8 +799,7 @@ router.get('/:wellId/images/:imageNumber', async (req, res) => {
                 
                 // Ensure we have an array
                 images = Array.isArray(parsed) ? parsed : [];
-                
-                console.log('Parsed images:', images);
+
             } catch (e) {
                 console.error('Error parsing wellImages:', e);
                 return res.status(500).json({ 

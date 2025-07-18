@@ -106,6 +106,7 @@ fun BrowseWellsScreen(
             maxWaterLevel = maxWaterLevel,
             context = context
         )
+        wells = loadedWells  // Add this line to update the state
         isLoading = false
         hasMorePages = loadedWells.size == pageSize
     }
@@ -250,7 +251,7 @@ fun BrowseWellsScreen(
                 )
             } else {
                 // List view
-                val wellsWithData = wells.filter { it.wellName.isNotEmpty() }
+                val wellsWithData = wells//.filter { it.wellName.isNotEmpty() } no need to filter with empty names
                 if (wellsWithData.isEmpty() && !isLoading) {
                     Box(
                         modifier = Modifier

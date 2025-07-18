@@ -6,5 +6,5 @@
         android:width="100dp"
         android:height="100dp"
         android:gravity="center"
-        android:drawable="@drawable/easteregg" />
+        android:drawable="@drawable/app_logo" />
 </layer-list> 

@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import android.util.Base64
+import android.util.Log
+import com.bluebridgeapp.bluebridge.data.model.ImageData
+import java.io.ByteArrayOutputStream
 
 val Context.wellDataStore: DataStore<Preferences> by preferencesDataStore(name = "well_preferences")
 class WellPreferences(val context: Context) {
@@ -58,7 +61,7 @@ class WellPreferences(val context: Context) {
     }
 
     suspend fun loadWellImageAsBitmap(wellId: String, imageNumber: Int): Bitmap? {
-        val well = getWellById(wellId) ?: return null
+        val well = getWellById(wellId) ?: return error("Well not found")
 
         // Check if images list exists and has the requested index
         val images = well.images ?: return null
@@ -72,11 +75,84 @@ class WellPreferences(val context: Context) {
             val decodedString = Base64.decode(imageBase64, Base64.DEFAULT)
             BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
         } catch (e: IllegalArgumentException) {
-            // Handle error: Invalid Base64 string
+            Log.e("WellPreferences", "Error decoding image: ${e.message}")
             null
         } catch (e: Exception) {
-            // Handle other potential errors
+            Log.e("WellPreferences", "Error loading image: ${e.message}")
             null
+        }
+    }
+    suspend fun saveWellImage(wellId: String, imageNumber: Int, bitmap: Bitmap): Boolean {
+        return try {
+            val well = getWellById(wellId) ?: return false
+            val images = well.images?.toMutableList() ?: mutableListOf()
+
+            // Ensure the list is big enough
+            while (images.size <= imageNumber) {
+                images.add(ImageData("", "", 0, ""))
+            }
+
+            // Convert bitmap to base64
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val base64Image = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT)
+
+            // Update the image data
+            images[imageNumber] = ImageData(
+                description = "Image $imageNumber",
+                uploadDate = System.currentTimeMillis().toString(),
+                fileSize = outputStream.size().toLong(),
+                base64encodedImage = base64Image
+            )
+
+            // Save the updated well
+            saveWell(well.copy(images = images))
+            true
+        } catch (e: Exception) {
+            Log.e("WellPreferences", "Error saving image: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun saveWellImageFromBase64(wellId: String, imageNumber: Int, base64Image: String): Boolean {
+        return try {
+            val well = getWellById(wellId) ?: return false
+            val images = well.images?.toMutableList() ?: mutableListOf()
+
+            while (images.size <= imageNumber) {
+                images.add(ImageData("", "", 0, ""))
+            }
+
+            images[imageNumber] = ImageData(
+                description = "Image $imageNumber",
+                uploadDate = System.currentTimeMillis().toString(),
+                fileSize = (base64Image.length * 3 / 4).toLong(), // Approximate size
+                base64encodedImage = base64Image
+            )
+
+            saveWell(well.copy(images = images))
+            true
+        } catch (e: Exception) {
+            Log.e("WellPreferences", "Error saving image from base64: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun deleteWellImage(wellId: String, imageNumber: Int): Boolean {
+        return try {
+            val well = getWellById(wellId) ?: return false
+            val images = well.images?.toMutableList() ?: return false
+
+            if (imageNumber < 0 || imageNumber >= images.size) {
+                return false
+            }
+
+            images.removeAt(imageNumber)
+            saveWell(well.copy(images = images))
+            true
+        } catch (e: Exception) {
+            Log.e("WellPreferences", "Error deleting image: ${e.message}")
+            false
         }
     }
 }

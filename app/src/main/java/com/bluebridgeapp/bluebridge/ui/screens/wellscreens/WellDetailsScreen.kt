@@ -233,13 +233,13 @@ private fun WellBasicInfoCard(well: WellData) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                well.wellName,
+                well.wellName!!,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
             InfoRow("Owner:", well.wellOwner ?: "Not specified")
-            InfoRow("Status:", well.wellStatus)
+            InfoRow("Status:", well.wellStatus!!)
         }
     }
 }
@@ -249,14 +249,14 @@ private fun WellWaterSpecsCard(well: WellData) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             SectionTitle("Water Specifications")
-            InfoRow("Water Type:", well.wellWaterType.ifBlank { "Not specified" })
+            InfoRow("Water Type:", well.wellWaterType!!.ifBlank { "Not specified" })
             InfoRow(
                 "Water Level:",
-                if (well.wellWaterLevel.isBlank()) "Not specified" else "${well.wellWaterLevel}L"
+                if (well.wellWaterLevel!!.isBlank()) "Not specified" else "${well.wellWaterLevel}L"
             )
             InfoRow(
                 "Capacity:",
-                if (well.wellCapacity.isBlank()) "Not specified" else "${well.wellCapacity}L"
+                if (well.wellCapacity!!.isBlank()) "Not specified" else "${well.wellCapacity}L"
             )
             InfoRow(
                 "Consumption:",
@@ -279,7 +279,7 @@ private fun WellLocationCard(
 
             Text(
                 text = if (well.hasValidCoordinates())
-                    "${well.wellLocation.latitude}, ${well.wellLocation.longitude}"
+                    "${well.wellLocation!!.latitude}, ${well.wellLocation.longitude}"
                 else "Location not specified",
                 style = MaterialTheme.typography.bodyLarge
             )

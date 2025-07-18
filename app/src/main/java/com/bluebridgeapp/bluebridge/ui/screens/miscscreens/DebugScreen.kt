@@ -2,6 +2,7 @@ package com.bluebridgeapp.bluebridge.ui.screens.miscscreens
 
 import android.graphics.Bitmap
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +35,6 @@ import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 @Composable
 fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
     var username by remember { mutableStateOf("") }
-    var sampleWell by remember { mutableStateOf<WellData?>(null) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -49,7 +49,7 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
     LaunchedEffect(Unit) {
         isLoading = true
         try {
-            bitmap = wellViewModel.getSingleWellImage("ESP-1234", 0)
+            bitmap = wellViewModel.getSingleWellImage("001", 0)
         } catch (e: Exception) {
             error = e.message
         } finally {

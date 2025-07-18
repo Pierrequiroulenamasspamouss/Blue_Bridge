@@ -285,7 +285,7 @@ private fun NearestWellsDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column {
-                            Text(well.wellName)
+                            Text(well.wellName!!)
                             currentLocation?.let {
                                 Text(
                                     "Distance: ${formatDistance(calculateDistance(it, well))}",

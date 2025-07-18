@@ -56,7 +56,7 @@ suspend fun fetchWellDetailsFromServer(
         val api = RetrofitBuilder.getServerApi(context)
         Log.d("fetchWellDetails", "Fetching details for well $espId from server_crt")
         val wellData = withTimeout(5_000) {
-            api.getWellDataById(espId)
+            api.getWellDetails(espId)
         }
 
         Log.d("fetchWellDetails", "Fetched well details: $wellData")
@@ -74,7 +74,7 @@ suspend fun fetchWellDetailsFromServer(
         }
         Log.e("fetchWellDetails", "Error: ${e.message}", e)
         null
-    }
+    } as Nothing?
 }
 
 /**
@@ -108,7 +108,7 @@ suspend fun retrieveDataFromServer(
             val espId = matchingWell.wellId
             Log.d("DataFetch", "Fetching data for ESP ID: $espId")
             
-            val newData = fetchWellDetailsFromServer(espId, context) ?: return@withContext false
+            val newData = fetchWellDetailsFromServer(espId!!, context) ?: return@withContext false
 
             // 3. Update only the timestamp and the id
             val updatedWell = newData

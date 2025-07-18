@@ -24,6 +24,7 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
 import com.bluebridgeapp.bluebridge.data.model.ImageData
+import com.bluebridgeapp.bluebridge.data.model.WellDetailsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellImageResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -69,9 +70,9 @@ interface ServerApi {
 
     // Get the full data of a well
     @GET("/api/wells/{espId}/details")
-    suspend fun getWellDataById(
+    suspend fun getWellDetails(
         @Path("espId") espId: String
-    ): WellData
+    ): WellDetailsResponse
 
     // Upload a well to the server TODO(implement this to the server)
     @POST("/api/wells")

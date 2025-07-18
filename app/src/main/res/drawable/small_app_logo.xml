@@ -1,23 +1,30 @@
-<layer-list xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
 
-    <!-- Background image -->
     <item
-        android:gravity="fill">
-        <bitmap android:src="@drawable/background"
-            android:gravity="fill"/>
-    </item>
-
-    <!-- Centered logo -->
-    <item
+        android:width="100dp"
+        android:height="100dp"
         android:gravity="center"
-        >
-        <bitmap
-            android:src="@drawable/logo_nobackground"
-            android:gravity="center"
-            android:tileMode="disabled"
-            android:antialias="true"
-            tools:ignore="PrivateResource" />
-    </item>
-
+        android:drawable="@drawable/logo_noname" />
 </layer-list>
+    <!--
+
+    <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <item android:drawable="@drawable/background" />
+
+
+    <item
+    android:width="@dimen/logo_width"
+    android:height="@dimen/logo_height"
+    android:gravity="center">
+
+    <bitmap
+        android:src="@drawable/logo_nobackground"
+        android:gravity="center"
+        android:tileMode="disabled" />
+    </item>
+        </layer-list>
+    -->
