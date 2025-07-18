@@ -22,7 +22,8 @@ data class WellData(
     val lastUpdated: String? = null,
     val wellWaterConsumption: String? = null,
     var wellOwner: String?= null,
-    val images: List<ImageData>? = emptyList()) {
+    val images: List<ImageData>? = emptyList() // a list of base64 encoded images
+) {
     fun toShortenedWell(wellData: WellData): ShortenedWellData {
         return ShortenedWellData(
             wellName = wellData.wellName,
@@ -74,11 +75,17 @@ data class Pagination(
     val pages: Int
 )
 
+
+@Serializable
+data class WellImageResponse(
+    val status: String,
+    val data: ImageData
+)
+
 @Serializable
 data class ImageData(
-    val imageNumber: Int,
     val description: String,
-    val fileName: String,
     val uploadDate: String,
-    val fileSize: Long
+    val fileSize: Long,
+    val base64encodedImage: String
 )

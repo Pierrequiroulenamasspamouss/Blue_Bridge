@@ -25,7 +25,7 @@ class DatabaseManager:
                     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )'''),
             'wells': DBConfig('wells.sqlite', '''
-                CREATE TABLE IF NOT EXISTS Well (
+                CREATE TABLE IF NOT EXISTS Wells (
                     wellId TEXT PRIMARY KEY, wellName TEXT NOT NULL,
                     wellOwner TEXT, wellLocation TEXT, wellWaterType TEXT DEFAULT 'Clean', 
                     wellCapacity REAL DEFAULT 0.0, wellWaterLevel REAL DEFAULT 0.0, 
@@ -133,7 +133,7 @@ class UserDB(BaseDB):
 
 class WellDB(BaseDB):
     def get_well(self, well_id):
-        row = self._execute('SELECT * FROM wells WHERE id=?', (well_id,)).fetchone()
+        row = self._execute('SELECT * FROM Wells WHERE wellId=?', (well_id,)).fetchone()
         return dict(row) if row else None
 
     def get_all_wells(self):
@@ -152,7 +152,7 @@ class WellDB(BaseDB):
             data['wellImages'] = json.dumps(data['wellImages'])
 
         cols, vals = zip(*data.items())
-        cursor = self._execute(f'INSERT INTO wells ({",".join(cols)}) VALUES ({",".join("?"*len(vals))})', vals)
+        cursor = self._execute(f'INSERT INTO Wells ({",".join(cols)}) VALUES ({",".join("?"*len(vals))})', vals)
         self.conn.commit()
         return cursor.lastrowid
 
@@ -160,12 +160,12 @@ class WellDB(BaseDB):
         if not updates: return False
         set_clause = ','.join(f'{k}=?' for k in updates)
         params = list(updates.values()) + [well_id]
-        cursor = self._execute(f'UPDATE wells SET {set_clause} WHERE id=?', params)
+        cursor = self._execute(f'UPDATE Wells SET {set_clause} WHERE welId=?', params)
         self.conn.commit()
         return cursor.rowcount > 0
 
     def delete_well(self, well_id):
-        cursor = self._execute('DELETE FROM wells WHERE id=?', (well_id,))
+        cursor = self._execute('DELETE FROM wells WHERE wellId=?', (well_id,))
         self.conn.commit()
         return cursor.rowcount > 0
 

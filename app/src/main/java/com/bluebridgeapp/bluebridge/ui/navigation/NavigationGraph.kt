@@ -188,9 +188,9 @@ fun NavigationGraph(
             route = "${Routes.WELL_DETAILS_SCREEN}/{wellId}",
             arguments = listOf(navArgument("wellId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val wellId = backStackEntry.arguments?.getInt("wellId") ?: 0
+            val wellId = backStackEntry.arguments?.getString("wellId")
 
-            wellViewModel.loadWell(wellId)
+            wellViewModel.loadWell(wellId.toString())
             Log.d("WellDetailsScreen", "Navigating to details of well with wellId: $wellId")
             WellDetailsScreen(
                 navController = navController,

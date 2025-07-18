@@ -60,7 +60,7 @@ class NearbyUsersRepositoryImpl(
     }
 
     override fun getNearbyUsersFlow(): Flow<List<NearbyUser>> {
-        TODO("Not yet implemented")
+        return _nearbyUsers
     }
 
     override suspend fun updateRadius(radius: Double): List<NearbyUser> {
@@ -70,8 +70,14 @@ class NearbyUsersRepositoryImpl(
 
     override suspend fun applyFilters(filters: Map<String, String>): List<NearbyUser> {
         return _nearbyUsers.value.filter { user ->
-            filters.all { (key, value) ->
-                TODO("Implement filter logic for $key with value $value")
+            filters.all { (key, filterValue) ->
+                when (key) {
+                    "userId" -> user.userId == filterValue
+                    "email" -> user.email == filterValue
+                    "username" -> user.username == filterValue
+                    "first name" -> user.firstName.contains(filterValue, ignoreCase = true) // Assuming you want a contains check
+                    else -> true // If the key is not recognized, don't filter out the user
+                }
             }
         }.also {
             _nearbyUsers.value = it

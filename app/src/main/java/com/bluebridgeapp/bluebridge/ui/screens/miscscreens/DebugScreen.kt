@@ -1,12 +1,18 @@
 package com.bluebridgeapp.bluebridge.ui.screens.miscscreens
 
+import android.graphics.Bitmap
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,18 +22,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.ImageData
 import com.bluebridgeapp.bluebridge.data.model.Location
-import com.bluebridgeapp.bluebridge.ui.components.WellImagesRow
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
     var username by remember { mutableStateOf("") }
     var sampleWell by remember { mutableStateOf<WellData?>(null) }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         userViewModel.getUserData().collect { userData ->
@@ -35,38 +45,16 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
         }
     }
 
-    // Create a sample well with images for demonstration
+    // Load image when screen appears
     LaunchedEffect(Unit) {
-        sampleWell = WellData(
-            wellId = "ESP-1234",
-            wellName = "Sample Well",
-            wellLocation = Location(latitude = 45.0517, longitude = -73.5673),
-            wellWaterType = "Clean",
-            wellCapacity = "50",
-            wellWaterLevel = "75",
-            wellStatus = "Active",
-            images = listOf(
-                ImageData(
-                    imageNumber = 0, description = "Well entrance",
-                    fileName = "well_001_0.png",
-                    uploadDate = "",
-                    fileSize = 150
-                )/*,
-                ImageData(
-                    imageNumber = 1, description = "Water quality test",
-                    fileName = TODO(),
-                    uploadDate = TODO(),
-                    fileSize = TODO()
-                ),
-                ImageData(
-                    imageNumber = 2, description = "Equipment overview",
-                    fileName = TODO(),
-                    uploadDate = TODO(),
-                    fileSize = TODO()
-                )
-                */
-            )
-        )
+        isLoading = true
+        try {
+            bitmap = wellViewModel.getSingleWellImage("ESP-1234", 0)
+        } catch (e: Exception) {
+            error = e.message
+        } finally {
+            isLoading = false
+        }
     }
 
     Column(
@@ -78,7 +66,7 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "Hello $username")
-        
+
         Card(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -87,13 +75,18 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(text = "Well Images Demo")
-                
-                sampleWell?.let { well ->
-                    WellImagesRow(
-                        wellData = well,
-                        wellRepository = wellViewModel.repository,
-                        modifier = Modifier.fillMaxSize()
-                    )
+
+                when {
+                    isLoading -> CircularProgressIndicator()
+                    error != null -> Text("Error: $error", color = Color.Red)
+                    bitmap != null -> {
+                        Image(
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = "Well Image",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    else -> Text("No image available")
                 }
             }
         }

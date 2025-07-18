@@ -2,7 +2,6 @@ package com.bluebridgeapp.bluebridge.viewmodels
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.media.Image
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -18,6 +17,8 @@ import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.WellEvents
 import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 sealed class ActionState {
     object Idle : ActionState()
@@ -82,18 +83,18 @@ class WellViewModel(
         }
     }
     @RequiresApi(Build.VERSION_CODES.O)
-    fun loadWell(id: Int) {
+    fun loadWell(wellId: String?) {
         viewModelScope.launch {
             _currentWellState.value = UiState.Loading
             try {
-                val well = repository.getWellById(id)
+                val well = repository.getWellById(wellId)
                 if (well != null) {
                     val currentTime = (System.currentTimeMillis() / 1000)
                     val updatedWell = well.copy(lastRefreshTime = currentTime)
                     _currentWellState.value = UiState.Success(updatedWell)
                     val currentWells = (_wellsListState.value as? UiState.Success)?.data ?: emptyList()
                     val updatedWells = currentWells.map {
-                        if (it.wellId == id.toString()) updatedWell else it
+                        if (it.wellId == wellId) updatedWell else it
                     }
                     _wellsListState.value = UiState.Success(updatedWells)
                     _actionState.value = ActionState.Success("Well loaded successfully")
@@ -107,6 +108,11 @@ class WellViewModel(
             }
         }
     }
+    suspend fun getWellFromServer(wellId: String): WellData? { // Does the same thing as loadWell,I believe, but in a different way.TODO("Unify them")
+        return repository.getWellFromServer(wellId)
+    }
+
+
     fun deleteWell(espId: String) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading
@@ -163,7 +169,16 @@ class WellViewModel(
         }
     }
     suspend fun isWellIdUnique(wellId: String)= repository.isEspIdUnique(wellId)
-    suspend fun getAllImages(wellId: String): List<Bitmap> = repository.getAllImages(wellId)
+    suspend fun getAllImages(wellId: String): List<Bitmap> = withContext(Dispatchers.IO) {
+        (0 until 10).mapNotNull { imageNumber ->
+            try {
+                repository.getWellImageAsBitmap(wellId, imageNumber)
+            } catch (e: Exception) {
+                Log.e("WellViewModel", "Error loading image $imageNumber for well $wellId: ${e.message}")
+                null
+            }
+        }
+    }
     suspend fun loadWells(
         page: Int,
         pageSize: Int,
@@ -200,12 +215,12 @@ class WellViewModel(
         }
     }
 
-    suspend fun getWellFromServer(wellId: String): WellData? {
-        return repository.getWellFromServer(wellId)
-    }
 
-    fun deleteWellImage(string: String, i: Int) {TODO()}
-    fun uploadWellPicture(string: String, i: Int, bitmap: Bitmap) {TODO()}
+    suspend fun getSingleWellImage(wellId: String, imageNumber: Int): Bitmap? {
+        return repository.getWellImageAsBitmap(wellId, imageNumber)
+    }
+    suspend fun deleteWellImage(wellId: String, imageNumber: Int) {repository.deleteWellImage(wellId, imageNumber)}
+    suspend fun uploadWellPicture(wellId: String, imageNumber: Int, bitmap: Bitmap) {repository.uploadWellPicture(wellId, imageNumber, bitmap)}
 
 
 }

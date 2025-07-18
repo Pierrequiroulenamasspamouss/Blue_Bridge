@@ -250,7 +250,8 @@ fun BrowseWellsScreen(
                 )
             } else {
                 // List view
-                if (wells.isEmpty() && !isLoading) {
+                val wellsWithData = wells.filter { it.wellName.isNotEmpty() }
+                if (wellsWithData.isEmpty() && !isLoading) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -269,8 +270,7 @@ fun BrowseWellsScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(wells) { well ->
-
+                        items(wellsWithData) { well ->
                             EnhancedWellCard(
                                 well = well,
                                 onClick = {
@@ -280,13 +280,10 @@ fun BrowseWellsScreen(
                                     val encodedName = URLEncoder.encode(well.wellName, "UTF-8")
                                     val lat = well.getLatitude()
                                     val lon = well.getLongitude()
-
                                     navController.navigate("${Routes.COMPASS_SCREEN}?lat=$lat&lon=$lon&name=$encodedName")
-
                                 }
                             )
                         }
-
                         if (hasMorePages) {
                             item {
                                 Box(

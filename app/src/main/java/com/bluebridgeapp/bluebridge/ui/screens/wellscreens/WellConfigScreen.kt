@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -109,7 +108,7 @@ fun WellConfigScreen(
     var isSaving by remember { mutableStateOf(false) }
 
     val currentWellState = wellViewModel.currentWellState.value
-    var currentWellId = wellId ?: -1
+    var currentWellId = wellId ?: "-1"
     val wellData = (currentWellState as? UiState.Success)?.data ?: WellData(
         wellName = "",
         wellLocation = Location(0.0, 0.0),
@@ -137,7 +136,7 @@ fun WellConfigScreen(
     }
     // Load well data when screen is first shown
     LaunchedEffect(currentWellId) {
-            wellViewModel.loadWell(currentWellId)
+            wellViewModel.loadWell(currentWellId.toString())
     }
 
     // Format location input when wellData changes
@@ -473,20 +472,20 @@ fun WellConfigScreen(
                                     
                                     if (success) {
                                         // Also save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
+                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
                                         lastSavedData = wellData
                                         AppEventChannel.sendEvent(AppEvent.ShowError("Well saved successfully!"))
                                         navigateBack = true
                                     } else {
                                         // If server save fails, at least save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
+                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
                                         lastSavedData = wellData
                                         AppEventChannel.sendEvent(AppEvent.ShowError("Could not save to server but saved locally"))
                                         navigateBack = true
                                     }
                                 } else {
                                     // No valid user credentials, just save locally
-                                    wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId))
+                                    wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
                                     lastSavedData = wellData
                                     AppEventChannel.sendEvent(AppEvent.ShowError("Well saved locally"))
                                     navigateBack = true

@@ -10,32 +10,32 @@ def get_wells():
     """Get all wells with parsed JSON fields"""
     wells = db.wells().get_all_wells()
     for well in wells:
-        for field in ['wellLocation', 'waterQuality', 'extraData', 'wellImages']:
+        for field in ['wellLocation', 'waterQuality', 'wellImages']:
             if well.get(field) and isinstance(well[field], str):
                 try: well[field] = json.loads(well[field])
                 except: well[field] = [] if field == 'wellImages' else None
     return wells
 
-def get_well(id):
+def get_well(wellId):
     """Get single well by ID with parsed JSON"""
-    well = db.wells().get_well(id)
+    well = db.wells().get_well(wellId)
     if well:
-        for field in ['wellLocation', 'waterQuality', 'extraData', 'wellImages']:
+        for field in ['wellLocation', 'waterQuality', 'wellImages']:
             if well.get(field) and isinstance(well[field], str):
                 try: well[field] = json.loads(well[field])
                 except: well[field] = [] if field == 'wellImages' else None
     return well
 
-def update_well(id, data):
+def update_well(wellId, data):
     """Update well with JSON serialization"""
     updates = {}
     for k, v in data.items():
-        if k in ['wellLocation', 'waterQuality', 'extraData', 'wellImages'] and v:
+        if k in ['wellLocation', 'waterQuality', 'wellImages'] and v:
             updates[k] = json.dumps(v)
         else:
             updates[k] = v
-    updates['lastUpdated'] = datetime.now().isoformat()
-    return db.wells().update_well(id, updates)
+    updates['updatedAt'] = datetime.now().isoformat()
+    return db.wells().update_well(wellId, updates)
 
 def add_well(data):
     """Create new well with validation"""
@@ -52,11 +52,12 @@ def add_well(data):
         'wellWaterLevel': float(data['wellWaterLevel']),
         'wellWaterConsumption': float(data['wellWaterConsumption']),
         'wellStatus': data.get('wellStatus', 'Unknown'),
-        'lastUpdated': datetime.now().isoformat(),
+        'updatedAt': datetime.now().isoformat(),
+        'createdAt': datetime.now().isoformat(),
         'wellImages': json.dumps(data.get('wellImages', []))
     }
 
-    for field in ['wellLocation', 'waterQuality', 'extraData']:
+    for field in ['wellLocation', 'waterQuality']:
         if field in data and data[field]:
             db_data[field] = json.dumps(data[field])
 
@@ -93,11 +94,7 @@ def random_wells(count=5):
                 'turbidity': round(random.uniform(0.1, 5.0), 2),
                 'tds': random.randint(50, 500)
             },
-            'extraData': {
-                'description': f"Well from {random.randint(2010,2023)}",
-                'contact': f"{random.randint(100,999)}-{random.randint(100,999)}-{random.randint(1000,9999)}",
-                'notes': "Test data"
-            }
+            
         }
         try:
             if add_well(well):
@@ -164,7 +161,7 @@ def main():
 
     print(f"\nWells ({len(wells)}):")
     for i, w in enumerate(wells):
-        print(f"{i}: {w['wellName']} (ID: {w['id']}, Status: {w['wellStatus']})")
+        print(f"{i}: {w['wellName']} (ID: {w['wellId']}, Status: {w['wellStatus']})")
 
     choice = input("\n1. Edit list field\n2. Add well\n3. Random wells\nChoice: ").strip()
 
@@ -180,7 +177,7 @@ def main():
                 to_delete = parse_indices(input("Delete indices: "), len(current))
                 for i in reversed(to_delete):
                     current.pop(i)
-                update_well(well['id'], {field: current})
+                update_well(well['wellId'], {field: current})
         except Exception as e:
             print(f"Error: {e}")
     elif choice == '2':

@@ -68,7 +68,7 @@ import java.nio.charset.StandardCharsets
 fun WellDetailsScreen(
     navController: NavController,
     wellViewModel: WellViewModel,
-    wellId: Int,
+    wellId: String?,
     userViewModel: UserViewModel
 ) {
     // State management
@@ -104,13 +104,13 @@ private fun rememberUserData(userViewModel: UserViewModel): State<UserData?> {
 @Composable
 private fun rememberWellState(
     wellViewModel: WellViewModel,
-    wellId: Int
+    wellId: String? = ""
 ): Pair<WellData?, Boolean> {
     val wellState by wellViewModel.currentWellState
 
     // Load data only once when screen appears
     LaunchedEffect(wellId) {
-        wellViewModel.loadWell(wellId)
+        wellViewModel.loadWell(wellId.toString())
     }
 
     return remember(wellState) {
@@ -127,7 +127,7 @@ private fun rememberWellState(
 private fun WellDetailsTopBar(
     navController: NavController,
     well: WellData?,
-    wellId: Int,
+    wellId: String?,
     userData: UserData?
 ) {
     TopAppBar(
@@ -157,7 +157,7 @@ private fun WellDetailsContent(
     padding: PaddingValues,
     isLoading: Boolean,
     well: WellData?,
-    wellId: Int,
+    wellId: String?,
     onRetry: () -> Unit,
     navController: NavController
 ) {
@@ -188,13 +188,13 @@ private fun FullScreenLoading() {
 }
 
 @Composable
-private fun WellNotFound(wellId: Int, onRetry: () -> Unit) {
+private fun WellNotFound(wellId: String?, onRetry: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.well_not_found, wellId))
+            Text(stringResource(R.string.well_not_found, wellId.toString()))
             Text(
                 stringResource(R.string.error_loading_data),
                 style = MaterialTheme.typography.bodySmall

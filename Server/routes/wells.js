@@ -3,73 +3,39 @@ const router = express.Router();
 const db = require('../models');
 const { Well } = db;
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+const sharp = require('sharp'); // Make sure to install sharp: npm install sharp
 const { Op } = require('sequelize'); // Import Sequelize operators
 const { validateToken } = require('../middleware/auth');
 const { body, param, query, validationResult } = require('express-validator');
 const validator = require('validator');
 
-// Configure multer for image upload
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, '../uploads/wells');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const wellId = req.params.wellId;
-        const imageNumber = req.params.imageNumber;
-        const ext = path.extname(file.originalname);
-        cb(null, `well_${wellId}_image_${imageNumber}${ext}`);
-    }
-});
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadPath = path.join(__dirname, '../uploads/wells');
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      }
-      cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-      const { wellId, imageNumber } = req.params;
-      cb(null, `well_${wellId}_image_${imageNumber}${path.extname(file.originalname)}`);
-    }
-  }),
-  fileFilter: (req, file, cb) => {
-    // More permissive check for testing
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      console.log('Rejected file:', file); // Log rejected files
-      cb(new Error(`Invalid file type. Only ${allowedTypes.join(', ')} are allowed.`), false);
-    }
-  }
-});
-
+// Use memory storage for multer
+const upload = multer({ storage: multer.memoryStorage() });
 
 
 function mapToShortenedWellData(well) {
-    // Extract latitude/longitude from wellLocation JSON if present
-    let latitude = '';
-    let longitude = '';
-    if (well.wellLocation && typeof well.wellLocation === 'object') {
-        latitude = well.wellLocation.latitude != null ? String(well.wellLocation.latitude) : '';
-        longitude = well.wellLocation.longitude != null ? String(well.wellLocation.longitude) : '';
+    // Handle wellLocation - ensure it's always an object
+    let wellLocation = { latitude: 0.0, longitude: 0.0 };
+    if (well.wellLocation) {
+        if (typeof well.wellLocation === 'string') {
+            try {
+                wellLocation = JSON.parse(well.wellLocation);
+            } catch (e) {
+                console.error('Error parsing wellLocation:', e);
+            }
+        } else if (typeof well.wellLocation === 'object') {
+            wellLocation = well.wellLocation;
+        }
     }
+
     // Add last refresh time
     const lastRefreshTime = well.lastUpdated ? new Date(well.lastUpdated).getTime() : 0;
+    
     return {
         status: "success",
         data: {
             wellName: well.wellName || '',
-            wellLocation: well.wellLocation || { latitude: 0.0, longitude: 0.0 },
+            wellLocation: wellLocation, // Use parsed object
             wellWaterType: well.wellWaterType || well.waterType || '',
             wellId: well.wellId || '',
             wellStatus: well.wellStatus || well.status || 'Unknown',
@@ -77,12 +43,11 @@ function mapToShortenedWellData(well) {
             wellCapacity: well.wellCapacity != null ? String(well.wellCapacity) : (well.capacity != null ? String(well.capacity) : ''),
             wellWaterLevel: well.wellWaterLevel != null ? String(well.wellWaterLevel) : (well.waterLevel != null ? String(well.waterLevel) : ''),
             wellWaterConsumption: well.wellWaterConsumption != null ? String(well.wellWaterConsumption) : (well.waterConsumption != null ? String(well.waterConsumption) : ''),
-            waterQuality: well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 },
+            waterQuality: typeof well.waterQuality === 'string' ? JSON.parse(well.waterQuality) : (well.waterQuality || { ph: 7.0, turbidity: 0.0, tds: 0 }),
             lastRefreshTime
         }
     };
 }
-
 
 // Get wells with optional filters
 router.get('/', async (req, res) => {
@@ -267,7 +232,6 @@ router.post('/', [
             wellWaterLevel: wellWaterLevel || 0,
             wellWaterConsumption: wellWaterConsumption || 0,
             waterQuality: qualityObj || { ph: 7.0, turbidity: 0.0, tds: 0 },
-            extraData: extraData || {},
             lastUpdated: new Date()
         });
         
@@ -294,16 +258,42 @@ router.get('/:wellId/details', async (req, res) => {
         });
         
         if (!well) {
-
             const normalResponse = {
                 status : "error",
                 response : "no well found with this name"
             }
             return res.json(normalResponse);
-            //return res.json(mockWell);
         }
-        
-        res.json(mapToShortenedWellData(well));
+
+        // Parse wellImages and return only the count
+        let images = [];
+        if (well.wellImages) {
+            try {
+                images = typeof well.wellImages === 'string' ? JSON.parse(well.wellImages) : well.wellImages;
+            } catch (e) {
+                images = [];
+            }
+        }
+        // Remove base64 data from images for details endpoint
+        const imageCount = Array.isArray(images) ? images.filter(img => !!img).length : 0;
+
+        // Prepare well data without base64 image data
+        const wellData = {
+            wellId: well.wellId,
+            wellName: well.wellName,
+            wellOwner: well.wellOwner,
+            wellLocation: typeof well.wellLocation === 'string' ? well.wellLocation : JSON.stringify(well.wellLocation),
+            wellWaterType: well.wellWaterType,
+            wellCapacity: well.wellCapacity,
+            wellWaterLevel: well.wellWaterLevel,
+            wellWaterConsumption: well.wellWaterConsumption,
+            wellStatus: well.wellStatus,
+            waterQuality: typeof well.waterQuality === 'string' ? well.waterQuality : JSON.stringify(well.waterQuality),
+            createdAt: well.createdAt,
+            updatedAt: well.updatedAt,
+            imageCount: imageCount
+        };
+        res.json({ status: 'success', data: wellData });
     } catch (error) {
         console.error('Error fetching well:', error);
         res.status(500).json({ 
@@ -652,29 +642,16 @@ router.get('/nearby/:latitude/:longitude/:radius', async (req, res) => {
 router.get('/:wellId', async (req, res) => {
     try {
         const well = await Well.findOne({
-            where: { [Op.or]: [{ wellId: req.params.wellId }, { id: req.params.wellId }] }
+            where: { wellId: req.params.wellId  }
         });
+        
         if (!well) {
-            // If well not found in database, create a mock well for demo purposes
-            const mockWell = {
-                wellId: req.params.wellId,
-                wellName: `Well ${req.params.wellId}`,
-                wellLocation: { latitude: 40.7128, longitude: -74.0060 },
-                wellWaterType: 'Clean',
-                wellStatus: 'Active',
-                wellOwner: 'Demo User',
-                wellCapacity: '1000',
-                wellWaterLevel: '750',
-                wellWaterConsumption: '10',
-                waterQuality: { ph: 7.2, turbidity: 0.5, tds: 150 },
-                lastUpdated: new Date()
-            };
             const normalResponse = {
                 status : "error",
                 response : "no well found"
             }
             return res.json(normalResponse);
-            //return res.json(status: "success", data: mapToShortenedWellData(mockWell));
+            
         }
         res.json(mapToShortenedWellData(well));
     } catch (error) {
@@ -690,7 +667,6 @@ router.get('/:wellId', async (req, res) => {
 
 // Upload image for a well
 router.post('/:wellId/images/:imageNumber/upload', [
-    //validateToken,
     param('wellId').isString().trim().escape(),
     param('imageNumber').isInt({ min: 0, max: 9 }),
     body('description').optional().isString().trim().escape()
@@ -711,6 +687,30 @@ router.post('/:wellId/images/:imageNumber/upload', [
             });
         }
 
+        // Validate image size (e.g., max 5MB)
+        if (req.file.size > 5 * 1024 * 1024) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Image too large (max 5MB)'
+            });
+        }
+
+        // Compress and resize image
+        let compressedBuffer;
+        try {
+            compressedBuffer = await sharp(req.file.buffer)
+                .resize(256, 256, { fit: 'inside' })
+                .jpeg({ quality: 80 })
+                .toBuffer();
+        } catch (e) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid image file'
+            });
+        }
+
+        const base64Data = compressedBuffer.toString('base64');
+
         // Get well from database
         const well = await db.Well.findOne({ where: { wellId: wellId } });
         if (!well) {
@@ -720,45 +720,40 @@ router.post('/:wellId/images/:imageNumber/upload', [
             });
         }
 
-        // Parse existing images
-        let images = [];
-        if (well.wellImages) {
+        // Initialize images array if null
+        let images = well.wellImages || [];
+        if (typeof images === 'string') {
             try {
-                images = JSON.parse(well.wellImages);
+                images = JSON.parse(images);
             } catch (e) {
-                console.error('Error parsing well images:', e);
+                images = [];
             }
         }
 
         const imageIndex = parseInt(imageNumber);
 
-        // Create or update image data
+        // Create image data
         const imageData = {
             imageNumber: imageIndex,
             description: description || `Image ${imageIndex}`,
-            filename: req.file.filename,
+            data: base64Data,
             uploadDate: new Date().toISOString(),
-            fileSize: req.file.size
+            fileSize: compressedBuffer.length
         };
 
-        // Update or add image
-        if (imageIndex < images.length) {
-            images[imageIndex] = imageData;
-        } else {
-            // Add new image
-            while (images.length <= imageIndex) {
-                images.push(null);
-            }
-            images[imageIndex] = imageData;
+        // Ensure array is large enough
+        while (images.length <= imageIndex) {
+            images.push(null);
         }
+        images[imageIndex] = imageData;
 
-        // Update well with new images data
-        await well.update({ wellImages: JSON.stringify(images) });
+        // Update well
+        await well.update({ wellImages: images });
 
         res.json({
             status: 'success',
             message: 'Image uploaded successfully',
-            data: imageData
+            data: { imageNumber: imageIndex, description: imageData.description }
         });
     } catch (error) {
         console.error('Error uploading image:', error);
@@ -769,46 +764,89 @@ router.post('/:wellId/images/:imageNumber/upload', [
     }
 });
 
+// Get image for a well (return base64 data)
 router.get('/:wellId/images/:imageNumber', async (req, res) => {
     try {
         const { wellId, imageNumber } = req.params;
-
-        // Validate parameters
-        if (!validator.isAlphanumeric(wellId) || !validator.isInt(imageNumber, { min: 0, max: 9 })) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Invalid well ID or image number format.'
-            });
-        }
-
+        console.log(`Fetching image ${imageNumber} for well ${wellId}`);
+        
         // Find the well
         const well = await db.Well.findOne({ where: { wellId } });
         if (!well) {
-            return res.status(404).json({ status: 'error', message: 'Well not found' });
+            console.log('Well not found');
+            return res.status(404).json({ 
+                status: 'error', 
+                data: {},
+                message: 'Well not found'
+            });
         }
 
-        // Parse images JSON
+        console.log('Found well:', well.wellId);
+        console.log('Raw wellImages:', well.wellImages);
+
+        // Parse images JSON robustly
         let images = [];
         if (well.wellImages) {
             try {
-                images = JSON.parse(well.wellImages);
+                // First parse the outer JSON string
+                let parsed = typeof well.wellImages === 'string' ? 
+                    JSON.parse(well.wellImages) : 
+                    well.wellImages;
+                
+                // If the result is still a string (double-encoded), parse again
+                if (typeof parsed === 'string') {
+                    parsed = JSON.parse(parsed);
+                }
+                
+                // Ensure we have an array
+                images = Array.isArray(parsed) ? parsed : [];
+                
+                console.log('Parsed images:', images);
             } catch (e) {
-                return res.status(500).json({ status: 'error', message: 'Error parsing image data' });
+                console.error('Error parsing wellImages:', e);
+                return res.status(500).json({ 
+                    status: 'error', 
+                    data: {},
+                    message: 'Error parsing image data'
+                });
             }
         }
 
+        // Convert imageNumber to integer
         const imgIndex = parseInt(imageNumber);
-        if (imgIndex >= images.length || !images[imgIndex]) {
-            return res.status(404).json({ status: 'error', message: 'Image not found' });
+        console.log(`Looking for image number: ${imgIndex}`);
+        
+        // Find the image by imageNumber property
+        const foundImage = images.find(img => img && img.imageNumber === imgIndex);
+        
+        if (!foundImage) {
+            console.log('Image not found. Available images:', images.map(img => img.imageNumber));
+            return res.status(404).json({ 
+                status: 'error', 
+                data: {},
+                message: 'Image not found'
+            });
         }
 
-        const image = images[imgIndex];
-        const imagePath = path.join(__dirname, '../uploads/wells', image.filename);
-
-        res.sendFile(imagePath);
+        console.log('Found image:', foundImage.imageNumber);
+        
+        // Return the image data in the expected format
+        res.json({
+            status: 'success',
+            data: {
+                description: foundImage.description,
+                uploadDate: foundImage.uploadDate,
+                fileSize: foundImage.fileSize,
+                base64encodedImage: foundImage.data // This matches your frontend model
+            }
+        });
     } catch (error) {
         console.error('Error fetching image:', error);
-        res.status(500).json({ status: 'error', message: 'Server error: ' + error.message });
+        res.status(500).json({ 
+            status: 'error', 
+            data: {},
+            message: 'Internal server error'
+        });
     }
 });
 
@@ -851,12 +889,6 @@ router.delete('/:wellId/images/:imageNumber', [
                 status: 'error',
                 message: 'Image not found'
             });
-        }
-
-        // Delete image file
-        const imagePath = path.join(__dirname, '../uploads/wells', `well_${wellId}_image_${imageNumber}.jpg`);
-        if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
         }
 
         // Remove image from array

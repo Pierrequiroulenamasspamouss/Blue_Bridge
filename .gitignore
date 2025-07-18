@@ -31,3 +31,4 @@ server.bat
 update-latest.sh
 /Server/node_modules/
 cloud_tunnelling.bat
+/Server/uploads/

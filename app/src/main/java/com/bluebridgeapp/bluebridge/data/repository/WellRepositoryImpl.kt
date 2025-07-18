@@ -1,6 +1,6 @@
 package com.bluebridgeapp.bluebridge.data.repository
-import android.annotation.SuppressLint
-import android.media.Image
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
 import com.bluebridgeapp.bluebridge.data.local.WellPreferences
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
@@ -9,10 +9,15 @@ import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
 import com.bluebridgeapp.bluebridge.network.ServerApi
 import android.util.Log
+import com.bluebridgeapp.bluebridge.data.model.Location
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import kotlinx.serialization.json.Json
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 class WellRepositoryImpl(
     private val api: ServerApi,
@@ -24,7 +29,7 @@ class WellRepositoryImpl(
         preferences.getAllWells()
     }
 
-    override suspend fun getWellById(id: Int): WellData? = withContext(Dispatchers.IO) {
+    override suspend fun getWellById(id: String?): WellData? = withContext(Dispatchers.IO) {
         try {
             preferences.getWellById(id)
         } catch (e: Exception) {
@@ -36,12 +41,20 @@ class WellRepositoryImpl(
     override suspend fun getAllWells(): List<ShortenedWellData> = withContext(Dispatchers.IO) {
         try {
             val response = api.getWellsWithFilters(page = 1, limit = 100)
-            if (response.isSuccessful && response.body() != null)  {
+            if (response.isSuccessful && response.body() != null) {
                 val wellsResponse = response.body()!!
                 wellsResponse.data.map { well ->
+                    // Safely parse wellLocation
+                    val wellLocation = try {
+                        Json.decodeFromString<Location>(well.wellLocation.toString())
+                    } catch (e: Exception) {
+                        Log.e("WellRepository", "Error parsing wellLocation for wellId ${well.wellId}: ${e.message}")
+
+                    }
+
                     ShortenedWellData(
                         wellName = well.wellName,
-                        wellLocation = well.wellLocation,
+                        wellLocation = wellLocation as Location, // Re-serialize if needed, or use the object directly
                         wellWaterType = well.wellWaterType,
                         wellStatus = well.wellStatus,
                         wellCapacity = well.wellCapacity,
@@ -84,7 +97,18 @@ class WellRepositoryImpl(
             )
             if (response.isSuccessful && response.body() != null) {
                 val wellsResponse = response.body()!!
-                Result.success(wellsResponse)
+                // Process the data if needed (handle potential errors)
+                val processedData = wellsResponse.data.map { well ->
+                    try {
+                        Json.decodeFromString<Location>(well.wellLocation.toString())
+                        well
+                    } catch (e: Exception) {
+                        Log.e("WellRepository", "Error parsing wellLocation in getFilteredWells for wellId ${well.wellId}: ${e.message}")
+                        well
+                    }
+                }
+                Log.d("WellRepository", "Successfully fetched filtered wells from server. Procesed data : $processedData")
+                Result.success(wellsResponse.copy(data = processedData))
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Unknown error"
                 Result.failure(Exception(errorMsg))
@@ -93,7 +117,6 @@ class WellRepositoryImpl(
             Result.failure(e)
         }
     }
-
     override suspend fun saveWell(well: WellData): Boolean = withContext(Dispatchers.IO) {
         try {
             preferences.saveWell(well, api)
@@ -130,7 +153,8 @@ class WellRepositoryImpl(
     }
 
     override suspend fun isEspIdUnique(espId: String): Boolean = withContext(Dispatchers.IO) {
-        true // TODO: Implement this
+        val wells = preferences.getAllWells()
+        wells.none { it.wellId == espId }
     }
 
     override suspend fun swapWells(from: String, to: String) = withContext(Dispatchers.IO) {
@@ -153,6 +177,7 @@ class WellRepositoryImpl(
             api.editWell(wellData, email, token)
             true
         } catch (e: Exception) {
+            Log.e("WellRepository", "Error saving well to server: ${e.message}", e)
             false
         }
     }
@@ -166,45 +191,8 @@ class WellRepositoryImpl(
             api.deleteWell(espId, email, token)
             true
         } catch (e: Exception) {
+            Log.e("WellRepository", "Error deleting well from server: ${e.message}", e)
             false
-        }
-    }
-    override suspend fun getAllImages(wellId: String): List<android.graphics.Bitmap> = withContext(Dispatchers.IO) {
-        try {
-            val wellData = api.getWellDataById(wellId)
-            val imagesList = mutableListOf<android.graphics.Bitmap>()
-            
-            wellData.images?.forEach { imageData ->
-                val bitmap = preferences.loadWellImageAsBitmap(imageData.imageNumber)
-                if (bitmap != null) {
-                    imagesList.add(bitmap)
-                } else {
-                    // Try to download from server if not cached
-                    try {
-                        val response = api.getWellImage(wellId, imageData.imageNumber)
-                        if (response.isSuccessful) {
-                            response.body()?.let { responseBody ->
-                                val imagePath = com.bluebridgeapp.bluebridge.utils.ImageUtils.downloadAndSaveImage(
-                                    preferences.context, 
-                                    imageData.imageNumber, 
-                                    responseBody
-                                )
-                                if (imagePath != null) {
-                                    val downloadedBitmap = preferences.loadWellImageAsBitmap(imageData.imageNumber)
-                                    downloadedBitmap?.let { imagesList.add(it) }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("WellRepository", "Error downloading image ${imageData.imageNumber}: ${e.message}", e)
-                    }
-                }
-            }
-            
-            imagesList
-        } catch (e: Exception) {
-            Log.e("WellRepository", "Error fetching images for wellId $wellId: ${e.message}", e)
-            emptyList()
         }
     }
 
@@ -242,13 +230,43 @@ class WellRepositoryImpl(
             null
         }
     }
-    
-    override suspend fun getWellImageAsComposeBitmap(imageNumber: Int): androidx.compose.ui.graphics.ImageBitmap? {
-        return preferences.loadWellImageAsComposeBitmap(imageNumber)
+
+    @OptIn(ExperimentalEncodingApi::class)
+    override suspend fun getWellImageAsBitmap(wellId: String, imageNumber: Int): Bitmap? = withContext(Dispatchers.IO) {
+        try {
+            // Try to load from local cache first
+            preferences.loadWellImageAsBitmap(wellId, imageNumber)
+        } catch (e: Exception) {
+            Log.d("WellRepositoryImpl", "Image not found locally for well $wellId, image $imageNumber. Fetching from server. Error: ${e.message}")
+            try {
+                val response = api.getWellImage(wellId, imageNumber)
+                if (response.isSuccessful && response.body() != null) {
+                    val base64 = response.body()!!.data.base64encodedImage
+                    Log.d("WellRepositoryImpl", "Fetched image meta from server: ${response.body()!!.data} base64 data")
+                    val bytes = Base64.decode(base64)
+                    return@withContext BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    null // No bitmap to return
+                } else {
+                    Log.e("WellRepositoryImpl", "Error fetching image from server: ${response.errorBody()?.string()}")
+                    null
+                }
+            } catch (serverException: Exception) {
+                Log.e("WellRepositoryImpl", "Error fetching image from server for well $wellId, image $imageNumber: ${serverException.message}", serverException)
+                null
+            }
+        } as Bitmap?
     }
-    
-    override suspend fun getWellImageAsBitmap(imageNumber: Int): android.graphics.Bitmap? {
-        return preferences.loadWellImageAsBitmap(imageNumber)
+
+    override suspend fun getAllImages(wellId: String): List<Bitmap> = withContext(Dispatchers.IO) {
+        (0 until 10).mapNotNull { imageNumber -> // Assuming a maximum of 10 images, adjust as needed
+            async { getWellImageAsBitmap(wellId, imageNumber) }
+        }.mapNotNull { it.await() }
+    }
+
+    override suspend fun deleteWellImage(wellId: String, imageNumber: Int) {
+        // This deletes the image from the server. You cannot remove an image only locally ( you shouldn't be able to anyways) .
+        Log.d("WellRepositoryImpl", "Deleting image for well $wellId, image $imageNumber from server")
+        api.deleteWellImage(wellId, imageNumber)
     }
 
 }

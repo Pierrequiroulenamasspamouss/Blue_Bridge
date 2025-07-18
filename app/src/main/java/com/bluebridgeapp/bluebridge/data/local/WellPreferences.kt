@@ -1,6 +1,8 @@
 package com.bluebridgeapp.bluebridge.data.local
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -8,12 +10,12 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.network.ServerApi
-import com.bluebridgeapp.bluebridge.utils.ImageUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import android.util.Base64
 
 val Context.wellDataStore: DataStore<Preferences> by preferencesDataStore(name = "well_preferences")
 class WellPreferences(val context: Context) {
@@ -32,7 +34,7 @@ class WellPreferences(val context: Context) {
         }
     }
 
-    suspend fun getWellById(wellId: Int): WellData? {
+    suspend fun getWellById(wellId: String?): WellData? {
         return wellListFlow.first().find { it.wellId == wellId.toString() }
     }
 
@@ -42,63 +44,11 @@ class WellPreferences(val context: Context) {
             .filterNot { it.wellId == well.wellId }
             .plus(well)
         saveWellList(updated)
-        
-        // Download and save images if API is provided
-        api?.let { serverApi ->
-            well.images?.forEach { imageData ->
-                if (!ImageUtils.imageExists(context, imageData.imageNumber)) {
-                    try {
-                        val response = serverApi.getWellImage(well.wellId, imageData.imageNumber)
-                        if (response.isSuccessful) {
-                            response.body()?.let { responseBody ->
-                                ImageUtils.downloadAndSaveImage(context, imageData.imageNumber, responseBody)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Log error but don't fail the save operation
-                        android.util.Log.e("WellPreferences", "Error downloading image ${imageData.imageNumber}: ${e.message}")
-                    }
-                }
-            }
-        }
     }
 
-    suspend fun updateWell(wellData: WellData, api: ServerApi? = null) {
-        val current = wellListFlow.first().toMutableList()
-        val index = current.indexOfFirst { it.wellId == wellData.wellId }
-        if (index != -1) {
-            current[index] = wellData
-            saveWellList(current)
-            
-            // Download new images if API is provided
-            api?.let { serverApi ->
-                wellData.images?.forEach { imageData ->
-                    if (!ImageUtils.imageExists(context, imageData.imageNumber)) {
-                        try {
-                            val response = serverApi.getWellImage(wellData.wellId, imageData.imageNumber)
-                            if (response.isSuccessful) {
-                                response.body()?.let { responseBody ->
-                                    ImageUtils.downloadAndSaveImage(context, imageData.imageNumber, responseBody)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("WellPreferences", "Error downloading image ${imageData.imageNumber}: ${e.message}")
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     suspend fun deleteWell(wellId: String) {
         val current = wellListFlow.first()
-        val wellToDelete = current.find { it.wellId.toString() == wellId }
-        
-        // Delete associated images
-        wellToDelete?.images?.forEach { imageData ->
-            ImageUtils.deleteImageFile(context, imageData.imageNumber)
-        }
-        
         val updated = current.filterNot { it.wellId.toString() == wellId }
         saveWellList(updated)
     }
@@ -106,27 +56,26 @@ class WellPreferences(val context: Context) {
     suspend fun getAllWells(): List<WellData> {
         return wellListFlow.first()
     }
-    
-    suspend fun getWellImage(imageNumber: Int): String? {
-        return if (ImageUtils.imageExists(context, imageNumber)) {
-            ImageUtils.getImageFile(context, imageNumber).absolutePath
-        } else {
-            null
+
+    suspend fun loadWellImageAsBitmap(wellId: String, imageNumber: Int): Bitmap? {
+        val well = getWellById(wellId) ?: return null
+
+        // Check if images list exists and has the requested index
+        val images = well.images ?: return null
+        if (images.isEmpty() || imageNumber < 0 || imageNumber >= images.size) {
+            return null
         }
-    }
-    
-    suspend fun loadWellImageAsBitmap(imageNumber: Int): android.graphics.Bitmap? {
-        return if (ImageUtils.imageExists(context, imageNumber)) {
-            ImageUtils.loadImageFromFile(ImageUtils.getImageFile(context, imageNumber).absolutePath)
-        } else {
+
+        val imageBase64 = images[imageNumber].base64encodedImage
+
+        return try {
+            val decodedString = Base64.decode(imageBase64, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+        } catch (e: IllegalArgumentException) {
+            // Handle error: Invalid Base64 string
             null
-        }
-    }
-    
-    suspend fun loadWellImageAsComposeBitmap(imageNumber: Int): androidx.compose.ui.graphics.ImageBitmap? {
-        return if (ImageUtils.imageExists(context, imageNumber)) {
-            ImageUtils.loadImageAsComposeBitmap(ImageUtils.getImageFile(context, imageNumber).absolutePath)
-        } else {
+        } catch (e: Exception) {
+            // Handle other potential errors
             null
         }
     }

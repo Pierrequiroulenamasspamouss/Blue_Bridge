@@ -28,21 +28,20 @@ def upload_image(well_id, image_number, image_path, description=None):
         print(f"Upload error: {str(e)}")
         return False
 def fetch_images(well_id):
-    url = f"{SERVER_URL}/api/wells/{well_id}/images"
-    response = requests.get(url)
-    print(f"Fetch images response: {response.status_code}")
-    if response.ok:
-        images = response.json().get('data', [])
-        print(f"Found {len(images)} images for well {well_id}:")
-        for img in images:
-            print(f"  Image {img.get('imageNumber')}: {img.get('description')} (file: {img.get('filename')})")
-    else:
-        print(response.text)
+    for i in range(0, 9):
+        url = f"{SERVER_URL}/api/wells/{well_id}/images/{i}"
+        response = requests.get(url)
+        print(f"Fetch images response: {response.status_code}")
+        if response.ok:
+            images = response.json().get('data', [])
+            print(f"Found image for well {well_id}with imageNumber {i}")
+        else:
+            print(response.text)
 
 if __name__ == '__main__':
     import sys
     well_id = input(f"Enter wellId (default {DEFAULT_WELL_ID}): ").strip() or DEFAULT_WELL_ID
-    image_number = 0
+    image_number = input("enter image number: ").strip() or 0
     print(f"Uploading {IMAGE_PATH} as image {image_number} for well {well_id}...")
     if upload_image(well_id, image_number, IMAGE_PATH, description="Test upload from script"):
         print("Image uploaded successfully.")

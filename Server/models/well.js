@@ -1,11 +1,14 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
+    
+
     const Well = sequelize.define('Well', {
         wellId: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true
+            unique: true,
+            primaryKey: true
         },
         wellName: {
             type: DataTypes.STRING,
@@ -50,10 +53,17 @@ module.exports = (sequelize) => {
             allowNull: true,
             defaultValue: null
         },
-        wellImages: {
-            type: DataTypes.TEXT,
+        wellImages: { // A list of images associated with the well
+            type: DataTypes.JSON, // Store as JSON array of ImageData objects
             allowNull: true,
-            defaultValue: '[]'
+            defaultValue: [],
+            get() {
+                const rawValue = this.getDataValue('wellImages');
+                return rawValue ? JSON.parse(rawValue) : [];
+            },
+            set(value) {
+                this.setDataValue('wellImages', JSON.stringify(value));
+            }
         },
         createdAt:{
             type: DataTypes.DATE,
@@ -66,7 +76,29 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.NOW
         }
     });
+    const ImageData = sequelize.define('ImageData', {
+        imageNumber: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        base64: {
+            type: DataTypes.BLOB, //The actual image data
+        },
+        uploadDate:{
+            type: DataTypes.DATE,
+            allowNull: false
+        },
+        fileSize:{
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+    });
 
+    Well.ImageData = ImageData; // Make ImageData accessible via Well.ImageData
 
     return Well;
-}; 
+};

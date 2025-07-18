@@ -23,15 +23,16 @@
     "greenlock-express": "^4.0.3",
     "node": "^24.2.0",
     "node-cache": "^5.1.2",
-    "rclone.js": "^2.0.2",
     "nodemailer": "^6.9.7",
     "selfsigned": "^2.4.1",
     "sequelize": "^6.31.0",
+    "sharp": "^0.32.0",
     "sqlite3": "^5.1.6",
+    "multer": "^2.0.0",
     "uuid": "^10.0.0",
     "winston": "^3.13.1",
-    "validator": "^13.9.0",
-    "multer": "^1.6.1"
+    "validator": "^13.9.0"
+    
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
