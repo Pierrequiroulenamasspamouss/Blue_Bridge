@@ -36,4 +36,33 @@ router.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../documentation', 'API_DOCUMENTATION.md'));
 });
 
+// Chat support endpoint
+router.post('/chat/support', (req, res) => {
+    try {
+        const { senderId, receiverId, content, messageType } = req.body;
+        
+        // Log the received message
+        console.log('Received chat message:', {
+            senderId,
+            receiverId,
+            content,
+            messageType
+        });
+        
+        // For now, just acknowledge receipt
+        res.json({
+            status: "success",
+            message: "Message received successfully",
+            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+        });
+    } catch (error) {
+        console.error('Error processing chat message:', error);
+        res.status(500).json({
+            status: "error",
+            message: "Failed to process message",
+            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+        });
+    }
+});
+
 module.exports = router;

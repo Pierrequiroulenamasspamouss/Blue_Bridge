@@ -29,6 +29,7 @@ import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.LoadingScreen
 import com.bluebridgeapp.bluebridge.ui.screens.miscscreens.DebugScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapDownloadScreen
 import com.bluebridgeapp.bluebridge.ui.screens.navscreens.MapScreen
+import com.bluebridgeapp.bluebridge.ui.screens.userscreens.ChatScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.EditWaterNeedsScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.LoginScreen
 import com.bluebridgeapp.bluebridge.ui.screens.userscreens.NearbyUsersScreen
@@ -45,6 +46,8 @@ import com.bluebridgeapp.bluebridge.viewmodels.UiState
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WeatherViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
+import com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel
+import com.bluebridgeapp.bluebridge.ui.screens.userscreens.ConversationsScreen
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -57,6 +60,7 @@ fun NavigationGraph(
     userViewModel: UserViewModel,
     weatherViewModel: WeatherViewModel,
     smsViewModel: SmsViewModel,
+    chatViewModel: ChatViewModel,
 ) {
 
     NavHost(
@@ -229,7 +233,6 @@ fun NavigationGraph(
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val wellIdParam = backStackEntry.arguments?.getString("wellId") ?: ""
             val userState = userViewModel.state.value
             val userData = (userState as? UiState.Success<UserData>)?.data
 
@@ -246,7 +249,7 @@ fun NavigationGraph(
         }
         composable (route = Routes.WELL_CONFIG_NEW) {
             val userState = userViewModel.state.value
-            val userData = (userState as? UiState.Success<UserData>)?.data
+            (userState as? UiState.Success<UserData>)?.data
             WellConfigScreen(
                 wellId = null,
                 wellViewModel = wellViewModel,
@@ -434,6 +437,62 @@ fun NavigationGraph(
         composable(Routes.LOADING_SCREEN) {
             LoadingScreen()
         }
+        
+        // Chat Screen
+        composable(Routes.CONVERSATIONS_SCREEN) {
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            
+            // Check if user is guest
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.CONVERSATIONS_SCREEN) { inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            } else {
+                ConversationsScreen(
+                    navController = navController,
+                    chatViewModel = chatViewModel
+                )
+            }
+        }
+        
+        // Individual Chat Screen
+        composable(
+            route = Routes.CHAT_SCREEN,
+            arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            val conversationId = backStackEntry.arguments?.getString("conversationId")
+            
+            // Check if user is guest
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.CONVERSATIONS_SCREEN) { inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            } else if (conversationId != null) {
+                ChatScreen(
+                    conversationId = conversationId,
+                    chatViewModel = chatViewModel,
+                    navController = navController
+                )
+            } else {
+                // Fallback to conversations screen if no conversation ID
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.CONVERSATIONS_SCREEN) {
+                        popUpTo(Routes.CHAT_SCREEN) { inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            }
+        }
+        
         composable(
             route = "${Routes.MAP_DOWNLOADING_SCREEN}?userLat={userLat}&userLon={userLon}",
             arguments = listOf(

@@ -33,6 +33,7 @@ import com.bluebridgeapp.bluebridge.data.repository.ServerRepositoryImpl
 import com.bluebridgeapp.bluebridge.data.repository.UserRepositoryImpl
 import com.bluebridgeapp.bluebridge.data.repository.WeatherRepository
 import com.bluebridgeapp.bluebridge.data.repository.WellRepositoryImpl
+import com.bluebridgeapp.bluebridge.data.repository.ChatRepositoryImpl
 import com.bluebridgeapp.bluebridge.network.RetrofitBuilder
 import com.bluebridgeapp.bluebridge.viewmodels.ViewModelFactory
 import com.google.android.gms.ads.MobileAds
@@ -97,18 +98,20 @@ class MainActivity : ComponentActivity() {
         val wellPreferences = WellPreferences(context)
         val api = RetrofitBuilder.getServerApi(context)
         val smsApi = RetrofitBuilder.getSmsApi(context)
+        val userRepository = UserRepositoryImpl(api, userPreferences)
 
         return ViewModelFactory(
             context = context,
-            userRepository = UserRepositoryImpl(api, userPreferences),
+            userRepository = userRepository,
             wellRepository = WellRepositoryImpl(api, wellPreferences),
             serverRepository = ServerRepositoryImpl(api),
             smsApi = smsApi,
             nearbyUsersRepository = NearbyUsersRepositoryImpl(
                 api,
-                UserRepositoryImpl(api, userPreferences)
+                userRepository
             ),
             weatherRepository = WeatherRepository(),
+            chatRepository = ChatRepositoryImpl(api, userRepository, context)
         )
     }
 }

@@ -20,17 +20,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
-import com.bluebridgeapp.bluebridge.data.model.WellData
-import com.bluebridgeapp.bluebridge.data.model.ImageData
-import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
+import kotlinx.coroutines.launch
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
@@ -39,22 +39,30 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    // Load username when screen appears
     LaunchedEffect(Unit) {
         userViewModel.getUserData().collect { userData ->
             username = userData?.username ?: "User"
         }
     }
 
-    // Load image when screen appears
-    LaunchedEffect(Unit) {
-        isLoading = true
+    // Function to load image
+    val loadImage = suspend {
         try {
+            isLoading = true
+            error = null
             bitmap = wellViewModel.getSingleWellImage("001", 0)
         } catch (e: Exception) {
             error = e.message
+            Log.e("DebugScreen", "Error loading image", e)
         } finally {
             isLoading = false
         }
+    }
+
+    // Load image initially
+    LaunchedEffect(Unit) {
+        loadImage()
     }
 
     Column(
@@ -65,14 +73,24 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val coroutineScope = rememberCoroutineScope()
         Text(text = "Hello $username")
 
         Card(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                // Only trigger reload if not already loading
+                if (!isLoading) { // This LaunchedEffect should be outside the onClick lambda
+                    coroutineScope.launch {
+                        loadImage()
+                    }
+                }
+            }
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "Well Images Demo")
 

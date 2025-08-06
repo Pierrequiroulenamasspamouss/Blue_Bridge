@@ -30,4 +30,6 @@ object Routes {
     const val LANGUAGE_SELECTION_SCREEN = "language_selection_screen"
     const val LOADING_SCREEN = "loading_screen"
     const val MAP_DOWNLOADING_SCREEN = "map_downloading_screen"
+    const val CONVERSATIONS_SCREEN = "conversations_screen"
+    const val CHAT_SCREEN = "chat_screen/{conversationId}"
 }

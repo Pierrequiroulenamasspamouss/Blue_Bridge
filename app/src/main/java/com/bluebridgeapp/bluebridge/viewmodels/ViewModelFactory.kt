@@ -9,6 +9,7 @@ import com.bluebridgeapp.bluebridge.data.interfaces.NearbyUsersRepository
 import com.bluebridgeapp.bluebridge.data.interfaces.ServerRepository
 import com.bluebridgeapp.bluebridge.data.interfaces.UserRepository
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
+import com.bluebridgeapp.bluebridge.data.interfaces.ChatRepository
 import com.bluebridgeapp.bluebridge.data.repository.WeatherRepository
 import com.bluebridgeapp.bluebridge.network.SmsApi
 
@@ -27,7 +28,8 @@ class ViewModelFactory(
     private val nearbyUsersRepository: NearbyUsersRepository,
     private val weatherRepository: WeatherRepository,
     private val serverRepository: ServerRepository,
-    private val smsApi: SmsApi
+    private val smsApi: SmsApi,
+    private val chatRepository: ChatRepository
 
 ) : ViewModelProvider.Factory {
 
@@ -65,6 +67,13 @@ class ViewModelFactory(
 
             modelClass.isAssignableFrom(SmsViewModel::class.java) -> {
                 SmsViewModel(smsApi) as T
+            }
+
+            modelClass.isAssignableFrom(ChatViewModel::class.java) -> {
+                ChatViewModel(
+                    chatRepository = chatRepository,
+                    userRepository = userRepository
+                ) as T
             }
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

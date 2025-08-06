@@ -16,8 +16,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Map
@@ -209,16 +211,12 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (currentUserRole >= userRole) { // Show for logged-in users (user, well_owner, admin)
-                    FeatureCard(
-                        icon = Icons.Default.Visibility,
-                        title = stringResource(R.string.nearby_users),
-                        description = stringResource(R.string.find_community_members_near_you),
-                        onClick = { navController.navigate(Routes.NEARBY_USERS_SCREEN) },
-                        modifier = Modifier.weight(1f)
-                    )
 
-                    if (currentUserRole >= wellOwnerRole) { // Show urgent SMS only for well_owner and admin
+                if (currentUserRole >= userRole) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         FeatureCard(
                             icon = Icons.Default.Emergency,
                             title = stringResource(R.string.urgent_sms),
@@ -226,10 +224,17 @@ fun HomeScreen(
                             onClick = { navController.navigate(Routes.URGENT_SMS_SCREEN) },
                             modifier = Modifier.weight(1f)
                         )
+                        FeatureCard(
+                            icon = Icons.Default.Visibility,
+                            title = stringResource(R.string.nearby_users),
+                            description = stringResource(R.string.find_community_members_near_you),
+                            onClick = { navController.navigate(Routes.NEARBY_USERS_SCREEN) },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
-            if (currentUserRole >=3 ) { // Show debug
+            if (currentUserRole >3 ) { // Show debug
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -239,6 +244,13 @@ fun HomeScreen(
                         title = "Testing",
                         description = "",
                         onClick = { navController.navigate(Routes.EXAMPLE_SCREEN) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FeatureCard(
+                        icon = Icons.AutoMirrored.Filled.Chat,
+                        title = "Chat",
+                        description = "Message other users",
+                        onClick = { navController.navigate(Routes.CONVERSATIONS_SCREEN) },
                         modifier = Modifier.weight(1f)
                     )
                 }

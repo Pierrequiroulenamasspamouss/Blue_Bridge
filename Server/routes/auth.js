@@ -112,13 +112,24 @@ router.post('/register', [
 // User Login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    console.log('Login request received:', req.body)
+
     if (!email || !password) {
         return jsonResponse(res, 400, { status: 'error', message: 'Email and password required' });
     }
 
     try {
         const user = await User.findOne({ where: { email: normalizeEmail(email) } });
-        if (!user || user.password !== password) {
+        if (!user) return jsonResponse(res, 401, { status: 'error', message: 'No user found with this e-mail address' });
+
+        // Decode HTML entities in stored password and trim
+        const storedPassword = user.password.replace(/&#x2F;/g, '/').trim();
+        const inputPassword = password.trim();
+
+        console.log('Stored password (decoded):', storedPassword);
+        console.log('Input password:', inputPassword);
+
+        if (storedPassword !== inputPassword) {
             return jsonResponse(res, 401, { status: 'error', message: 'Invalid credentials' });
         }
 
@@ -146,11 +157,11 @@ router.post('/login', async (req, res) => {
                 waterNeeds: waterNeeds
             }
         });
-    } catch (error) {
-        console.error('Login error:', error);
-        jsonResponse(res, 500, { status: 'error', message: 'Login failed' });
-    }
-});
+   } catch (error) {
+          console.error('Login error:', error);
+          jsonResponse(res, 500, { status: 'error', message: 'Login failed' });
+      }
+  });
 
 // Weather Endpoint (using userId instead of email)
 router.post('/weather', validateToken, async (req, res) => {

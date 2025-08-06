@@ -1,5 +1,15 @@
 #!/bin/bash
 
+
+# Install Git if not already installed
+if ! command -v git &> /dev/null; then
+    echo "Git not found, installing..."
+    sudo dnf install -y git-all
+else
+    echo "Git already installed"
+fi
+
+
 # Configuration
 GITHUB_TOKEN="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"
 GITHUB_USER="Pierrequiroulenamasspamouss"

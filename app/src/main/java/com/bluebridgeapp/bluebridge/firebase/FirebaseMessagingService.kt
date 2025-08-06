@@ -36,10 +36,29 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
         if (remoteMessage.data.isNotEmpty()) {
             Log.d(TAG, "Message data payload: ${remoteMessage.data}")
             
-            val title = remoteMessage.data["title"] ?: "BlueBridge"
-            val message = remoteMessage.data["message"] ?: "New update"
-            sendNotification(title, message)
+            // Check if this is a chat message
+            val messageType = remoteMessage.data["type"]
+            if (messageType == "chat_message") {
+                handleChatMessage(remoteMessage.data)
+            } else {
+                val title = remoteMessage.data["title"] ?: "BlueBridge"
+                val message = remoteMessage.data["message"] ?: "New update"
+                sendNotification(title, message)
+            }
         }
+    }
+
+    private fun handleChatMessage(data: Map<String, String>) {
+        val senderName = data["senderName"] ?: "Unknown"
+        val content = data["content"] ?: ""
+        val messageId = data["messageId"] ?: ""
+        
+        // Send notification for chat message
+        sendNotification(senderName, content)
+        
+        // TODO: Save message locally if needed
+        // This could be handled by a ChatRepository or similar
+        Log.d(TAG, "Chat message received from $senderName: $content")
     }
 
     override fun onNewToken(token: String) {

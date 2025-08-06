@@ -16,7 +16,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.4.11"
+        versionName = "0.1.4.12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -92,8 +92,8 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.google.play.services.location)
     // Google AdMob
-    //noinspection UseTomlInstead,GradleDependency
-    implementation("com.google.android.gms:play-services-ads:24.2.0")
+
+    implementation(libs.play.services.ads)
     implementation(libs.accompanist.permissions)
 
     // OSMDroid dependencies
@@ -106,6 +106,7 @@ dependencies {
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.firebase.analytics.ktx)
     implementation(libs.firebase.inappmessaging.display)
+    implementation(libs.firebase.messaging)
 
     // Add SMS functionality dependencies
     implementation(libs.play.services.auth)

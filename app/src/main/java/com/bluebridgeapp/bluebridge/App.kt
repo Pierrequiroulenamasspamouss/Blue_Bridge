@@ -238,7 +238,8 @@ private fun AppContent(
                 wellViewModel = wellViewModel,
                 userViewModel = userViewModel,
                 weatherViewModel = viewModel(factory = viewModelFactory),
-                smsViewModel = viewModel(factory = viewModelFactory)
+                smsViewModel = viewModel(factory = viewModelFactory),
+                chatViewModel = viewModel(factory = viewModelFactory)
             )
 
             ServerStatusDialogs(serverViewModel)

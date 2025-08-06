@@ -6,6 +6,14 @@ DEST_DIR="/opt/bluebridge"
 # The directory where this script is located (source of files)
 SOURCE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# --- Allow the iptables for the server ---
+sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+# Now save the iptables
+sudo apt install iptables-persistent
+sudo netfilter-persistent save
+
+
 # --- Colors for output ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
