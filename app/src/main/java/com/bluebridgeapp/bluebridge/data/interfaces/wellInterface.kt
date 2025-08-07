@@ -30,7 +30,7 @@ interface WellRepository {
     suspend fun swapWells(from: String, to: String)
     suspend fun saveWellToServer(wellData: WellData, email: String, token: String): Boolean
     suspend fun deleteWellFromServer(espId: String, email: String, token: String): Boolean
-    suspend fun uploadWellPicture(wellId: String, imageNumber: Int, image: Bitmap): Boolean
+    suspend fun uploadWellPicture(wellId: String?, imageNumber: Int, image: Bitmap): Boolean
     suspend fun getWellFromServer(wellId: String): WellData?
     suspend fun getWellImageAsBitmap(wellId: String, imageNumber: Int): Bitmap?
     suspend fun getAllImages(wellId:String): List<Bitmap>

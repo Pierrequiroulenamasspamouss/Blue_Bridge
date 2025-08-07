@@ -5,6 +5,8 @@
 if ! command -v git &> /dev/null; then
     echo "Git not found, installing..."
     sudo dnf install -y git-all
+    sudo apt-get install -y nodejs #if there is no git, there probably is no node either
+
 else
     echo "Git already installed"
 fi

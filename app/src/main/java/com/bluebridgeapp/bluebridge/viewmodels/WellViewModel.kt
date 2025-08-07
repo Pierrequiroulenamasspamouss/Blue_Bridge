@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridgeapp.bluebridge.data.interfaces.WellRepository
+import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.ShortenedWellData
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.events.AppEvent
@@ -31,6 +32,7 @@ sealed class ActionState {
 class WellViewModel(
     val repository: WellRepository //TODO: make it as private later
 ) : ViewModel() {
+
     private val _currentWellState = mutableStateOf<UiState<WellData>>(UiState.Empty)
     val currentWellState: State<UiState<WellData>> = _currentWellState
     private val _wellsListState = mutableStateOf<UiState<List<WellData>>>(UiState.Loading)
@@ -40,35 +42,62 @@ class WellViewModel(
 
     private fun saveCurrentWell() {
         viewModelScope.launch {
-            val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return@launch
-            _currentWellState.value = UiState.Loading
+            _actionState.value = ActionState.Loading
             try {
-                if (currentWell.wellOwner?.isBlank() == true) {
-                    val defaultOwner = "BlueBridge User"
-                    val updatedWell = currentWell.copy(wellOwner = defaultOwner)
-                    repository.saveWell(updatedWell)
-                    _currentWellState.value = UiState.Success(updatedWell)
-                    viewModelScope.launch {
-                        saveWellToServer(updatedWell)
+                val currentWell = when (val state = _currentWellState.value) {
+                    is UiState.Success -> state.data
+                    else -> {
+                        // Create a new well if none exists
+                        WellData(
+                            wellId = "",
+                            wellName = "",
+                            wellOwner = "BlueBridge User",
+                            wellLocation = Location(0.0, 0.0),
+                            wellWaterType = "",
+                            wellCapacity = "",
+                            wellWaterLevel = "",
+                            wellWaterConsumption = "",
+                            lastRefreshTime = System.currentTimeMillis() / 1000,
+                            wellStatus = "",
+                            description = "",
+                            lastUpdated = "",
+                            images = emptyList()
+                        )
                     }
-                } else {
-                    repository.saveWell(currentWell)
-                    _currentWellState.value = UiState.Success(currentWell)
                 }
+
+                // Save to local database
+                repository.saveWell(currentWell)
+
+                // Update state
+                _currentWellState.value = UiState.Success(currentWell)
+                _actionState.value = ActionState.Success("Well saved successfully")
+
+                // Try to save to server
+                try {
+                    saveWellToServer(currentWell)
+                } catch (e: Exception) {
+                    Log.e("WellViewModel", "Failed to save to server", e)
+                }
+
+                // Refresh wells list
                 getSavedWells()
             } catch (e: Exception) {
-                _currentWellState.value = UiState.Error(e.message ?: "Failed to save well")
+                _actionState.value = ActionState.Error(e.message ?: "Failed to save well")
+                Log.e("WellViewModel", "Error saving well", e)
             }
         }
     }
     private fun updateCurrentWell(transform: WellData.() -> WellData) {
-        val currentWell = (_currentWellState.value as? UiState.Success)?.data ?: return
-        val updatedWell = currentWell.transform()
-        _currentWellState.value = UiState.Success(updatedWell)
-        viewModelScope.launch {
-            saveWellToServer(updatedWell)
+        _currentWellState.value = _currentWellState.value.let { current ->
+            if (current is UiState.Success) {
+                UiState.Success(current.data.transform())
+            } else {
+                current
+            }
         }
     }
+
     fun handleEvent(event: WellEvents) {
         when (event) {
             is WellEvents.SaveWell -> saveCurrentWell()
@@ -220,7 +249,7 @@ class WellViewModel(
         return repository.getWellImageAsBitmap(wellId, imageNumber)
     }
     suspend fun deleteWellImage(wellId: String, imageNumber: Int) {repository.deleteWellImage(wellId, imageNumber)}
-    suspend fun uploadWellPicture(wellId: String, imageNumber: Int, bitmap: Bitmap) {repository.uploadWellPicture(wellId, imageNumber, bitmap)}
+    suspend fun uploadWellPicture(wellId: String?, imageNumber: Int, bitmap: Bitmap): Boolean = repository.uploadWellPicture(wellId, imageNumber, bitmap)
 
 
 }

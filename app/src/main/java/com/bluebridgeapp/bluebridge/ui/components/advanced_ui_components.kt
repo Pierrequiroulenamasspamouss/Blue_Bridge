@@ -66,34 +66,6 @@ import java.util.Date
 
 
 @Composable
-fun WellField(
-    label: String,
-    value: String,
-    keyId: String,
-    onValueChange: (String) -> Unit,
-    isNumeric: Boolean = false
-) {
-    Spacer(modifier = Modifier.size(10.dp))
-    TextComponent(text = label, fontSize = 18.sp)
-
-    key(keyId) {
-        if (isNumeric) {
-            AdvancedNumbersFieldComponent(
-                initialValue = value,
-                defaultInputMessage = label,
-                onTextChanged = onValueChange
-            )
-        } else {
-            AdvancedTextFieldComponent(
-                initialValue = value,
-                defaultInputMessage = label,
-                onTextChanged = onValueChange
-            )
-        }
-    }
-}
-
-@Composable
 fun PasswordField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -322,34 +294,69 @@ fun TextComponent(text: String, fontSize: androidx.compose.ui.unit.TextUnit) {
 }
 
 @Composable
+fun WellField(
+    label: String,
+    value: String,
+    keyId: String,
+    isNumeric: Boolean = false,
+    onValueChange: (String) -> Unit // Add callback parameter
+) {
+    Spacer(modifier = Modifier.size(10.dp))
+    TextComponent(text = label, fontSize = 18.sp)
+
+    key(keyId) {
+        if (isNumeric) {
+            AdvancedNumbersFieldComponent(
+                initialValue = value,
+                defaultInputMessage = label,
+                onValueChange = onValueChange // Pass callback
+            )
+        } else {
+            AdvancedTextFieldComponent(
+                initialValue = value,
+                defaultInputMessage = label,
+                onValueChange = onValueChange // Pass callback
+            )
+        }
+    }
+}
+
+@Composable
 fun AdvancedTextFieldComponent(
     initialValue: String,
     defaultInputMessage: String,
-    onTextChanged: (String) -> Unit
+    onValueChange: (String) -> Unit // Add callback
 ) {
+    var text by remember(initialValue) { mutableStateOf(initialValue) }
     OutlinedTextField(
-        value = initialValue,
-        onValueChange = onTextChanged,
+        value = text,
+        onValueChange = {
+            text = it
+            onValueChange(it) // Call the callback
+        },
         label = { Text(defaultInputMessage) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true
     )
 }
 
-
 @Composable
 fun AdvancedNumbersFieldComponent(
     initialValue: String,
     defaultInputMessage: String,
-    onTextChanged: (String) -> Unit
+    onValueChange: (String) -> Unit // Add callback
 ) {
+    var text by remember(initialValue) { mutableStateOf(initialValue) }
     OutlinedTextField(
-        value = initialValue,
-        onValueChange = onTextChanged,
+        value = text,
+        onValueChange = {
+            text = it
+            onValueChange(it) // Call the callback
+        },
         label = { Text(defaultInputMessage) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
 }
 

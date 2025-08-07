@@ -32,9 +32,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SettingsRemote
 import androidx.compose.material.icons.filled.Water
@@ -75,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.model.Location
@@ -82,6 +85,7 @@ import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
 import com.bluebridgeapp.bluebridge.events.WellEvents
+import com.bluebridgeapp.bluebridge.ui.components.ImageSection
 import com.bluebridgeapp.bluebridge.ui.components.WellField
 import com.bluebridgeapp.bluebridge.ui.dialogs.RequireGalleryPermissionDialog
 import com.bluebridgeapp.bluebridge.viewmodels.UiState
@@ -209,19 +213,26 @@ fun WellConfigScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Well Name
                         WellField(
                             label = stringResource(R.string.well_name),
                             value = wellData.wellName!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.WellNameEntered(it)) }
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.WellNameEntered(newValue))
+                            }
                         )
 
+                        // Well Owner
                         WellField(
                             label = stringResource(R.string.well_owner),
-                            value = wellData.wellOwner.toString(),
+                            value = wellData.wellOwner!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.OwnerEntered(it)) }
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.OwnerEntered(newValue))
+                            }
                         )
+
                     }
                 }
 
@@ -244,7 +255,8 @@ fun WellConfigScreen(
                             value = locationInput,
                             onValueChange = { locationInput = it },
                             label = { Text(stringResource(R.string.location)) },
-                            singleLine = false,
+                            readOnly = false, // Allow user to edit location manually if needed
+                            singleLine = false, // Allow multi-line input for lat/lon
                             modifier = Modifier.fillMaxWidth()
                         )
                         
@@ -343,35 +355,48 @@ fun WellConfigScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Water Type
                         WellField(
                             label = stringResource(R.string.water_type),
                             value = wellData.wellWaterType!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.WaterTypeEntered(it)) }
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.WaterTypeEntered(newValue))
+                            }
                         )
 
+                        // Well Capacity (numeric)
                         WellField(
                             label = stringResource(R.string.well_capacity),
                             value = wellData.wellCapacity!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.WellCapacityEntered(it)) },
-                            isNumeric = true
+                            isNumeric = true,
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.WellCapacityEntered(newValue))
+                            }
                         )
 
+
+                        // Water Level (numeric)
                         WellField(
                             label = stringResource(R.string.water_level),
                             value = wellData.wellWaterLevel!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.WaterLevelEntered(it)) },
-                            isNumeric = true
+                            isNumeric = true,
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.WaterLevelEntered(newValue))
+                            }
                         )
 
+                        // Consumption (numeric)
                         WellField(
                             label = stringResource(R.string.daily_consumption),
-                            value = wellData.wellWaterConsumption.toString(),
+                            value = wellData.wellWaterConsumption!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { wellViewModel.handleEvent(WellEvents.ConsumptionEntered(it)) },
-                            isNumeric = true
+                            isNumeric = true,
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.ConsumptionEntered(newValue))
+                            }
                         )
                         
                         // Water level visualization
@@ -426,15 +451,8 @@ fun WellConfigScreen(
                             label = stringResource(R.string.esp_id),
                             value = wellData.wellId!!,
                             keyId = wellData.wellId!!,
-                            onValueChange = { newEspId ->
-                                scope.launch {
-                                    val isUnique = wellViewModel.isWellIdUnique(newEspId)
-                                    if (isUnique) {
-                                        wellViewModel.handleEvent(WellEvents.WellIdEntered(newEspId))
-                                    } else {
-                                        AppEventChannel.sendEvent(AppEvent.ShowError("ESP ID already in use"))
-                                    }
-                                }
+                            onValueChange = { newValue ->
+                                wellViewModel.handleEvent(WellEvents.WellIdEntered(newValue))
                             }
                         )
 
@@ -454,53 +472,26 @@ fun WellConfigScreen(
                     onClick = {
                         scope.launch {
                             isSaving = true
+                            Log.d("WellConfigScreen", "Saving well...")
                             try {
-                                val isUnique = wellViewModel.isWellIdUnique(wellData.wellId!!)
-                                if (!isUnique && wellId == -1) {
-                                    AppEventChannel.sendEvent(AppEvent.ShowError("Well ID already in use by another well"))
-                                    isSaving = false
-                                    return@launch
-                                }
-                                
-                                // Get user credentials for server authentication
-                                val email = userViewModel.getUserEmail()
-                                val token = userViewModel.getLoginToken()
-                                
-                                if (email != null && token != null) {
-                                    // Create or update well via server API
-                                    val success = wellViewModel.saveWellToServer(wellData)
-                                    
-                                    if (success) {
-                                        // Also save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
-                                        lastSavedData = wellData
-                                        AppEventChannel.sendEvent(AppEvent.ShowError("Well saved successfully!"))
-                                        navigateBack = true
-                                    } else {
-                                        // If server save fails, at least save locally
-                                        wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
-                                        lastSavedData = wellData
-                                        AppEventChannel.sendEvent(AppEvent.ShowError("Could not save to server but saved locally"))
-                                        navigateBack = true
-                                    }
-                                } else {
-                                    // No valid user credentials, just save locally
-                                    wellViewModel.handleEvent(WellEvents.SaveWell(currentWellId.toString()))
-                                    lastSavedData = wellData
-                                    AppEventChannel.sendEvent(AppEvent.ShowError("Well saved locally"))
+                                // Get current state
+                                val currentWell = (currentWellState as? UiState.Success)?.data
+                                Log.d("WellConfigScreen", "Current well: $currentWell")
+                                if (currentWell != null) {
+                                    wellViewModel.handleEvent(WellEvents.SaveWell(currentWell))
+                                    lastSavedData = currentWell
+                                    AppEventChannel.sendEvent(AppEvent.ShowSuccess("Well saved successfully!"))
                                     navigateBack = true
                                 }
                             } catch (e: Exception) {
-                                AppEventChannel.sendEvent(AppEvent.ShowError("Error saving well: ${e.message}"))
+                                AppEventChannel.sendEvent(AppEvent.ShowError("Error saving: ${e.message}"))
                             } finally {
                                 isSaving = false
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    enabled = wellData.isValid() && wellData != lastSavedData && !isSaving
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    enabled = !isSaving // Remove other conditions temporarily
                 ) {
                     if (isSaving) {
                         CircularProgressIndicator(
@@ -598,133 +589,4 @@ private fun WellData.isValid(): Boolean {
            wellWaterType!!.isNotBlank()
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun ImageSection(
-    wellData: WellData,
-    wellViewModel: WellViewModel
-) {
-    // State to hold the list of images
-    var images: List<Bitmap> by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
-    val coroutineScope = rememberCoroutineScope()
-    var showPermissionDialog by remember { mutableStateOf(false) }
-    var requestPermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) {}
 
-    val context = LocalContext.current
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            coroutineScope.launch {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                val byteArrayOutputStream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-
-                // Upload to server as next image number
-                val imageNumber = images.size
-                wellViewModel.uploadWellPicture(wellData.wellId!!, imageNumber, bitmap)
-                // Reload images after upload
-                images = wellViewModel.getAllImages(wellData.wellId!!)
-            }
-        }
-    }
-    LaunchedEffect(wellData.wellId) {
-        images = wellViewModel.getAllImages(wellData.wellId!!)
-    }
-
-    Column {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            itemsIndexed(images) { index, image ->
-                Box(modifier = Modifier) {
-                    Image(
-                        bitmap = image.asImageBitmap(),
-                        contentDescription = "Well Image",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                    // Remove button
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                wellViewModel.deleteWellImage(wellData.wellId!!, index)
-                                images = wellViewModel.getAllImages(wellData.wellId!!)
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Photo,
-                            contentDescription = "Remove image",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-            item {
-                // Add image button
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable {
-                            coroutineScope.launch {
-                                val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    Manifest.permission.READ_MEDIA_IMAGES
-                                } else {
-                                    Manifest.permission.READ_EXTERNAL_STORAGE
-                                }
-                                if (context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) {
-                                    imagePickerLauncher.launch("image/*")
-                                } else {
-                                    showPermissionDialog = true
-                                }
-                            }
-                        }
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (showPermissionDialog) {
-                        RequireGalleryPermissionDialog(onDismiss = { showPermissionDialog = false }, onAllow = {
-                            showPermissionDialog = false
-                            requestPermissionLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
-                            imagePickerLauncher.launch("image/*") })
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.AddAPhoto,
-                            contentDescription = stringResource(R.string.add_image),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = stringResource(R.string.add_image),
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        if (images.isEmpty()) {
-            Text(
-                text = stringResource(R.string.no_images_yet_add_one),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}

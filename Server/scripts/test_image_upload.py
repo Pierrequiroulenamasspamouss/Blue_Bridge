@@ -2,8 +2,8 @@ import os
 import requests
 
 # CONFIGURATION
-SERVER_URL = 'http://localhost:80'  # Change to your server's address and port
-IMAGE_PATH = r'C:\Users\Pierr\Downloads\test.jpg'  # Path to your test image
+SERVER_URL = 'http://bluebridge.homeonthewater.com:80'  # Change to your server's address and port
+IMAGE_PATH = r"C:\Users\Pierr\Downloads\test.png"	  # Path to your test image
 DEFAULT_WELL_ID = '001'
 
 

@@ -36,3 +36,4 @@ cloud_tunnelling.bat
 /Server/uploads/
 /Server/ssh_keys/ssh-key-2025-08-03.key
 /Server/ssh_keys/ssh-key-2025-08-03.key.pub
+/Server/scripts/response.json

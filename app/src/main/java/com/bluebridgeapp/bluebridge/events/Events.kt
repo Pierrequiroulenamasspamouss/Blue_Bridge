@@ -5,10 +5,11 @@ import com.bluebridgeapp.bluebridge.data.model.LoginRequest
 import com.bluebridgeapp.bluebridge.data.model.RegisterRequest
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
+import com.bluebridgeapp.bluebridge.data.model.WellData
 import kotlinx.coroutines.channels.Channel
 
 open class WellEvents {
-    data class SaveWell(val wellId: String) : WellEvents()
+    data class SaveWell(val wellData: WellData) : WellEvents()
     data class WellNameEntered(val wellName: String) : WellEvents()
     data class OwnerEntered(val wellOwner: String) : WellEvents()
     data class WellLocationEntered(val wellLocation: Location) : WellEvents()

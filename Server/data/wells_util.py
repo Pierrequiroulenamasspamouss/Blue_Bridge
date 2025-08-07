@@ -77,7 +77,7 @@ def random_wells(count=5):
 
     for _ in range(count):
         well = {
-            'wellId': f"ESP-{random.randint(1000,9999)}-{random.choices(string.ascii_uppercase, k=2)}",
+            'wellId': f"{random.randint(1000,9999)}",
             'wellName': f"{random_string()} Well",
             'wellOwner': f"{random_string()} Water Co.",
             'wellLocation': {

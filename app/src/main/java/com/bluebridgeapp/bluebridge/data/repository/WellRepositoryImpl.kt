@@ -215,28 +215,32 @@ class WellRepositoryImpl(
         }
     }
 
-    override suspend fun uploadWellPicture(wellId: String, imageNumber: Int, image: android.graphics.Bitmap): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun uploadWellPicture(wellId: String?, imageNumber: Int, image: Bitmap): Boolean = withContext(Dispatchers.IO) {
         try {
             // Convert bitmap to file for upload
             val imageFile = java.io.File(preferences.context.cacheDir, "upload_image.jpg")
             val outputStream = java.io.FileOutputStream(imageFile) // Use context.cacheDir for temp files
-            image.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
+            image.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
             outputStream.close()
             
             val requestBody = imageFile
                 .asRequestBody("image/jpeg".toMediaTypeOrNull())
             val multipartBody = okhttp3.MultipartBody.Part.createFormData("image", "image.jpg", requestBody)
-            
-            val response = api.uploadWellPicture(wellId = wellId, imageNumber = imageNumber, image = multipartBody)
-            imageFile.delete()
-            
-            response.isSuccessful
+
+            if (wellId != null) {
+                val response = api.uploadWellPicture(wellId = wellId, imageNumber = imageNumber, image = multipartBody)
+                imageFile.delete()
+                response.isSuccessful
+            } else {
+                Log.e("WellRepository", "wellId is null, cannot upload image")
+                imageFile.delete() // Clean up the temp file
+                false
+            }
         } catch (e: Exception) {
             Log.e("WellRepository", "Error uploading image for wellId $wellId and imageNumber $imageNumber: ${e.message}", e)
             false
         }
     }
-
     override suspend fun getWellFromServer(wellId: String): WellData? = withContext(Dispatchers.IO) {
         try {
             // Get basic well details
