@@ -175,6 +175,7 @@ fun SettingsScreen(
                                     11 -> {
                                         userData?.role = "admin" //put the use as an admin for this session
                                         // Navigate to easter egg screen on the 11th click
+                                        userViewModel.handleEvent(UserEvent.UpdateProfile(userData!!))
                                         navController.navigate(Routes.EASTER_EGG_SCREEN)
                                         "Congratulations! You've unlocked the secret game!"
                                     }
