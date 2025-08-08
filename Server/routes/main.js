@@ -28,6 +28,7 @@ router.get('/send-notifications', (req, res) => res.send(readHtmlFile('send-noti
 router.get('/support', (req, res) => res.send(readHtmlFile('support')));
 router.get('/contact', (req, res) => res.send(readHtmlFile('website_under_construction')));
 router.get('/joel', (req, res) => res.sendFile(path.join(__dirname, '../assets', 'joel.jpg')));
+router.get('/pierre', (req, res) => res.sendFile(path.join(__dirname, '../assets', 'pierre.jpg')));
 router.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, '../robots.txt')));
 router.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, '../sitemap.xml')));
 
