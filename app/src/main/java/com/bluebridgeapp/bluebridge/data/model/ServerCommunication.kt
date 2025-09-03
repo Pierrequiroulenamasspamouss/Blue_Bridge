@@ -22,10 +22,18 @@ data class CertificateResponse(
 )
 
 @Serializable
+data class ServerStatus(
+    val message: String,
+    val versions: ServerVersions,
+    val status: String
+)
+
+@Serializable
 data class ServerStatusResponse(
     val status: String,
     val data: ServerStatusData
 )
+
 
 @Serializable
 data class ServerStatusData(

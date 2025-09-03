@@ -11,17 +11,20 @@ import androidx.core.app.NotificationCompat
 import com.bluebridgeapp.bluebridge.MainActivity
 import com.bluebridgeapp.bluebridge.R
 import com.bluebridgeapp.bluebridge.data.interfaces.UserRepository
+
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
 
 class BluebridgeMessagingService : FirebaseMessagingService() {
 
     private val TAG = "BlueBridgeFCM"
     private lateinit var userRepository: UserRepository
-
+    private lateinit var chatRepository: com.bluebridgeapp.bluebridge.data.interfaces.ChatRepository
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d(TAG, "From: ${remoteMessage.from}")
@@ -36,28 +39,52 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
         if (remoteMessage.data.isNotEmpty()) {
             Log.d(TAG, "Message data payload: ${remoteMessage.data}")
             
-            // Check if this is a chat message
+            // Check if this is an image chunk
             val messageType = remoteMessage.data["type"]
-            if (messageType == "chat_message") {
-                handleChatMessage(remoteMessage.data)
-            } else {
-                val title = remoteMessage.data["title"] ?: "BlueBridge"
-                val message = remoteMessage.data["message"] ?: "New update"
-                sendNotification(title, message)
+            when (messageType) {
+                "chat_message" -> {
+                    handleChatMessage(remoteMessage.data)
+                }
+                else -> {
+                    val title = remoteMessage.data["title"] ?: "BlueBridge"
+                    val message = remoteMessage.data["message"] ?: "New update"
+                    sendNotification(title, message)
+                }
             }
         }
     }
 
+
+
     private fun handleChatMessage(data: Map<String, String>) {
+        val senderId = data["senderId"] ?: "Unknown"
         val senderName = data["senderName"] ?: "Unknown"
+        val receiverId = data["receiverId"] ?: ""
         val content = data["content"] ?: ""
-        val messageId = data["messageId"] ?: ""
-        
+        val messageId = data["messageId"] ?: java.util.UUID.randomUUID().toString()
+        val timestamp = data["timestamp"]?.toLongOrNull() ?: System.currentTimeMillis()
+
         // Send notification for chat message
         sendNotification(senderName, content)
-        
-        // TODO: Save message locally if needed
-        // This could be handled by a ChatRepository or similar
+
+        // Sauvegarder le message localement via le ChatRepository
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val message = com.bluebridgeapp.bluebridge.data.model.ChatMessage(
+                    messageId = messageId,
+                    senderId = senderId,
+                    senderName = senderName,
+                    receiverId = receiverId,
+                    content = com.bluebridgeapp.bluebridge.data.model.MessageContent.Text(content),
+                    timestamp = timestamp,
+                    messageType = com.bluebridgeapp.bluebridge.data.model.MessageType.TEXT
+                )
+                chatRepository.saveMessageLocally(message)
+                Log.d(TAG, "Chat message saved locally: $messageId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving received chat message", e)
+            }
+        }
         Log.d(TAG, "Chat message received from $senderName: $content")
     }
 
@@ -68,6 +95,11 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
             try {
                 // Save the loginToken to preferences
                 userRepository.saveNotificationToken(token)
+                
+                // Sauvegarder le token dans le système décentralisé
+
+                val userId = userRepository.getUserId()
+                val userName = userRepository.getUserData().first()?.firstName ?: "Unknown"
                 
                 // Check if the user is logged in (has email and auth loginToken)
                 val email = userRepository.getUserEmail()
@@ -94,6 +126,10 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(title: String, messageBody: String) {
+        sendNotification(title, messageBody, 0)
+    }
+
+    private fun sendNotification(title: String, messageBody: String, notificationId: Int) {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
@@ -131,6 +167,7 @@ class BluebridgeMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
+
 } 

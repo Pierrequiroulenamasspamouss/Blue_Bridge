@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "my_second_app"
+rootProject.name = "Bluebridge_app"
 include(":app")

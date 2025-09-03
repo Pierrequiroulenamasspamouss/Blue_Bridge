@@ -8,8 +8,12 @@ import com.bluebridgeapp.bluebridge.data.interfaces.ChatRepository
 import com.bluebridgeapp.bluebridge.data.interfaces.UserRepository
 import com.bluebridgeapp.bluebridge.data.model.ChatMessage
 import com.bluebridgeapp.bluebridge.data.model.ChatConversation
-import com.bluebridgeapp.bluebridge.data.model.SendMessageRequest
+import com.bluebridgeapp.bluebridge.data.model.MessageContent
 import com.bluebridgeapp.bluebridge.data.model.MessageType
+import com.bluebridgeapp.bluebridge.events.AppEvent
+import com.bluebridgeapp.bluebridge.events.AppEventChannel
+import com.bluebridgeapp.bluebridge.events.AppEventChannel.sendEvent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +24,7 @@ import java.util.Date
 import java.util.Locale
 
 class ChatViewModel(
-    private val chatRepository: ChatRepository,
+    val chatRepository: ChatRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
     
@@ -109,38 +113,8 @@ class ChatViewModel(
     }
 
     fun sendImageMessage(imageUri: String, receiverId: String) {
-        Log.d(TAG, "sendImageMessage() called - imageUri: $imageUri, receiverId: $receiverId")
         viewModelScope.launch {
-            try {
-                Log.d(TAG, "Setting loading to true for image sending")
-                _isLoading.value = true
-                _errorMessage.value = null
-                
-                Log.d(TAG, "Calling chatRepository.sendImageMessage()")
-                val success = chatRepository.sendImageMessage(imageUri, receiverId)
-                
-                if (success) {
-                    Log.d(TAG, "Image message sent successfully")
-                    
-                    // Reload messages for current conversation to show the new message
-                    val currentConversationId = _currentConversationId.value
-                    if (currentConversationId != null) {
-                        Log.d(TAG, "Reloading messages for current conversation: $currentConversationId")
-                        val messages = chatRepository.getMessages(currentConversationId).first()
-                        _currentMessages.value = messages
-                        Log.d(TAG, "Updated current messages: ${messages.size}")
-                    }
-                } else {
-                    Log.e(TAG, "Failed to send image message")
-                    _errorMessage.value = "Failed to send image message"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error sending image message", e)
-                _errorMessage.value = "Error sending image message: ${e.message}"
-            } finally {
-                Log.d(TAG, "Setting loading to false after image sending")
-                _isLoading.value = false
-            }
+            AppEventChannel.sendEvent(AppEvent.ShowError("Image sending not implemented yet."))
         }
     }
 
@@ -186,12 +160,8 @@ class ChatViewModel(
         }
     }
 
-    fun sendMessage(content: String, receiverId: String) {
-        Log.d(TAG, "sendMessage() called - content: '$content', receiverId: $receiverId")
-        if (content.trim().isEmpty()) {
-            Log.d(TAG, "Message content is empty, returning")
-            return
-        }
+    fun sendMessage(content: MessageContent, receiverId: String) {
+
         
         viewModelScope.launch {
             try {
@@ -202,15 +172,8 @@ class ChatViewModel(
                 val senderId = userRepository.getUserId()
                 Log.d(TAG, "Sender ID: $senderId")
                 
-                val request = SendMessageRequest(
-                    senderId = senderId,
-                    receiverId = receiverId,
-                    content = content.trim(),
-                    messageType = MessageType.TEXT
-                )
-                
                 Log.d(TAG, "Calling chatRepository.sendMessage()")
-                val success = chatRepository.sendMessage(request)
+                val success = chatRepository.sendMessage(content, receiverId)
                 
                 if (success) {
                     Log.d(TAG, "Message sent successfully")
@@ -316,11 +279,10 @@ class ChatViewModel(
                 conversationId = "conv_${currentUserId}_user4_${System.currentTimeMillis()}",
                 participants = listOf(currentUserId, "user4"),
                 lastMessage = ChatMessage(
-                    messageId = "debug_msg_${System.currentTimeMillis()}",
                     senderId = "user4",
                     senderName = "Debug User",
                     receiverId = currentUserId,
-                    content = "This is a debug conversation",
+                    content = TODO(),
                     timestamp = System.currentTimeMillis(),
                     isRead = false
                 ),
@@ -344,11 +306,10 @@ class ChatViewModel(
                 Log.d(TAG, "Adding debug message to conversation: $currentConversationId")
                 val currentUserId = getCurrentUserId()
                 val debugMessage = ChatMessage(
-                    messageId = "debug_msg_${System.currentTimeMillis()}",
                     senderId = "user2",
                     senderName = "Debug Sender",
                     receiverId = currentUserId,
-                    content = "This is a debug message sent at ${System.currentTimeMillis()}",
+                    content = TODO(),
                     timestamp = System.currentTimeMillis(),
                     isRead = false
                 )
@@ -381,7 +342,7 @@ class ChatViewModel(
         Log.d(TAG, "resetConversations() called")
         viewModelScope.launch {
             try {
-                (chatRepository as? com.bluebridgeapp.bluebridge.data.repository.ChatRepositoryImpl)?.resetConversations()
+                chatRepository.resetConversations()
                 _conversations.value = emptyList()
                 Log.d(TAG, "Conversations reset to empty")
             } catch (e: Exception) {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,8 +51,10 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
+import com.bluebridgeapp.bluebridge.ui.navigation.Routes
 import com.bluebridgeapp.bluebridge.viewmodels.UserViewModel
 import com.bluebridgeapp.bluebridge.viewmodels.WellViewModel
 import kotlinx.coroutines.launch
@@ -60,7 +63,11 @@ import java.io.ByteArrayOutputStream
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
+fun DebugScreen(
+    userViewModel: UserViewModel, 
+    wellViewModel: WellViewModel,
+    navController: NavController? = null
+) {
     var username by remember { mutableStateOf("") }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var wellImages by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
@@ -364,6 +371,30 @@ fun DebugScreen(userViewModel: UserViewModel, wellViewModel: WellViewModel) {
                 }
 
 
+            }
+        }
+
+        // FCM Debug section
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "FCM Image Chunks Debug")
+                
+                Button(
+                    onClick = {
+                        navController?.navigate(Routes.NOTIFICATION_DEBUG_SCREEN)
+                    },
+                    enabled = navController != null
+                ) {
+                    Icon(Icons.Default.Notifications, contentDescription = null)
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(8.dp))
+                    Text("Test FCM Image Chunks")
+                }
             }
         }
 

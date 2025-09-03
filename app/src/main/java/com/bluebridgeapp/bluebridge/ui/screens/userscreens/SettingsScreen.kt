@@ -193,6 +193,7 @@ fun SettingsScreen(
                     onClick = {
                         if (currentUserRole > guestRole) {
                             showNotificationPermissionDialog = true
+
                         } else {
                             coroutineScope.launch {
                                 AppEventChannel.sendEvent(AppEvent.ShowInfo(context.getString(R.string.need_to_be_registered_to_receive_notifications)))

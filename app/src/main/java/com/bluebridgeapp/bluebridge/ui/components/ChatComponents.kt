@@ -1,9 +1,21 @@
 package com.bluebridgeapp.bluebridge.ui.components
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -12,14 +24,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.AudioFile
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,9 +60,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bluebridgeapp.bluebridge.data.model.ChatConversation
 import com.bluebridgeapp.bluebridge.data.model.ChatMessage
+import com.bluebridgeapp.bluebridge.data.model.MessageContent
+import com.bluebridgeapp.bluebridge.data.model.MediaType
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ChatErrorCard(
@@ -111,7 +144,7 @@ fun ConversationsListView(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    Icons.Default.Chat,
+                    Icons.AutoMirrored.Filled.Chat,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -206,7 +239,7 @@ fun ConversationItem(
                 
                 lastMessage?.let { message ->
                     Text(
-                        text = message.content,
+                        text = formatMessagePreview(message.content),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -255,11 +288,14 @@ fun ChatConversationView(
     onMessageInputChange: (String) -> Unit,
     onSendMessage: (String) -> Unit,
     onSendImage: () -> Unit,
+    onSendVideo: () -> Unit,
+    onSendAudio: () -> Unit,
+    onSendFile: () -> Unit,
     currentUserId: String,
     isLoading: Boolean,
     conversationTitle: String = "Chat"
 ) {
-    Log.d("ChatComponents", "ChatConversationView composable called - messages: ${messages.size}, isLoading: $isLoading, conversationTitle: $conversationTitle")
+    //Log.d("ChatComponents", "ChatConversationView composable called - messages: ${messages.size}, isLoading: $isLoading, conversationTitle: $conversationTitle")
     
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
@@ -317,10 +353,10 @@ fun ChatConversationView(
                     listState.animateScrollToItem(0)
                 }
             },
-            onSendImage = {
-                Log.d("ChatComponents", "Send image clicked")
-                // This will be handled by the parent component
-            },
+            onSendImage = onSendImage,
+            onSendVideo = onSendVideo,
+            onSendAudio = onSendAudio,
+            onSendFile = onSendFile,
             isLoading = isLoading
         )
     }
@@ -376,41 +412,21 @@ fun MessageGroup(
                 Column(
                     modifier = Modifier.padding(12.dp)
                 ) {
-                    if (message.messageType == com.bluebridgeapp.bluebridge.data.model.MessageType.IMAGE) {
-                        // Display image message
-                        message.imageUri?.let { imageUri ->
-                            // For now, show a placeholder for images
-                            // In a real implementation, you'd load the image using Coil or similar
-                            Card(
-                                modifier = Modifier.widthIn(max = 200.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(8.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Image,
-                                        contentDescription = "Image",
-                                        modifier = Modifier.size(48.dp),
-                                        tint = textColor
-                                    )
-                                    Text(
-                                        text = "Image",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = textColor
-                                    )
-                                }
-                            }
+                    // Display message content based on type
+                    when (message.content) {
+                        is MessageContent.Text -> {
+                            Text(
+                                text = formatMessageContent(message.content.text),
+                                color = textColor,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
-                    } else {
-                        // Display text message
-                        Text(
-                            text = formatMessageContent(message.content),
-                            color = textColor,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        is MessageContent.Media -> {
+                            MediaMessageContent(
+                                mediaContent = message.content,
+                                textColor = textColor
+                            )
+                        }
                     }
                     
                     if (showTimestamp) {
@@ -477,6 +493,60 @@ fun MessageGroup(
     }
 }
 
+@SuppressLint("DefaultLocale")
+@Composable
+fun MediaMessageContent(
+    mediaContent: MessageContent.Media,
+    textColor: androidx.compose.ui.graphics.Color
+) {
+    Card(
+        modifier = Modifier.widthIn(max = 200.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Icon based on media type
+            val icon = when (mediaContent.mediaType) {
+                MediaType.IMAGE -> Icons.Default.Image
+                MediaType.VIDEO -> Icons.Default.VideoFile
+                MediaType.AUDIO -> Icons.Default.AudioFile
+            }
+
+            Icon(
+                icon,
+                contentDescription = mediaContent.mediaType.name.lowercase().capitalize(),
+                modifier = Modifier.size(48.dp),
+                tint = textColor
+            )
+            
+            Text(
+                text = when (mediaContent.mediaType) {
+                    MediaType.IMAGE -> "Image"
+                    MediaType.VIDEO -> "Video"
+                    MediaType.AUDIO -> "Audio"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = textColor
+            )
+            
+            // Show file name if available
+            mediaContent.base64.substringAfterLast("/").takeIf { it.isNotEmpty() }?.let { fileName ->
+                Text(
+                    text = fileName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
 private fun groupMessagesByTime(messages: List<ChatMessage>): List<List<ChatMessage>> {
     if (messages.isEmpty()) return emptyList()
     
@@ -507,9 +577,22 @@ private fun groupMessagesByTime(messages: List<ChatMessage>): List<List<ChatMess
     return groups
 }
 
-private fun formatMessageContent(content: String): String {
+private fun formatMessagePreview(content: MessageContent): String {
+    return when (content) {
+        is MessageContent.Text -> content.text
+        is MessageContent.Media -> {
+            when (content.mediaType) {
+                MediaType.IMAGE -> "📷 Image"
+                MediaType.VIDEO -> "🎥 Video"
+                MediaType.AUDIO -> "🎵 Audio"
+            }
+        }
+    }
+}
+
+private fun formatMessageContent(text: String): String {
     // Enhanced text formatting with commands
-    return content
+    return text
         .replace(Regex("\\*\\*(.*?)\\*\\*"), "**$1**") // Bold: **text**
         .replace(Regex("--(.*?)--"), "~~$1~~") // Strikethrough: --text--
         .replace(Regex(">(.*?)$"), "> $1") // Quote: >text
@@ -557,11 +640,21 @@ fun MessageItem(
             Column(
                 modifier = Modifier.padding(12.dp)
             ) {
-                Text(
-                    text = message.content,
-                    color = textColor,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                when (message.content) {
+                    is MessageContent.Text -> {
+                        Text(
+                            text = formatMessageContent(message.content.text),
+                            color = textColor,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    is MessageContent.Media -> {
+                        MediaMessageContent(
+                            mediaContent = message.content,
+                            textColor = textColor
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
@@ -581,6 +674,9 @@ fun MessageInputArea(
     onMessageInputChange: (String) -> Unit,
     onSendMessage: (String) -> Unit,
     onSendImage: () -> Unit,
+    onSendVideo: () -> Unit,
+    onSendAudio: () -> Unit,
+    onSendFile: () -> Unit,
     isLoading: Boolean
 ) {
     Log.d("ChatComponents", "MessageInputArea composable called - messageInput: '$messageInput', isLoading: $isLoading")
@@ -620,16 +716,54 @@ fun MessageInputArea(
                 
                 Spacer(modifier = Modifier.width(8.dp))
                 
-                // Image button
-                IconButton(
-                    onClick = { 
-                        Log.d("ChatComponents", "Image button clicked")
-                        onSendImage()
-                    },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.Image, contentDescription = "Send Image")
+                // Media buttons row
+                Column {
+                    // Image button
+                    IconButton(
+                        onClick = { 
+                            Log.d("ChatComponents", "Image button clicked")
+                            onSendImage()
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = "Send Image")
+                    }
+                    
+                    // Video button
+                    IconButton(
+                        onClick = { 
+                            Log.d("ChatComponents", "Video button clicked")
+                            onSendVideo()
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Default.VideoFile, contentDescription = "Send Video")
+                    }
+                    
+                    // Audio button
+                    IconButton(
+                        onClick = { 
+                            Log.d("ChatComponents", "Audio button clicked")
+                            onSendAudio()
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Default.AudioFile, contentDescription = "Send Audio")
+                    }
+                    
+                    // File button
+                    IconButton(
+                        onClick = { 
+                            Log.d("ChatComponents", "File button clicked")
+                            onSendFile()
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Default.Description, contentDescription = "Send File")
+                    }
                 }
+                
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 // Send button
                 FloatingActionButton(

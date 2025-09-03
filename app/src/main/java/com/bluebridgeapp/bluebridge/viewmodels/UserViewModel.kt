@@ -1,5 +1,6 @@
 package com.bluebridgeapp.bluebridge.viewmodels
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class UserViewModel(
-    private val repository: UserRepository
+    val repository: UserRepository
 ) : ViewModel() {
     // UI State
     private val _state = mutableStateOf<UiState<UserData>>(UiState.Empty)
@@ -236,9 +237,12 @@ class UserViewModel(
         viewModelScope.launch {
             try {
                 var token = repository.getNotificationToken()
+                Log.d("UserViewModel", "Firebase token: $token")
                 if (token.isNullOrEmpty()) {
                     token = getFirebaseToken()
+                    Log.d("UserViewModel", "Firebase token: $token")
                     if (token.isNullOrEmpty()) return@launch
+
                 }
                 repository.saveNotificationToken(token)
                 val email = repository.getUserEmail()
@@ -247,7 +251,9 @@ class UserViewModel(
                 if (email != null && authToken != null) {
                     repository.registerNotificationToken(userId, authToken, token)
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                Log.d("UserViewModel", "Failed to register for notifications")
+            }
         }
     }
     private fun unregisterFromNotifications() {

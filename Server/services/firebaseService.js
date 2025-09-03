@@ -159,12 +159,106 @@ const sendMulticastPushNotification = async (deviceTokens, title, body, data = {
         throw error;
     }
 };
+// Send image chunks via FCM
+const sendImageChunks = async (receiverToken, senderId, senderName, imageChunks, delayMs = 100) => {
+    if (!isInitialized && !initializeFirebase()) {
+        throw new Error('Firebase Admin SDK not initialized');
+    }
+
+    if (!receiverToken) {
+        throw new Error('Receiver token not provided');
+    }
+
+    const imageId = imageChunks[0]?.imageId || Date.now();
+    let successCount = 0;
+    let failureCount = 0;
+
+    console.log(`📤 Sending ${imageChunks.length} chunks for image ${imageId} to ${receiverToken.substring(0, 10)}...`);
+
+    for (let i = 0; i < imageChunks.length; i++) {
+        const chunk = imageChunks[i];
+
+        try {
+            const message = {
+                token: receiverToken,
+                data: {
+                    type: 'image_chunk',
+                    imageId: chunk.imageId.toString(),
+                    totalChunks: chunk.totalChunks.toString(),
+                    chunkIndex: chunk.chunkIndex.toString(),
+                    data: chunk.data,
+                    senderId: senderId,
+                    senderName: senderName,
+                    receiverId: 'receiver', // Will be set by the app
+                    timestamp: Date.now().toString()
+                },
+                android: {
+                    priority: 'high',
+                    notification: {
+                        title: 'Image transmission',
+                        body: `Image part ${chunk.chunkIndex + 1}/${chunk.totalChunks}`,
+                        sound: 'default',
+                        priority: 'high',
+                        channelId: 'default-channel'
+                    }
+                },
+                apns: {
+                    payload: {
+                        aps: {
+                            sound: 'default',
+                            badge: 1,
+                            contentAvailable: true
+                        }
+                    }
+                }
+            };
+
+            const response = await admin.messaging().send(message);
+            successCount++;
+            console.log(`✅ Chunk ${chunk.chunkIndex + 1}/${chunk.totalChunks} sent successfully`);
+
+            // Add delay between chunks to avoid rate limiting
+            if (i < imageChunks.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        } catch (error) {
+            failureCount++;
+            console.error(`❌ Failed to send chunk ${chunk.chunkIndex + 1}/${chunk.totalChunks}:`, error);
+        }
+    }
+
+    console.log(`📊 Image ${imageId} transmission complete: ${successCount} successful, ${failureCount} failed`);
+    return { successCount, failureCount, totalChunks: imageChunks.length };
+};
+
+// Send chat message via FCM (wrapper for sendPushNotification)
+const sendChatMessage = async (deviceToken, senderId, senderName, content, data = {}) => {
+    if (!isInitialized && !initializeFirebase()) {
+        throw new Error('Firebase Admin SDK not initialized');
+    }
+    // Merge chat-specific data
+    const messageData = {
+        type: 'chat_message',
+        senderId,
+        senderName,
+        content,
+        ...data
+    };
+    return await sendPushNotification(
+        deviceToken,
+        senderName,
+        content,
+        messageData
+    );
+};
 
 // Initialize Firebase on module load
 initializeFirebase();
 
 module.exports = {
+    sendImageChunks,
     sendPushNotification,
     sendMulticastPushNotification,
-    initializeFirebase
+    initializeFirebase,
+    sendChatMessage
 };

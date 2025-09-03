@@ -12,6 +12,7 @@ import com.bluebridgeapp.bluebridge.data.model.LoginResponse
 import com.bluebridgeapp.bluebridge.data.model.NearbyUsersRequest
 import com.bluebridgeapp.bluebridge.data.model.NearbyUsersResponse
 import com.bluebridgeapp.bluebridge.data.model.NotificationTokenRequest
+import com.bluebridgeapp.bluebridge.data.model.PostMessageRequest
 import com.bluebridgeapp.bluebridge.data.model.RegisterRequest
 import com.bluebridgeapp.bluebridge.data.model.RegisterResponse
 import com.bluebridgeapp.bluebridge.data.model.ServerStatusResponse
@@ -24,8 +25,6 @@ import com.bluebridgeapp.bluebridge.data.model.WeatherResponse
 import com.bluebridgeapp.bluebridge.data.model.WellData
 import com.bluebridgeapp.bluebridge.data.model.WellStatsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellsResponse
-import com.bluebridgeapp.bluebridge.data.model.ImageData
-import com.bluebridgeapp.bluebridge.data.model.SendMessageRequest
 import com.bluebridgeapp.bluebridge.data.model.WellDetailsResponse
 import com.bluebridgeapp.bluebridge.data.model.WellImageResponse
 import okhttp3.MultipartBody
@@ -214,10 +213,8 @@ interface ServerApi {
         @Body bugReport: BugReportRequest
     ): Response<BasicResponse>
 
-    @POST("api/chat/support")
-    suspend fun sendMessage(
-        @Body message: SendMessageRequest
-    ): Response<BasicResponse>// For now the server will just respond with a BasicResponseto notify the app the message has been recieved
+    @POST("api/chats")
+    suspend fun sendMessage(@Body requestBody: PostMessageRequest): Response<Unit>
 
 
 }

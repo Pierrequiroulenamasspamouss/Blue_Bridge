@@ -391,7 +391,30 @@ fun NavigationGraph(
             DebugScreen(
                 wellViewModel = wellViewModel,
                 userViewModel = userViewModel,
+                navController = navController
             )
+        }
+
+        // Notification Debug Screen
+        composable(Routes.NOTIFICATION_DEBUG_SCREEN) {
+            val userState = userViewModel.state.value
+            val userData = (userState as? UiState.Success<UserData>)?.data
+            
+            // Check if user is guest
+            if (userData == null || userData.role == "guest") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.LOGIN_SCREEN) {
+                        popUpTo(Routes.NOTIFICATION_DEBUG_SCREEN) { inclusive = true }
+                    }
+                }
+                LoadingScreen()
+            } else {
+                com.bluebridgeapp.bluebridge.ui.screens.miscscreens.NotificationDebugScreen(
+                    chatRepository = chatViewModel.chatRepository,
+                    userRepository = userViewModel.repository,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // Weather Screen

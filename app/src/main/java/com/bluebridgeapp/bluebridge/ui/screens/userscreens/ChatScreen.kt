@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AudioFile
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.bluebridgeapp.bluebridge.data.model.MessageContent
+import com.bluebridgeapp.bluebridge.data.model.MediaType
 import com.bluebridgeapp.bluebridge.ui.components.ChatConversationView
 import com.bluebridgeapp.bluebridge.ui.components.ChatErrorCard
 import com.bluebridgeapp.bluebridge.ui.components.DebugChatInfo
@@ -75,14 +81,16 @@ fun ChatScreen(
     var showSearchDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var searchMode by remember { mutableStateOf(ChatViewModel.SearchMode.PARTIAL) }
+    var showMediaOptions by remember { mutableStateOf(false) }
     val conversation = conversations.find { it.conversationId == conversationId }
     val otherParticipantId = conversation?.participants?.find { it != currentUserId }
     val scope = rememberCoroutineScope()
+    
     LaunchedEffect(Unit) {
         scope.launch { currentUserId = chatViewModel.getCurrentUserId() }
     }
 
-    // Image picker launcher
+    // Media picker launchers
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -93,6 +101,42 @@ fun ChatScreen(
             }
         }
     }
+    
+    val videoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { videoUri ->
+            Log.d(TAG, "Video selected: $videoUri")
+            otherParticipantId?.let { receiverId ->
+                // TODO: Implement video sending
+                Log.d(TAG, "Video sending not yet implemented")
+            }
+        }
+    }
+    
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { audioUri ->
+            Log.d(TAG, "Audio selected: $audioUri")
+            otherParticipantId?.let { receiverId ->
+                // TODO: Implement audio sending
+                Log.d(TAG, "Audio sending not yet implemented")
+            }
+        }
+    }
+    
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { fileUri ->
+            Log.d(TAG, "File selected: $fileUri")
+            otherParticipantId?.let { receiverId ->
+                // TODO: Implement file sending
+                Log.d(TAG, "File sending not yet implemented")
+            }
+        }
+    }
 
     Log.d(TAG, "ChatScreen state - conversations: ${conversations.size}, currentMessages: ${currentMessages.size}, isLoading: $isLoading")
 
@@ -100,6 +144,7 @@ fun ChatScreen(
         Log.d(TAG, "LaunchedEffect triggered - loading messages for conversation: $conversationId")
         chatViewModel.loadMessages(conversationId)
     }
+    
     fun formatTimestamp(timestamp: Long): String {
         val date = Date(timestamp)
         val now = Date()
@@ -200,12 +245,24 @@ fun ChatScreen(
                 Log.d(TAG, "Send message clicked with content: '$content'")
                 otherParticipantId?.let { receiverId ->
                     Log.d(TAG, "Sending message to receiverId: $receiverId")
-                    chatViewModel.sendMessage(content, receiverId)
+                    chatViewModel.sendMessage(MessageContent.Text(content), receiverId)
                 }
             },
             onSendImage = {
                 Log.d(TAG, "Send image clicked")
                 imagePickerLauncher.launch("image/*")
+            },
+            onSendVideo = {
+                Log.d(TAG, "Send video clicked")
+                videoPickerLauncher.launch("video/*")
+            },
+            onSendAudio = {
+                Log.d(TAG, "Send audio clicked")
+                audioPickerLauncher.launch("audio/*")
+            },
+            onSendFile = {
+                Log.d(TAG, "Send file clicked")
+                filePickerLauncher.launch("*/*")
             },
             currentUserId = currentUserId,
             isLoading = isLoading,
@@ -374,7 +431,14 @@ fun ChatScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = message.content,
+                                        text = when (message.content) {
+                                            is MessageContent.Text -> message.content.text
+                                            is MessageContent.Media -> when (message.content.mediaType) {
+                                                MediaType.IMAGE -> "📷 Image"
+                                                MediaType.VIDEO -> "🎥 Video"
+                                                MediaType.AUDIO -> "🎵 Audio"
+                                            }
+                                        },
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
