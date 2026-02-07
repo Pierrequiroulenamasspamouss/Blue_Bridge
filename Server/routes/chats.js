@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
 async function getReceiverFCMToken(receiverId) {
     try {
         console.log(`🔍 Looking for FCM token for user: ${receiverId}`);
-        
+        receiverId = (receiverId || "").trim().replace(/\0/g, ""); //cleaning the entry from nulls
         // Essayer de récupérer depuis la base de données
         const fcmToken = await db.getUserFCMToken(receiverId);
         if (fcmToken) {
@@ -108,7 +108,7 @@ async function getReceiverFCMToken(receiverId) {
         // Fallback pour les tests si la base de données n'est pas disponible
         if (receiverId === "test_receiver") {
             console.log(`✅ Using fallback FCM token for test_receiver`);
-            return "d9MrrVpSRL6ou_-Oq6FmW_:APA91bFnnfuJ25QyYuhDXYFsoI9iv-6nI3x7pXdqI0rrvdRKA74vtsUw5gyVy85uvOg2qggEq770K-F_WhqMEy_fd_HevEdLzTjGaYOZRRfj3Q75gyoOzqg";
+            return "eCHHgsxaTGy82Ey-Tl-soX:APA91bF-y2w_fYo83kXpuW5WRGbnaSdGyb-Y4CWXSr9wWxijo2rn2ON0WdZWQbufrxWHXjm8gfsTvyG8xt6PFGoy67QavA5qFyrP1YG4XyvvUEP_xVSrlyc";
         }
         
         console.log(`❌ No FCM token found for user: ${receiverId}`);
@@ -119,7 +119,7 @@ async function getReceiverFCMToken(receiverId) {
         // Fallback pour les tests en cas d'erreur de base de données
         if (receiverId === "test_receiver") {
             console.log(`✅ Using fallback FCM token for test_receiver (after error)`);
-            return "d9MrrVpSRL6ou_-Oq6FmW_:APA91bFnnfuJ25QyYuhDXYFsoI9iv-6nI3x7pXdqI0rrvdRKA74vtsUw5gyVy85uvOg2qggEq770K-F_WhqMEy_fd_HevEdLzTjGaYOZRRfj3Q75gyoOzqg";
+            return "eCHHgsxaTGy82Ey-Tl-soX:APA91bF-y2w_fYo83kXpuW5WRGbnaSdGyb-Y4CWXSr9wWxijo2rn2ON0WdZWQbufrxWHXjm8gfsTvyG8xt6PFGoy67QavA5qFyrP1YG4XyvvUEP_xVSrlyc";
         }
         
         return null;
@@ -130,7 +130,7 @@ async function getReceiverFCMToken(receiverId) {
 async function getSenderName(senderId) {
     try {
         console.log(`🔍 Looking for sender name for user: ${senderId}`);
-        
+
         // Essayer de récupérer depuis la base de données
         const user = await db.getUserById(senderId);
         if (user) {
@@ -140,7 +140,7 @@ async function getSenderName(senderId) {
         }
         
         // Fallback pour les tests si la base de données n'est pas disponible
-        if (senderId === "bba26029-1c2f-4bae-9359-4e4e3d327fee") {
+        if (senderId === "1cd14acb-bbf1-4d45-8cc9-1a1e8d13d525") {
             console.log(`✅ Using fallback sender name: Test User`);
             return "Test User";
         }
@@ -151,7 +151,7 @@ async function getSenderName(senderId) {
         console.error('Error getting sender name:', error);
         
         // Fallback pour les tests en cas d'erreur de base de données
-        if (senderId === "bba26029-1c2f-4bae-9359-4e4e3d327fee") {
+        if (senderId === "1cd14acb-bbf1-4d45-8cc9-1a1e8d13d525") {
             console.log(`✅ Using fallback sender name: Test User (after error)`);
             return "Test User";
         }

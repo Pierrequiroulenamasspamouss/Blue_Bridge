@@ -1,7 +1,6 @@
 package com.bluebridgeapp.bluebridge.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bluebridgeapp.bluebridge.data.interfaces.ChatRepository
@@ -9,107 +8,206 @@ import com.bluebridgeapp.bluebridge.data.interfaces.UserRepository
 import com.bluebridgeapp.bluebridge.data.model.ChatMessage
 import com.bluebridgeapp.bluebridge.data.model.ChatConversation
 import com.bluebridgeapp.bluebridge.data.model.MessageContent
-import com.bluebridgeapp.bluebridge.data.model.MessageType
 import com.bluebridgeapp.bluebridge.events.AppEvent
 import com.bluebridgeapp.bluebridge.events.AppEventChannel
-import com.bluebridgeapp.bluebridge.events.AppEventChannel.sendEvent
-import kotlinx.coroutines.CoroutineScope
+import com.bluebridgeapp.bluebridge.events.AppEventHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class ChatViewModel(
     val chatRepository: ChatRepository,
     private val userRepository: UserRepository
-) : ViewModel() {
-    
+) : ViewModel(), AppEventHandler.ChatEventListener {
+
     private val TAG = "ChatViewModel"
-    
+
+    // State flows
     private val _conversations = MutableStateFlow<List<ChatConversation>>(emptyList())
-    val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
-    
     private val _currentMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val currentMessages: StateFlow<List<ChatMessage>> = _currentMessages.asStateFlow()
-    
-    private val _currentConversationId = mutableStateOf<String?>(null)
-    val currentConversationId = _currentConversationId
-    
-    private val _isLoading = mutableStateOf(false)
-    val isLoading = _isLoading
-    
-    private val _errorMessage = mutableStateOf<String?>(null)
-    val errorMessage = _errorMessage
-    
-    private val _messageInput = mutableStateOf("")
-    val messageInput = _messageInput
-
-    // Search functionality
-    private val _searchQuery = mutableStateOf("")
-    val searchQuery = _searchQuery
-    
     private val _searchResults = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val searchResults: StateFlow<List<ChatMessage>> = _searchResults.asStateFlow()
-    
-    private val _isSearching = mutableStateOf(false)
-    val isSearching = _isSearching
-    
-    private val _searchMode = mutableStateOf(SearchMode.PARTIAL)
-    val searchMode = _searchMode
 
+    // Mutable states
+    private val _currentConversationId = MutableStateFlow<String?>(null)
+    private val _isLoading = MutableStateFlow(false)
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _messageInput = MutableStateFlow("")
+    private val _searchQuery = MutableStateFlow("")
+    private val _isSearching = MutableStateFlow(false)
+    private val _searchMode = MutableStateFlow(SearchMode.PARTIAL)
+
+    // Public state flows
+    val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
+    val currentMessages: StateFlow<List<ChatMessage>> = _currentMessages.asStateFlow()
+    val searchResults: StateFlow<List<ChatMessage>> = _searchResults.asStateFlow()
+    val currentConversationId: StateFlow<String?> = _currentConversationId.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    val messageInput: StateFlow<String> = _messageInput.asStateFlow()
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+    val searchMode: StateFlow<SearchMode> = _searchMode.asStateFlow()
+
+    companion object {
+        val currentChatPartnerId = MutableStateFlow<String?>(null)
+    }
+
+    // In ChatViewModel init
     init {
         Log.d(TAG, "ChatViewModel initialized")
+        AppEventChannel.setChatEventListener(this)
         loadConversations()
-    }
 
-    enum class SearchMode {
-        EXACT, PARTIAL
-    }
-
-    fun updateSearchQuery(query: String) {
-        Log.d(TAG, "updateSearchQuery() called: '$query'")
-        _searchQuery.value = query
-        if (query.isNotEmpty()) {
-            performSearch(query, _searchMode.value)
-        } else {
-            _searchResults.value = emptyList()
-        }
-    }
-
-    fun updateSearchMode(mode: SearchMode) {
-        Log.d(TAG, "updateSearchMode() called: $mode")
-        _searchMode.value = mode
-        if (_searchQuery.value.isNotEmpty()) {
-            performSearch(_searchQuery.value, mode)
-        }
-    }
-
-    fun performSearch(query: String, mode: SearchMode) {
-        Log.d(TAG, "performSearch() called - query: '$query', mode: $mode")
+        // Listen for general app events with proper error handling
         viewModelScope.launch {
-            try {
-                _isSearching.value = true
-                val results = chatRepository.searchMessages(query, mode)
-                _searchResults.value = results
-                Log.d(TAG, "Search completed with ${results.size} results")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error performing search", e)
-                _errorMessage.value = "Search failed: ${e.message}"
-            } finally {
-                _isSearching.value = false
+            AppEventChannel.events.collect { event ->
+                Log.d(TAG, "AppEvent received: ${event::class.simpleName}")
+                when (event) {
+                    is AppEvent.NewMessageReceived -> {
+                        Log.d(TAG, "NewMessageReceived for conversation: ${event.conversationId}")
+                        onNewMessageReceived(event.conversationId)
+                    }
+                    is AppEvent.RefreshAllConversations -> {
+                        Log.d(TAG, "RefreshAllConversations event received")
+                        refreshAllConversations()
+                    }
+                    else -> {
+                        // Ignore other events
+                    }
+                }
+            }
+        }
+    }
+    // Improved event handlers
+    override fun onNewMessageReceived(conversationId: String) {
+        Log.d(TAG, "onNewMessageReceived: $conversationId")
+        viewModelScope.launch {
+            safeExecute {
+                // Refresh conversations first
+                refreshConversations()
+
+                // If this is the current conversation, refresh messages with a small delay
+                if (_currentConversationId.value == conversationId) {
+                    kotlinx.coroutines.delay(100L) // Allow repository to update
+                    refreshMessages(conversationId)
+                    Log.d(TAG, "Messages refreshed for current conversation: $conversationId")
+                } else {
+                    Log.d(TAG, "Message received for different conversation: $conversationId")
+                }
             }
         }
     }
 
+    override fun onConversationUpdated(conversationId: String) {
+        Log.d(TAG, "onConversationUpdated: $conversationId")
+        viewModelScope.launch {
+            refreshConversations()
+        }
+    }
+
+    override fun onRefreshAllConversations() {
+        Log.d(TAG, "onRefreshAllConversations")
+        refreshAllConversations()
+    }
+
+    private fun refreshAllConversations() {
+        viewModelScope.launch {
+            safeExecute {
+                refreshConversations()
+                // Also refresh current messages if we're in a conversation
+                _currentConversationId.value?.let { conversationId ->
+                    kotlinx.coroutines.delay(50L)
+                    refreshMessages(conversationId)
+                }
+            }
+        }
+    }
+
+    // Improved load methods with forced refresh
+    fun loadConversations() {
+        viewModelScope.launch {
+            safeExecute("Failed to load conversations") {
+                _isLoading.value = true
+                // Force refresh by clearing cache first if needed
+                refreshConversations()
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun loadMessages(conversationId: String) {
+        viewModelScope.launch {
+            safeExecute("Failed to load messages") {
+                _currentConversationId.value = conversationId
+                currentChatPartnerId.value = getChatPartnerId(conversationId)
+                refreshMessages(conversationId)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        AppEventChannel.removeChatEventListener()
+        Log.d(TAG, "ChatViewModel cleared")
+        super.onCleared()
+    }
+
+    enum class SearchMode { EXACT, PARTIAL }
+
+    // Search functionality
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        if (query.isNotEmpty()) performSearch(query, _searchMode.value)
+        else _searchResults.value = emptyList()
+    }
+
+    fun updateSearchMode(mode: SearchMode) {
+        _searchMode.value = mode
+        if (_searchQuery.value.isNotEmpty()) performSearch(_searchQuery.value, mode)
+    }
+
+    private fun performSearch(query: String, mode: SearchMode) {
+        viewModelScope.launch {
+            safeExecute("Search failed") {
+                _isSearching.value = true
+                _searchResults.value = chatRepository.searchMessages(query, mode)
+                Log.d(TAG, "Search found ${_searchResults.value.size} results")
+            }
+            _isSearching.value = false
+        }
+    }
+
     fun clearSearch() {
-        Log.d(TAG, "clearSearch() called")
         _searchQuery.value = ""
         _searchResults.value = emptyList()
         _isSearching.value = false
+    }
+
+    fun sendMessage(content: MessageContent, receiverId: String) {
+        viewModelScope.launch {
+            safeExecute("Failed to send message") {
+                _isLoading.value = true
+
+                val senderId = userRepository.getUserId()
+                val conversationId = chatRepository.getConversationId(senderId, receiverId)
+
+                // Ensure conversation exists
+                ensureConversationExists(conversationId, senderId, receiverId)
+
+                // Send message
+                val success = chatRepository.sendMessage(content, receiverId)
+
+                if (success) {
+                    _messageInput.value = ""
+                    refreshMessages(conversationId)
+                    refreshConversations()
+                } else {
+                    throw Exception("Message sending failed")
+                }
+            }
+            _isLoading.value = false
+        }
     }
 
     fun sendImageMessage(imageUri: String, receiverId: String) {
@@ -118,261 +216,120 @@ class ChatViewModel(
         }
     }
 
-    fun loadConversations() {
-        Log.d(TAG, "loadConversations() called")
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "Setting loading to true")
-                _isLoading.value = true
-                _errorMessage.value = null
-                
-                Log.d(TAG, "Calling chatRepository.getConversations()")
-                // Always reload from repository to get latest data
-                val initialConversations = chatRepository.getConversations().first()
-                Log.d(TAG, "Received initial conversations: ${initialConversations.size}")
-                _conversations.value = initialConversations
-                
-                Log.d(TAG, "Setting loading to false")
-                _isLoading.value = false
-                
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading conversations", e)
-                _errorMessage.value = "Failed to load conversations: ${e.message}"
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun loadMessages(conversationId: String) {
-        Log.d(TAG, "loadMessages() called for conversationId: $conversationId")
-        viewModelScope.launch {
-            try {
-                _currentConversationId.value = conversationId
-                Log.d(TAG, "Calling chatRepository.getMessages()")
-                // Always reload from repository to get latest messages
-                val initialMessages = chatRepository.getMessages(conversationId).first()
-                Log.d(TAG, "Received initial messages: ${initialMessages.size}")
-                _currentMessages.value = initialMessages
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading messages", e)
-                _errorMessage.value = "Failed to load messages: ${e.message}"
-            }
-        }
-    }
-
-    fun sendMessage(content: MessageContent, receiverId: String) {
-
-        
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "Setting loading to true for message sending")
-                _isLoading.value = true
-                _errorMessage.value = null
-                
-                val senderId = userRepository.getUserId()
-                Log.d(TAG, "Sender ID: $senderId")
-                
-                Log.d(TAG, "Calling chatRepository.sendMessage()")
-                val success = chatRepository.sendMessage(content, receiverId)
-                
-                if (success) {
-                    Log.d(TAG, "Message sent successfully")
-                    _messageInput.value = ""
-                    
-                    // Reload messages for current conversation to show the new message
-                    val currentConversationId = _currentConversationId.value
-                    if (currentConversationId != null) {
-                        Log.d(TAG, "Reloading messages for current conversation: $currentConversationId")
-                        val messages = chatRepository.getMessages(currentConversationId).first()
-                        _currentMessages.value = messages
-                        Log.d(TAG, "Updated current messages: ${messages.size}")
-                    }
-                } else {
-                    Log.e(TAG, "Failed to send message")
-                    _errorMessage.value = "Failed to send message"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error sending message", e)
-                _errorMessage.value = "Error sending message: ${e.message}"
-            } finally {
-                Log.d(TAG, "Setting loading to false after message sending")
-                _isLoading.value = false
-            }
-        }
-    }
-
+    // Utility functions
     fun updateMessageInput(input: String) {
-        Log.d(TAG, "updateMessageInput() called: '$input'")
         _messageInput.value = input
+    }
+    suspend fun getConversationId(currentUserId: String, userId: String): String {
+        return chatRepository.getConversationId(currentUserId, userId)
+    }
+
+    // Add this method to set error messages
+    fun setError(message: String) {
+        _errorMessage.value = message
     }
 
     fun clearError() {
-        Log.d(TAG, "clearError() called")
         _errorMessage.value = null
     }
 
     fun markMessageAsRead(messageId: String) {
-        Log.d(TAG, "markMessageAsRead() called for messageId: $messageId")
         viewModelScope.launch {
-            try {
-                val success = chatRepository.markMessageAsRead(messageId)
-                Log.d(TAG, "Message marked as read: $success")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error marking message as read", e)
-            }
+            safeExecute { chatRepository.markMessageAsRead(messageId) }
         }
     }
 
     suspend fun getConversationWithUser(userId: String): ChatConversation? {
-        Log.d(TAG, "getConversationWithUser() called for userId: $userId")
         val currentUserId = userRepository.getUserId()
-        val conversation = conversations.value.find { conversation ->
-            conversation.participants.contains(userId) && 
-            conversation.participants.contains(currentUserId)
-        }
-        Log.d(TAG, "Found conversation: ${conversation?.conversationId}")
-        return conversation
-    }
-
-    fun formatTimestamp(timestamp: Long): String {
-        val date = Date(timestamp)
-        val now = Date()
-        val diff = now.time - timestamp
-        
-        return when {
-            diff < 60000 -> "Just now" // Less than 1 minute
-            diff < 3600000 -> "${diff / 60000}m ago" // Less than 1 hour
-            diff < 86400000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(date) // Same day
-            else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(date) // Different day
+        return _conversations.value.find { conv ->
+            conv.participants.contains(userId) && conv.participants.contains(currentUserId)
         }
     }
 
-    suspend fun getCurrentUserId(): String {
-        Log.d(TAG, "getCurrentUserId() called")
-        return try {
-            // Get the actual user ID from the repository
-            userRepository.getUserId()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting current user ID", e)
-            "unknown_user"
-        }
-    }
+    suspend fun getCurrentUserId(): String = userRepository.getUserId()
 
-    suspend fun getCurrentUserName(): String {
-        Log.d(TAG, "getCurrentUserName() called")
-        return try {
-            val userName = userRepository.getUserData().first()?.firstName ?: "Unknown"
-            Log.d(TAG, "Current user name: $userName")
-            userName
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting current user name", e)
-            "Unknown"
-        }
-    }
-
-    // Debug functions for testing
-    fun addDebugConversation() {
-        Log.d(TAG, "addDebugConversation() called")
-        viewModelScope.launch {
-            val currentUserId = getCurrentUserId()
-            val newConversation = ChatConversation(
-                conversationId = "conv_${currentUserId}_user4_${System.currentTimeMillis()}",
-                participants = listOf(currentUserId, "user4"),
-                lastMessage = ChatMessage(
-                    senderId = "user4",
-                    senderName = "Debug User",
-                    receiverId = currentUserId,
-                    content = TODO(),
-                    timestamp = System.currentTimeMillis(),
-                    isRead = false
-                ),
-                unreadCount = 1,
-                lastActivity = System.currentTimeMillis()
-            )
-            
-            Log.d(TAG, "Adding debug conversation: ${newConversation.conversationId}")
-            val currentConversations = _conversations.value.toMutableList()
-            currentConversations.add(0, newConversation)
-            _conversations.value = currentConversations
-            Log.d(TAG, "Total conversations after adding debug: ${_conversations.value.size}")
-        }
-    }
-
-    fun addDebugMessage() {
-        Log.d(TAG, "addDebugMessage() called")
-        viewModelScope.launch {
-            val currentConversationId = _currentConversationId.value
-            if (currentConversationId != null) {
-                Log.d(TAG, "Adding debug message to conversation: $currentConversationId")
-                val currentUserId = getCurrentUserId()
-                val debugMessage = ChatMessage(
-                    senderId = "user2",
-                    senderName = "Debug Sender",
-                    receiverId = currentUserId,
-                    content = TODO(),
-                    timestamp = System.currentTimeMillis(),
-                    isRead = false
-                )
-                
-                // Add to current messages
-                val currentMessages = _currentMessages.value.toMutableList()
-                currentMessages.add(debugMessage)
-                _currentMessages.value = currentMessages
-                Log.d(TAG, "Total messages after adding debug: ${_currentMessages.value.size}")
-                
-                // Update conversation
-                val currentConversations = _conversations.value.toMutableList()
-                val conversationIndex = currentConversations.indexOfFirst { it.conversationId == currentConversationId }
-                if (conversationIndex != -1) {
-                    currentConversations[conversationIndex] = currentConversations[conversationIndex].copy(
-                        lastMessage = debugMessage,
-                        lastActivity = debugMessage.timestamp
-                    )
-                    _conversations.value = currentConversations
-                    Log.d(TAG, "Updated conversation with debug message")
-                }
-            } else {
-                Log.w(TAG, "No current conversation selected for debug message")
-            }
-        }
-    }
-
-    // Debug function to reset conversations to empty
     fun resetConversations() {
-        Log.d(TAG, "resetConversations() called")
         viewModelScope.launch {
-            try {
+            safeExecute {
                 chatRepository.resetConversations()
                 _conversations.value = emptyList()
-                Log.d(TAG, "Conversations reset to empty")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error resetting conversations", e)
             }
         }
     }
 
-    // Function to delete a conversation
     fun deleteConversation(conversationId: String) {
-        Log.d(TAG, "deleteConversation() called for conversationId: $conversationId")
         viewModelScope.launch {
-            try {
-                val success = chatRepository.deleteConversation(conversationId)
-                if (success) {
-                    Log.d(TAG, "Conversation deleted successfully")
-                    // If we're currently viewing this conversation, go back to list
+            safeExecute("Failed to delete conversation") {
+                if (chatRepository.deleteConversation(conversationId)) {
                     if (_currentConversationId.value == conversationId) {
                         _currentConversationId.value = null
                         _currentMessages.value = emptyList()
                     }
-                    loadConversations() // Necessary to remove the displaying of the newly deleted conversation
+                    loadConversations()
                 } else {
-                    Log.e(TAG, "Failed to delete conversation")
-                    _errorMessage.value = "Failed to delete conversation"
+                    throw Exception("Delete operation failed")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error deleting conversation", e)
-                _errorMessage.value = "Error deleting conversation: ${e.message}"
             }
         }
     }
-} 
+
+    // Private helper methods
+    private suspend fun ensureConversationExists(conversationId: String, user1Id: String, user2Id: String) {
+        // Check both repository and local state
+        val repositoryConversation = chatRepository.getConversation(listOf(user1Id, user2Id))
+        val stateConversation = _conversations.value.find { it.conversationId == conversationId }
+
+        if (repositoryConversation == null && stateConversation == null) {
+            Log.d(TAG, "Creating conversation: $conversationId")
+            chatRepository.createConversation(conversationId, user1Id, user2Id)
+            // Force immediate reload
+            refreshConversations()
+        }
+        _currentConversationId.value = conversationId
+    }
+    suspend fun createNewConversation(otherUserId: String): String? {
+        return try {
+            val currentUserId = userRepository.getUserId()
+            val conversationId = chatRepository.getConversationId(currentUserId, otherUserId)
+
+            // Create the conversation in the repository
+            chatRepository.createConversation(conversationId, currentUserId, otherUserId)
+
+            // Force reload conversations immediately
+            refreshConversations()
+
+            conversationId
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating conversation", e)
+            null
+        }
+    }
+    private suspend fun getChatPartnerId(conversationId: String): String? {
+        val currentUserId = userRepository.getUserId()
+        return _conversations.value
+            .find { it.conversationId == conversationId }
+            ?.participants?.find { it != currentUserId }
+    }
+
+    private suspend fun refreshConversations() {
+        _conversations.value = chatRepository.getConversations().first()
+    }
+
+    private suspend fun refreshMessages(conversationId: String) {
+        _currentMessages.value = chatRepository.getMessages(conversationId).first()
+    }
+
+    private suspend fun refreshCurrentMessages() {
+        _currentConversationId.value?.let { refreshMessages(it) }
+    }
+
+    private suspend fun <T> safeExecute(errorMessage: String? = null, block: suspend () -> T) {
+        try {
+            _errorMessage.value = null
+            block()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error: ${e.message}", e)
+            _errorMessage.value = errorMessage ?: "Error: ${e.message}"
+        }
+    }
+}

@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bluebridgeapp.bluebridge.ui.components.ConversationsListView
 import com.bluebridgeapp.bluebridge.ui.components.DebugChatInfo
+import com.bluebridgeapp.bluebridge.ui.components.NewChatScreen
 import com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel
 import kotlinx.coroutines.launch
 
@@ -23,16 +24,18 @@ fun ConversationsScreen(
     chatViewModel: ChatViewModel
 ) {
     val TAG = "ConversationsScreen"
-    
+
     Log.d(TAG, "ConversationsScreen composable called")
-    
+
     val conversations by chatViewModel.conversations.collectAsState()
-    val isLoading by chatViewModel.isLoading
-    val errorMessage by chatViewModel.errorMessage
+    val isLoading by chatViewModel.isLoading.collectAsState()
+    val errorMessage by chatViewModel.errorMessage.collectAsState()
     var currentUserId by remember { mutableStateOf("") }
     var showDebugInfo by remember { mutableStateOf(false) }
+    var showNewChatDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         scope.launch { currentUserId = chatViewModel.getCurrentUserId() }
     }
@@ -44,42 +47,24 @@ fun ConversationsScreen(
         chatViewModel.loadConversations()
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top App Bar
+    Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = {
-                Text(
-                    text = "Conversations",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            },
+            title = { Text("Conversations", style = MaterialTheme.typography.headlineSmall) },
             actions = {
-                IconButton(onClick = { 
-                    Log.d(TAG, "Add new chat button clicked")
-                    chatViewModel.addDebugConversation()
-                }) {
+                IconButton(onClick = { showNewChatDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = "New Chat")
                 }
             }
         )
 
-        // Error message
         errorMessage?.let { error ->
-            Log.d(TAG, "Showing error message: $error")
             com.bluebridgeapp.bluebridge.ui.components.ChatErrorCard(
                 error = error,
-                onDismiss = { 
-                    Log.d(TAG, "Error dismissed")
-                    chatViewModel.clearError() 
-                }
+                onDismiss = { chatViewModel.clearError() }
             )
         }
 
-        // Debug info (toggleable)
         if (showDebugInfo) {
-            Log.d(TAG, "Showing debug info")
             DebugChatInfo(
                 conversations = conversations,
                 currentMessages = emptyList(),
@@ -88,83 +73,76 @@ fun ConversationsScreen(
             )
         }
 
-        // Conversations list
-        Log.d(TAG, "Showing conversations list")
         ConversationsListView(
             conversations = conversations,
             onConversationClick = { conversation ->
-                Log.d(TAG, "Conversation clicked: ${conversation.conversationId}")
                 navController.navigate("chat_screen/${conversation.conversationId}")
             },
             currentUserId = currentUserId,
             isLoading = isLoading,
-            onAddNewChat = {
-                Log.d(TAG, "Add new chat clicked")
-                chatViewModel.addDebugConversation()
-            }
+            onAddNewChat = { showNewChatDialog = true }
         )
 
-        // Debug buttons - More prominent
+        // Debug buttons
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Debug Options",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Debug Options", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        onClick = { 
-                            Log.d(TAG, "Debug toggle button clicked")
-                            showDebugInfo = !showDebugInfo 
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Button(onClick = { showDebugInfo = !showDebugInfo }) {
                         Text(if (showDebugInfo) "Hide Debug" else "Show Debug")
                     }
-                    
-                    Button(
-                        onClick = { 
-                            Log.d(TAG, "Add debug conversation button clicked")
-                            chatViewModel.addDebugConversation() 
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Text("Add Test Chat")
-                    }
-                    
-                    Button(
-                        onClick = { 
-                            Log.d(TAG, "Reset conversations button clicked")
-                            chatViewModel.resetConversations() 
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
+                    Button(onClick = { chatViewModel.resetConversations() }) {
                         Text("Reset All")
                     }
                 }
             }
         }
     }
-}
 
+    // New Chat Dialog
+    if (showNewChatDialog) {
+        NewChatScreen(
+            onStartChat = { userId ->
+                Log.d(TAG, "Starting new chat with user: $userId")
+                scope.launch {
+                    try {
+                        // Check if conversation already exists
+                        val existingConversation = chatViewModel.getConversationWithUser(userId)
+                        if (existingConversation != null) {
+                            Log.d(TAG, "Conversation already exists: ${existingConversation.conversationId}")
+                            navController.navigate("chat_screen/${existingConversation.conversationId}")
+                        } else {
+                            // Create the conversation first
+                            val currentUserId = chatViewModel.getCurrentUserId()
+                            val conversationId = chatViewModel.createNewConversation(userId)
+
+                            if (conversationId != null) {
+                                Log.d(TAG, "New conversation created: $conversationId")
+
+                                // Small delay to ensure state is updated
+                                kotlinx.coroutines.delay(100L)
+
+                                // Force refresh conversations to include the new one
+                                chatViewModel.loadConversations()
+
+                                navController.navigate("chat_screen/$conversationId")
+                            } else {
+                                Log.e(TAG, "Failed to create conversation")
+                                chatViewModel.setError("Failed to create conversation")
+                            }
+                        }
+                        showNewChatDialog = false
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error creating new chat", e)
+                        chatViewModel.setError("Error creating chat: ${e.message}")
+                    }
+                }
+            },
+            onCancel = { showNewChatDialog = false }
+        )
+    }
+}

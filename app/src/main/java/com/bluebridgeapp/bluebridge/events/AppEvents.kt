@@ -8,6 +8,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class AppEventHandler(
@@ -21,7 +23,25 @@ class AppEventHandler(
     private val bugReportCategory = mutableStateOf("")
     private val bugReportExtra = mutableStateOf(emptyMap<String, String>())
 
+    // Chat event listener
+    private var chatEventListener: ChatEventListener? = null
+
+    interface ChatEventListener {
+        fun onNewMessageReceived(conversationId: String)
+        fun onConversationUpdated(conversationId: String)
+        fun onRefreshAllConversations()
+    }
+
+    fun setChatEventListener(listener: ChatEventListener) {
+        chatEventListener = listener
+    }
+
+    fun removeChatEventListener() {
+        chatEventListener = null
+    }
+
     fun handleEvent(event: AppEvent) {
+        Log.d("AppEventHandler", "Handling event: $event")
         when (event) {
             is AppEvent.ShowError -> showSnackbar(event.message)
             is AppEvent.ShowSuccess -> showSnackbar(event.message)
@@ -36,13 +56,24 @@ class AppEventHandler(
                 bugReportExtra.value = event.extra
                 showBugReportDialog.value = true
             }
+            is AppEvent.NewMessageReceived -> {
+                Log.d("AppEventHandler", "New message received for conversation: ${event.conversationId}")
+                chatEventListener?.onNewMessageReceived(event.conversationId)
+            }
+            is AppEvent.ConversationUpdated -> {
+                Log.d("AppEventHandler", "Conversation updated: ${event.conversationId}")
+                chatEventListener?.onConversationUpdated(event.conversationId)
+            }
+            is AppEvent.RefreshAllConversations -> {
+                Log.d("AppEventHandler", "Refreshing all conversations")
+                chatEventListener?.onRefreshAllConversations()
+            }
         }
     }
 
     private fun showSnackbar(message: String) {
         coroutineScope.launch {
             try {
-                // Clear previous snackbars to avoid overlap
                 snackbarHostState.currentSnackbarData?.dismiss()
                 snackbarHostState.showSnackbar(message)
             } catch (e: Exception) {
@@ -71,7 +102,6 @@ class AppEventHandler(
         Log.i("AppEventHandler", "Extra: ${bugReportExtra.value}")
 
         showSnackbar("Bug report submitted successfully!")
-
         resetBugReportFields()
     }
 

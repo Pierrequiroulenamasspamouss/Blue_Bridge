@@ -16,5 +16,7 @@ interface ChatRepository {
     suspend fun saveMessageLocally(message: ChatMessage)
     suspend fun getLocalMessages(conversationId: String): List<ChatMessage>
     suspend fun resetConversations()
+    fun getConversationId(senderId: String, receiverId: String): String
+    suspend fun createConversation(conversationId: String, user1Id: String, user2Id: String)
 
 }

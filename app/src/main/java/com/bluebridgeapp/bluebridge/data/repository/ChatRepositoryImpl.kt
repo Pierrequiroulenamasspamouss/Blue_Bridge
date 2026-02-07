@@ -1,225 +1,208 @@
 package com.bluebridgeapp.bluebridge.data.repository
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import com.bluebridgeapp.bluebridge.data.interfaces.ChatRepository
-import com.bluebridgeapp.bluebridge.data.model.MessageContent
-import com.bluebridgeapp.bluebridge.data.model.MediaType
 import com.bluebridgeapp.bluebridge.data.interfaces.UserRepository
-import com.bluebridgeapp.bluebridge.data.model.ChatMessage
-import com.bluebridgeapp.bluebridge.data.model.ChatConversation
-import com.bluebridgeapp.bluebridge.network.ServerApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import com.bluebridgeapp.bluebridge.data.local.ChatPreferences
-import com.bluebridgeapp.bluebridge.data.model.MessageType
-import com.bluebridgeapp.bluebridge.data.model.PostMessageData
-import com.bluebridgeapp.bluebridge.data.model.PostMessageRequest
-import com.bluebridgeapp.bluebridge.events.AppEvent
-import com.bluebridgeapp.bluebridge.events.AppEventChannel
-import com.bluebridgeapp.bluebridge.utils.ImageUtils
-import java.io.ByteArrayOutputStream
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
-import java.io.ByteArrayInputStream
+import com.bluebridgeapp.bluebridge.data.model.*
+import com.bluebridgeapp.bluebridge.network.ServerApi
+import com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 class ChatRepositoryImpl(
     private val api: ServerApi,
     private val userRepository: UserRepository,
     private val context: Context
 ) : ChatRepository {
-    
+
     private val TAG = "ChatRepository"
     private val chatPrefs = ChatPreferences(context)
-    private val conversations = MutableStateFlow<List<ChatConversation>>(emptyList())
-    private val messages = mutableMapOf<String, MutableStateFlow<List<ChatMessage>>>()
-    
-    init {
-        // Load persisted conversations
-        val loadedConvs = chatPrefs.loadConversations()
-        conversations.value = loadedConvs
-        // Load messages for each conversation
-        loadedConvs.forEach { conv ->
-            val msgs = chatPrefs.loadMessages(conv.conversationId)
-            messages[conv.conversationId] = MutableStateFlow(msgs)
-        }
-    }
+    private val viewModelScope = CoroutineScope(Dispatchers.IO)
+
+    // Cache flows with lazy initialization
+    private val _conversations = MutableStateFlow(chatPrefs.loadConversations())
+    private val _messagesCache = mutableMapOf<String, MutableStateFlow<List<ChatMessage>>>()
 
     override suspend fun sendMessage(content: MessageContent, receiverId: String): Boolean {
-        Log.d(TAG, "sendMessage() called - content: $content, receiverId: $receiverId")
-        
+        Log.d(TAG, "sendMessage: content=$content, receiverId=$receiverId")
+
         return try {
             val senderId = userRepository.getUserId()
-            Log.d(TAG, "Sender ID: $senderId")
-            
-            // Envoyer via l'API serveur
-            val requestBody = PostMessageRequest(PostMessageData(
-                senderId = senderId,
-                receiverId = receiverId,
-                content = content
-            ))
+            val conversationId = getConversationId(senderId, receiverId)
 
-            val response = api.sendMessage(requestBody)
-            val success = response.isSuccessful
-            
-            if (success) {
-                Log.d(TAG, "Message sent successfully via server API")
-                
-                // Créer le message pour le stockage local
-                val message = ChatMessage(
-                    senderId = senderId,
-                    senderName = userRepository.getUserData().first()?.firstName ?: "Unknown",
-                    receiverId = receiverId,
-                    content = content,
-                    timestamp = System.currentTimeMillis(),
-                    messageType = when (content) {
-                        is MessageContent.Text -> MessageType.TEXT
-                        is MessageContent.Media -> TODO()
-                    }
-                )
+            // Send via server API
+            val request = PostMessageRequest(PostMessageData(senderId, receiverId, content))
+            val response = api.sendMessage(request)
 
+            if (response.isSuccessful) {
+                // Create and save message locally
+                val message = createMessage(senderId, receiverId, content) // Suspend call
                 saveMessageLocally(message)
+                sendBroadcast(conversationId)
+                true
             } else {
-                Log.e(TAG, "Failed to send message via server API: ${response.code()}")
+                Log.e(TAG, "API failed: ${response.code()}")
+                false
             }
-            
-            Log.d(TAG, "Message sent successfully: $success")
-            success
-            
         } catch (e: Exception) {
             Log.e(TAG, "Error sending message", e)
             false
         }
     }
 
-    override suspend fun getConversations(): Flow<List<ChatConversation>> {
-        Log.d(TAG, "getConversations() called")
-        // Always reload from preferences
-        conversations.value = chatPrefs.loadConversations()
-        return conversations.asStateFlow()
+    override suspend fun createConversation(conversationId: String, user1Id: String, user2Id: String) {
+        val conversation = ChatConversation(
+            conversationId = conversationId,
+            participants = listOf(user1Id, user2Id)
+        )
+
+        // Add to current conversations
+        val currentConvs = chatPrefs.loadConversations().toMutableList()
+        if (currentConvs.none { it.conversationId == conversationId }) {
+            currentConvs.add(conversation)
+            chatPrefs.saveConversations(currentConvs)
+            _conversations.value = currentConvs
+            Log.d(TAG, "Conversation created: $conversationId")
+        }
     }
 
+    override suspend fun getConversations(): Flow<List<ChatConversation>> = _conversations.asStateFlow()
+
     override suspend fun getMessages(conversationId: String): Flow<List<ChatMessage>> {
-        Log.d(TAG, "getMessages() called for conversationId: $conversationId")
-        if (!messages.containsKey(conversationId)) {
-            val loaded = chatPrefs.loadMessages(conversationId)
-            messages[conversationId] = MutableStateFlow(loaded)
-        }
-        val messageFlow = messages[conversationId]!!
-        Log.d(TAG, "Returning message flow with ${messageFlow.value.size} messages")
-        return messageFlow.asStateFlow()
+        return getOrCreateMessageFlow(conversationId).asStateFlow()
     }
 
     override suspend fun markMessageAsRead(messageId: String): Boolean {
-        Log.d(TAG, "markMessageAsRead() called for messageId: $messageId")
-        try {
-            // TODO: Implement mark as read functionality
-            Log.d(TAG, "Message marked as read successfully")
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "Error marking message as read", e)
-            return false
-        }
+        // TODO: Implement mark as read functionality
+        return true
     }
 
     override suspend fun getConversation(participantIds: List<String>): ChatConversation? {
-        Log.d(TAG, "getConversation() called for participants: $participantIds")
-        val convs = chatPrefs.loadConversations()
-        val conversation = convs.find { conversation ->
-            conversation.participants.containsAll(participantIds) && 
-            participantIds.containsAll(conversation.participants)
+        return _conversations.value.find { conv ->
+            conv.participants.toSet() == participantIds.toSet()
         }
-        Log.d(TAG, "Found conversation: ${conversation?.conversationId}")
-        return conversation
     }
 
     override suspend fun saveMessageLocally(message: ChatMessage) {
-        Log.d(TAG, "saveMessageLocally() called for message: ${message.messageId}")
         val conversationId = getConversationId(message.senderId, message.receiverId)
-        Log.d(TAG, "Conversation ID: $conversationId")
-        if (!messages.containsKey(conversationId)) {
-            messages[conversationId] = MutableStateFlow(emptyList())
-        }
-        val currentMessages = messages[conversationId]!!.value.toMutableList()
+
+        println("💾 REPOSITORY: Saving message to conversation: $conversationId")
+
+        // Ensure conversation exists
+        createConversation(conversationId, message.senderId, message.receiverId)
+
+        // Get the message flow
+        val messageFlow = getOrCreateMessageFlow(conversationId)
+
+        // CRITICAL: Create a NEW list instance to force recomposition
+        val currentMessages = messageFlow.value.toMutableList()
         currentMessages.add(message)
-        messages[conversationId]!!.value = currentMessages.sortedBy { it.timestamp }
-        chatPrefs.saveMessages(conversationId, messages[conversationId]!!.value)
-        Log.d(TAG, "Message saved locally, total messages in conversation: ${messages[conversationId]!!.value.size}")
-        //TODO
-        //updateConversations(message, conversationId)
+        val updatedMessages = currentMessages.sortedBy { it.timestamp }
+
+        // Update the flow with a NEW instance
+        messageFlow.value = ArrayList(updatedMessages) // Force new instance
+
+        // Persist async
+        chatPrefs.saveMessages(conversationId, updatedMessages)
+        updateConversationLastMessage(conversationId, message)
+
+        println("✅ REPOSITORY: Message saved. New count: ${updatedMessages.size}")
     }
 
     override suspend fun getLocalMessages(conversationId: String): List<ChatMessage> {
-        Log.d(TAG, "getLocalMessages() called for conversationId: $conversationId")
-        val msgs = chatPrefs.loadMessages(conversationId)
-        Log.d(TAG, "Returning ${msgs.size} local messages")
-        return msgs
+        return chatPrefs.loadMessages(conversationId)
     }
 
     override suspend fun resetConversations() {
-        Log.d(TAG, "resetConversations() called")
-        conversations.value = emptyList()
-        messages.clear()
+        _conversations.value = emptyList()
+        _messagesCache.clear()
         chatPrefs.saveConversations(emptyList())
-        // Consider if you need to clear all individual message files as well
-        Log.d(TAG, "All conversations and messages have been reset.")
+        Log.d(TAG, "Reset all conversations")
     }
 
     override suspend fun deleteConversation(conversationId: String): Boolean {
-        Log.d(TAG, "deleteConversation() called for conversationId: $conversationId")
         return try {
             chatPrefs.deleteConversation(conversationId)
-            messages.remove(conversationId)
-            conversations.value = chatPrefs.loadConversations()
-            Log.d(TAG, "Conversation removed from list and storage")
+            _messagesCache.remove(conversationId)
+            _conversations.value = _conversations.value.filter { it.conversationId != conversationId }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting conversation", e)
             false
         }
     }
-    fun getConversationId(senderId: String, receiverId: String): String {
-        // TODO: Implement proper conversation ID generation
+
+    override fun getConversationId(senderId: String, receiverId: String): String {
         val sortedIds = listOf(senderId, receiverId).sorted()
         return "conv_${sortedIds[0]}_${sortedIds[1]}"
     }
 
-
-
-    override suspend fun searchMessages(query: String, mode: com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel.SearchMode): List<ChatMessage> {
-        Log.d(TAG, "searchMessages() called - query: '$query', mode: $mode")
-        return try {
-            val allMessages = mutableListOf<ChatMessage>()
-            
-            // Get all messages from all conversations
-            conversations.value.forEach { conversation ->
-                val conversationMessages = chatPrefs.loadMessages(conversation.conversationId)
-                allMessages.addAll(conversationMessages)
-            }
-            
-            val results = when (mode) {
-                com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel.SearchMode.EXACT -> {
-                    allMessages.filter { message ->
-                        (message.content as? MessageContent.Text)?.text?.equals(query, ignoreCase = true) ?: false
-                    }
-                }
-                com.bluebridgeapp.bluebridge.viewmodels.ChatViewModel.SearchMode.PARTIAL -> {
-                    allMessages.filter { message ->
-                        (message.content as? MessageContent.Text)?.text?.contains(query, ignoreCase = true) ?: false
-                    }
+    override suspend fun searchMessages(query: String, mode: ChatViewModel.SearchMode): List<ChatMessage> {
+        return _conversations.value
+            .flatMap { conv -> getLocalMessages(conv.conversationId) }
+            .filter { message ->
+                val text = (message.content as? MessageContent.Text)?.text ?: ""
+                when (mode) {
+                    ChatViewModel.SearchMode.EXACT -> text.equals(query, true)
+                    ChatViewModel.SearchMode.PARTIAL -> text.contains(query, true)
                 }
             }
-            
-            Log.d(TAG, "Search found ${results.size} results")
-            results
-        } catch (e: Exception) {
-            Log.e(TAG, "Error searching messages", e)
-            emptyList()
+    }
+
+    // Private helper methods
+    private fun getOrCreateMessageFlow(conversationId: String): MutableStateFlow<List<ChatMessage>> {
+        return _messagesCache.getOrPut(conversationId) {
+            val messages = chatPrefs.loadMessages(conversationId)
+            Log.d(TAG, "Created message flow for $conversationId with ${messages.size} messages")
+            MutableStateFlow(messages)
         }
     }
 
+    private suspend fun updateConversations(newConversations: List<ChatConversation>) {
+        _conversations.value = newConversations
+        chatPrefs.saveConversations(newConversations)
+    }
 
+    private suspend fun updateConversationLastMessage(conversationId: String, message: ChatMessage) {
+        val conversations = _conversations.value.toMutableList()
+        val index = conversations.indexOfFirst { it.conversationId == conversationId }
 
-} 
+        if (index != -1) {
+            val lastMessageText = when (message.content) {
+                is MessageContent.Text -> message.content.text
+                is MessageContent.Media -> "Media message"
+            }
+            // Update conversation if needed
+            updateConversations(conversations)
+        }
+    }
+
+    private suspend fun createMessage(senderId: String, receiverId: String, content: MessageContent): ChatMessage {
+        return ChatMessage(
+            messageId = UUID.randomUUID().toString(),
+            senderId = senderId,
+            senderName = userRepository.getUserData().first()?.firstName ?: "Unknown", // Suspend call
+            receiverId = receiverId,
+            content = content,
+            timestamp = System.currentTimeMillis(),
+            messageType = when (content) {
+                is MessageContent.Text -> MessageType.TEXT
+                is MessageContent.Media -> MessageType.TEXT //TODO: replace when media available
+            }
+        )
+    }
+
+    private fun sendBroadcast(conversationId: String) {
+        val intent = Intent("com.bluebridgeapp.NEW_CHAT_MESSAGE").apply {
+            putExtra("conversationId", conversationId)
+        }
+        context.sendBroadcast(intent)
+    }
+}

@@ -327,7 +327,7 @@ fun NotificationPermissionDialog(onDismiss: () -> Unit, onAllow: () -> Unit) {
         }
     }
 
-    if (true){//(!isPermissionGranted) {
+    if (!isPermissionGranted) {
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.notification_permission)) },

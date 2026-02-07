@@ -1,0 +1,22 @@
+sender app side : 
+image -> compressed image -> base64 -> compressed base64 -> server api { url = http:bluebridge.homeonthewater.com/api/chats, method : POST , jsonObject {senderId, recieverId, compressedBase64}  }
+
+server :
+recieved jsonObject {senderId, recieverId, compressedBase64} -> chunking the image -> get the reciever FCM token from FCM database -> send a serie of notifications to the reciever with that FCM token. { 
+SenderId, 
+data :   
+base64compressed(ImageChunk(
+    val imageId: Int,
+    val totalChunks: Int,
+    val chunkIndex: Int,
+    val data: String
+)) } //here imageChunk could be simply a message. In that case it doesn't matter since it's all base64 and the app will itself decide if the recieved data is an encoded image, or a chat message. 
+
+reciever app side :
+Receive fcm notification ( not push message ) -> identify the type of the message ( image, text, etc... ) -> associate it with the chat with the corresponding senderId and the corresponding image -> reconstruct base64 text -> decompress base 64 -> display it in the adequate channel. 
+
+
+
+
+
+

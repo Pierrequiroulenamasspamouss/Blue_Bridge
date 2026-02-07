@@ -1,13 +1,47 @@
 package com.bluebridgeapp.bluebridge.events
 
+import android.util.Log
 import com.bluebridgeapp.bluebridge.data.model.Location
 import com.bluebridgeapp.bluebridge.data.model.LoginRequest
 import com.bluebridgeapp.bluebridge.data.model.RegisterRequest
 import com.bluebridgeapp.bluebridge.data.model.UserData
 import com.bluebridgeapp.bluebridge.data.model.WaterNeed
 import com.bluebridgeapp.bluebridge.data.model.WellData
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
+object AppEventChannel {
+    private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 50)
+    val events = _events.asSharedFlow()
+
+    private var eventHandler: AppEventHandler? = null
+
+    fun initialize(handler: AppEventHandler) {
+        this.eventHandler = handler
+        Log.d("AppEventChannel", "EventHandler initialized")
+    }
+
+    fun setChatEventListener(listener: AppEventHandler.ChatEventListener) {
+        eventHandler?.setChatEventListener(listener)
+    }
+
+    fun removeChatEventListener() {
+        eventHandler?.removeChatEventListener()
+    }
+
+    suspend fun sendEvent(event: AppEvent) {
+        Log.d("AppEventChannel", "Sending event: $event")
+        try {
+            // Emit to the shared flow for general subscribers
+            _events.emit(event)
+
+            // Also handle immediately with the event handler
+            eventHandler?.handleEvent(event)
+        } catch (e: Exception) {
+            Log.e("AppEventChannel", "Error sending event: ${e.message}", e)
+        }
+    }
+}
 open class WellEvents {
     data class SaveWell(val wellData: WellData) : WellEvents()
     data class WellNameEntered(val wellName: String) : WellEvents()
@@ -61,18 +95,9 @@ sealed class AppEvent {
         val category: String,
         val extra: Map<String, String> = emptyMap()
     ) : AppEvent()
-}
 
-object AppEventChannel {
-    private val _events = Channel<AppEvent>(Channel.BUFFERED)
-    private lateinit var eventHandler: AppEventHandler
-
-    fun initialize(handler: AppEventHandler) {
-        this.eventHandler = handler
-    }
-
-    suspend fun sendEvent(event: AppEvent) {
-        _events.send(event)
-        eventHandler.handleEvent(event)
-    }
+    // Chat-related events
+    data class NewMessageReceived(val conversationId: String) : AppEvent()
+    data class ConversationUpdated(val conversationId: String) : AppEvent()
+    object RefreshAllConversations : AppEvent()
 }

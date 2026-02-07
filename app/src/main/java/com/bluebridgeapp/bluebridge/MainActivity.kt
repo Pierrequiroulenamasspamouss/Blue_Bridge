@@ -114,4 +114,5 @@ class MainActivity : ComponentActivity() {
             chatRepository = ChatRepositoryImpl(api, userRepository, context)
         )
     }
+
 }

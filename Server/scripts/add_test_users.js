@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 
 // Chemins des bases de données
 const dbPaths = {
@@ -43,7 +45,7 @@ const testUsers = [
 ];
 
 // Token FCM de test
-const testFCMToken = 'd9MrrVpSRL6ou_-Oq6FmW_:APA91bFnnfuJ25QyYuhDXYFsoI9iv-6nI3x7pXdqI0rrvdRKA74vtsUw5gyVy85uvOg2qggEq770K-F_WhqMEy_fd_HevEdLzTjGaYOZRRfj3Q75gyoOzqg';
+const testFCMToken = process.env.DEVICE_TOKEN
 
 // Fonction pour ajouter un utilisateur
 function addUser(user) {

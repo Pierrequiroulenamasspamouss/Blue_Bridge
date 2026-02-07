@@ -129,8 +129,10 @@ class UserViewModel(
             try {
                 val success = repository.login(request)
                 if (success) {
-                    loadUser()
+                    getFirebaseToken()
                     registerForNotifications()
+                    loadUser()
+
                 } else {
                     _state.value = UiState.Error("Login failed. Please check your credentials.")
                 }
@@ -210,7 +212,6 @@ class UserViewModel(
             }
         }
     }
-    suspend fun getUserEmail(): String? = repository.getUserEmail()
 
     fun setNotificationsEnabled(enable: Boolean) {
         viewModelScope.launch {

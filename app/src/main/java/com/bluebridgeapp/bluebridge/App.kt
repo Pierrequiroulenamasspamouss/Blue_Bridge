@@ -177,8 +177,7 @@ private suspend fun validateUserToken(
 ) {
     val token = userViewModel.getLoginToken()
     val currentRole = userViewModel.getRole()
-
-    if (token != null && currentRole != "guest") {
+    if (token != null && currentRole != "guest" && currentRole != "admin") {
         try {
             val request = ValidateAuthTokenRequest(
                 token = token,

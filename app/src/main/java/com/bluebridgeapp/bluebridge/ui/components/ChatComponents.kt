@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AudioFile
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Person
@@ -200,9 +199,9 @@ fun ConversationItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { 
+            .clickable {
                 Log.d("ChatComponents", "Conversation item clicked: ${conversation.conversationId}")
-                onClick() 
+                onClick()
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -282,21 +281,56 @@ fun ConversationItem(
 }
 
 @Composable
+fun NewChatScreen(
+    onStartChat: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var userIdInput by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Start New Chat") },
+        text = {
+            Column {
+                Text("Enter the User ID you want to chat with:")
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = userIdInput,
+                    onValueChange = { userIdInput = it },
+                    label = { Text("User ID") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        if (userIdInput.isNotBlank()) {
+                            onStartChat(userIdInput)
+                        }
+                        focusManager.clearFocus()
+                    })
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onStartChat(userIdInput) }, enabled = userIdInput.isNotBlank()) {
+                Text("Start Chat")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
 fun ChatConversationView(
     messages: List<ChatMessage>,
     messageInput: String,
     onMessageInputChange: (String) -> Unit,
     onSendMessage: (String) -> Unit,
-    onSendImage: () -> Unit,
-    onSendVideo: () -> Unit,
-    onSendAudio: () -> Unit,
-    onSendFile: () -> Unit,
     currentUserId: String,
     isLoading: Boolean,
-    conversationTitle: String = "Chat"
+    onRefresh: () -> Unit
 ) {
-    //Log.d("ChatComponents", "ChatConversationView composable called - messages: ${messages.size}, isLoading: $isLoading, conversationTitle: $conversationTitle")
-    
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
@@ -313,6 +347,7 @@ fun ChatConversationView(
             contentPadding = PaddingValues(vertical = 8.dp),
             reverseLayout = true
         ) {
+
             items(groupMessagesByTime(messages).reversed()) { messageGroup ->
                 MessageGroup(
                     messages = messageGroup,
@@ -340,23 +375,18 @@ fun ChatConversationView(
                 )
             }
         }
-        
+
         // Input area
         MessageInputArea(
             messageInput = messageInput,
             onMessageInputChange = onMessageInputChange,
             onSendMessage = { content ->
-                Log.d("ChatComponents", "Send message clicked with content: '$content'")
                 onSendMessage(content)
                 focusManager.clearFocus()
                 scope.launch {
                     listState.animateScrollToItem(0)
                 }
             },
-            onSendImage = onSendImage,
-            onSendVideo = onSendVideo,
-            onSendAudio = onSendAudio,
-            onSendFile = onSendFile,
             isLoading = isLoading
         )
     }
@@ -385,7 +415,9 @@ fun MessageGroup(
     }
     
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalAlignment = alignment
     ) {
         messages.forEachIndexed { index, message ->
@@ -394,13 +426,15 @@ fun MessageGroup(
             var showMessageMenu by remember { mutableStateOf(false) }
             
             Card(
-                modifier = Modifier.widthIn(max = 280.dp).then(
-                    if (isFromCurrentUser) {
-                        Modifier.clickable { showMessageMenu = true }
-                    } else {
-                        Modifier
-                    }
-                ),
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .then(
+                        if (isFromCurrentUser) {
+                            Modifier.clickable { showMessageMenu = true }
+                        } else {
+                            Modifier
+                        }
+                    ),
                 colors = CardDefaults.cardColors(containerColor = backgroundColor),
                 shape = RoundedCornerShape(
                     topStart = 16.dp,
@@ -602,81 +636,13 @@ private fun formatMessageContent(text: String): String {
         .replace(Regex("__(.*?)__"), "<sub>$1</sub>") // Subscript: __text__
 }
 
-@Composable
-fun MessageItem(
-    message: ChatMessage,
-    isFromCurrentUser: Boolean
-) {
-    Log.d("ChatComponents", "MessageItem composable called - messageId: ${message.messageId}, isFromCurrentUser: $isFromCurrentUser")
-    
-    val alignment = if (isFromCurrentUser) Alignment.End else Alignment.Start
-    val backgroundColor = if (isFromCurrentUser) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-    val textColor = if (isFromCurrentUser) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalAlignment = alignment
-    ) {
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            colors = CardDefaults.cardColors(containerColor = backgroundColor),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isFromCurrentUser) 16.dp else 4.dp,
-                bottomEnd = if (isFromCurrentUser) 4.dp else 16.dp
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
-                when (message.content) {
-                    is MessageContent.Text -> {
-                        Text(
-                            text = formatMessageContent(message.content.text),
-                            color = textColor,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    is MessageContent.Media -> {
-                        MediaMessageContent(
-                            mediaContent = message.content,
-                            textColor = textColor
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = formatTimestamp(message.timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = textColor.copy(alpha = 0.7f)
-                )
-            }
-        }
-    }
-}
+
 
 @Composable
 fun MessageInputArea(
     messageInput: String,
     onMessageInputChange: (String) -> Unit,
     onSendMessage: (String) -> Unit,
-    onSendImage: () -> Unit,
-    onSendVideo: () -> Unit,
-    onSendAudio: () -> Unit,
-    onSendFile: () -> Unit,
     isLoading: Boolean
 ) {
     Log.d("ChatComponents", "MessageInputArea composable called - messageInput: '$messageInput', isLoading: $isLoading")
@@ -718,6 +684,7 @@ fun MessageInputArea(
                 
                 // Media buttons row
                 Column {
+                    /*
                     // Image button
                     IconButton(
                         onClick = { 
@@ -761,6 +728,8 @@ fun MessageInputArea(
                     ) {
                         Icon(Icons.Default.Description, contentDescription = "Send File")
                     }
+
+                     */
                 }
                 
                 Spacer(modifier = Modifier.width(8.dp))
